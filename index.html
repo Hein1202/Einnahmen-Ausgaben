@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Einnahmen-Ausgaben (Offline) – Version 159.02.26</title>
+  <style>
+    :root{
+      /* Moderner, klar sichtbarer Rand (deutlich, aber nicht "hart"). */
+      --border-strong: #94a3b8;       /* slate-400 */
+      --border-strong-hover: #64748b; /* slate-500 */
+      --inner-highlight: rgba(255,255,255,0.70);
+    }
+    html, body { height: 100%; margin: 0; padding: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#e5e7eb; }
+    #topbar {
+      height: 52px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px;
+      background: #ffffff;
+      border-bottom: 1px solid #cbd5e1;
+      box-sizing: border-box;
+    }
+    #brand {
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      color:#111827;
+      font-size: 15px;
+      padding-left: 2px;
+    }
+    #spacer { flex: 1; }
+    #verBadge {
+      border: 2px solid var(--border-strong);
+      background: #f8fafc;
+      color: #0f172a;
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .navbtn {
+      appearance: none;
+      border: 2px solid var(--border-strong);
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-weight: 700;
+      color: #111827;
+    }
+    .navbtn:hover { background: #f8fafc; }
+    .hidden { display:none !important; }
+
+    #main {
+      height: calc(100% - 52px);
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: none;
+      background: white;
+    }
+    iframe.active { display: block; }
+
+    #homeScreen {
+      display: none;
+      height: 100%;
+      overflow: auto;
+      background:
+        radial-gradient(900px 320px at 10% 0%, rgba(99,102,241,0.08), transparent 60%),
+        radial-gradient(900px 320px at 90% 0%, rgba(59,130,246,0.06), transparent 60%),
+        #e5e7eb;
+    }
+    #homeScreen.active{ display:block; }
+    #homeInner {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 26px 18px 30px;
+      box-sizing: border-box;
+    }
+    #hero {
+      background:#ffffff;
+      border: 2px solid var(--border-strong);
+      border-radius: 18px;
+      padding: 18px 18px 16px;
+      box-shadow:
+        inset 0 0 0 1px var(--inner-highlight),
+        0 12px 28px rgba(0,0,0,0.07);
+    }
+    .heroRow { display:flex; align-items:flex-start; gap: 14px; }
+    .heroIcon {
+      width: 44px; height: 44px; border-radius: 14px;
+      display:flex; align-items:center; justify-content:center;
+      background: #111827; color:#fff; font-size: 20px; font-weight: 900;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.10);
+      flex: 0 0 auto;
+    }
+    .heroKicker { color:#64748b; font-weight: 800; font-size: 12px; }
+    #hero h1 { margin: 2px 0 4px; font-size: 26px; letter-spacing: -0.02em; color:#0f172a; }
+    .heroSub { color:#475569; font-weight: 600; }
+
+    #tileGrid {
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .tileBtn {
+      border: 2px solid var(--border-strong);
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 16px;
+      cursor:pointer;
+      text-align:left;
+      box-shadow:
+        inset 0 0 0 1px var(--inner-highlight),
+        0 12px 28px rgba(0,0,0,0.07);
+      transition: transform 0.08s ease, box-shadow 0.08s ease, border-color 0.08s ease;
+    }
+    .tileBtn:hover {
+      transform: translateY(-1px);
+      border-color: var(--border-strong-hover);
+      box-shadow:
+        inset 0 0 0 1px var(--inner-highlight),
+        0 18px 38px rgba(0,0,0,0.10);
+    }
+    .tileTop { display:flex; gap: 12px; align-items:flex-start; }
+    .tileIcon {
+      width: 40px; height: 40px; border-radius: 14px;
+      display:flex; align-items:center; justify-content:center;
+      background: #e2e8f0;
+      color:#0f172a;
+      font-size: 18px;
+      flex: 0 0 auto;
+    }
+    .tileTitle { font-weight: 900; color:#0f172a; }
+    .tileDesc { margin-top: 4px; color:#64748b; font-weight: 600; font-size: 13px; line-height: 1.25rem; }
+
+    @media (max-width: 820px) {
+      #tileGrid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="topbar">
+    <button id="btnHome" class="navbtn hidden" type="button">Start</button>
+    <div id="brand">Einnahmen-Ausgaben</div>
+    <div id="spacer"></div>
+    <div id="verBadge">v159.02.26</div>
+  </div>
+
+  <div id="main">
+    <div id="homeScreen" class="active">
+      <div id="homeInner">
+        <div id="hero">
+          <div class="heroRow">
+            <div class="heroIcon">€</div>
+            <div>
+              <div class="heroKicker">Offline • Version <span id="homeVer">159.02.26</span></div>
+              <h1>Einnahmen-Ausgaben</h1>
+              <div class="heroSub">Wähle einen Bereich aus.</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tileGrid">
+          <button class="tileBtn" id="tileEinnahmen" type="button">
+            <div class="tileTop">
+              <div class="tileIcon" aria-hidden="true">€</div>
+              <div>
+                <div class="tileTitle">Einnahmen</div>
+                <div class="tileDesc">Erfassen, importieren, exportieren und auswerten.</div>
+              </div>
+            </div>
+          </button>
+
+          <button class="tileBtn" id="tileAusgaben" type="button">
+            <div class="tileTop">
+              <div class="tileIcon" aria-hidden="true">🧾</div>
+              <div>
+                <div class="tileTitle">Ausgaben</div>
+                <div class="tileDesc">Ausgaben erfassen, Belege verwalten, Export & Druck.</div>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <iframe id="frameEinnahmen" title="Einnahmen"></iframe>
+    <iframe id="frameAusgaben" title="Ausgaben"></iframe>
+  </div>
+
+  <script>
+    const version = "159.02.26";
+    const homeScreen = document.getElementById('homeScreen');
+    const btnHome = document.getElementById('btnHome');
+    const tileEinnahmen = document.getElementById('tileEinnahmen');
+    const tileAusgaben = document.getElementById('tileAusgaben');
+
+    const frameEinnahmen = document.getElementById('frameEinnahmen');
+    const frameAusgaben = document.getElementById('frameAusgaben');
+
+    function injectElectronAPI(frame) {
+      try {
+        if (window.electronAPI && frame && frame.contentWindow) {
+          frame.contentWindow.electronAPI = window.electronAPI;
+        }
+      } catch(e) {}
+    }
+
+    function show(which) {
+      const isHome = which === 'home';
+      const isAusgaben = which === 'ausgaben';
+      const isEinnahmen = which === 'einnahmen';
+
+      homeScreen.classList.toggle('active', isHome);
+      frameAusgaben.classList.toggle('active', isAusgaben);
+      frameEinnahmen.classList.toggle('active', isEinnahmen);
+
+      btnHome.classList.toggle('hidden', isHome);
+    }
+
+    // iframes laden (separate Dateien – robust, keine String-Einbettung)
+    frameEinnahmen.src = 'einnahmen.html';
+    frameAusgaben.src = 'ausgaben.html';
+
+    frameEinnahmen.addEventListener('load', () => injectElectronAPI(frameEinnahmen));
+    frameAusgaben.addEventListener('load', () => injectElectronAPI(frameAusgaben));
+
+    btnHome.addEventListener('click', () => show('home'));
+    tileEinnahmen.addEventListener('click', () => show('einnahmen'));
+    tileAusgaben.addEventListener('click', () => show('ausgaben'));
+
+    show('home');
+  </script>
+</body>
+</html>
