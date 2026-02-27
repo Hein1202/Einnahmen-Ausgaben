@@ -158,34 +158,115 @@
       font-family: inherit;
     }
 
+
+    /* Monatsschaltung wie im Einnahmen-Modul */
+    .expense-headline {
+      flex-wrap: wrap;
+      row-gap: 0.5rem;
+    }
+
+    .expense-month-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-left: 0.25rem;
+      flex-wrap: nowrap;
+    }
+
+    .expense-month-mid {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .expense-month-picker {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .expense-nav-right {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.2rem;
+      margin-left: 0.1rem;
+    }
+
+    .expense-nav-btn {
+      font-size: 1.4em;
+      padding: 6px 12px;
+      margin: 0;
+      cursor: pointer;
+      font-weight: bold;
+      border: 2px solid #444;
+      background: #eee;
+      border-radius: 6px;
+      line-height: 1;
+    }
+
+    .expense-lock-btn {
+      border: none;
+      background: transparent;
+      padding: 0 2px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    @media (max-width: 700px) {
+      .expense-month-nav {
+        width: 100%;
+        justify-content: flex-start;
+        margin-left: 0;
+      }
+
+      .expense-headline {
+        align-items: flex-start;
+      }
+    }
+
   </style>
 <script src="assets/xlsx.full.min.js"></script>
 </head>
 <body class="p-6 bg-gray-100 text-gray-800">
   <div class="max-w-4xl mx-auto bg-white rounded-xl shadow p-6">
     <div class="flex justify-between items-center mb-4">
-      <h1 class="text-2xl font-bold flex items-center gap-2">
+      <h1 class="text-2xl font-bold flex items-center gap-2 expense-headline">
       <span class="text-2xl">📊</span>
       <span>Ausgaben</span>
-      <select id="monthSelect" class="border rounded px-2 py-1 text-sm">
-        <option value="">(Monat wählen)</option>
-        <option value="01">Januar</option>
-        <option value="02">Februar</option>
-        <option value="03">März</option>
-        <option value="04">April</option>
-        <option value="05">Mai</option>
-        <option value="06">Juni</option>
-        <option value="07">Juli</option>
-        <option value="08">August</option>
-        <option value="09">September</option>
-        <option value="10">Oktober</option>
-        <option value="11">November</option>
-        <option value="12">Dezember</option>
-      </select>
-      <button id="lockIcon" class="text-xl px-2 advanced-only" title="Monat ist entsperrt – Klick zum Sperren">🔓</button>
 
-      <select id="yearSelect" class="border rounded px-2 py-1 text-sm">
-      </select>
+      <div class="expense-month-nav" aria-label="Monatnavigation">
+        <button id="prevMonthBtn" class="expense-nav-btn" type="button" aria-label="Vormonat">◄</button>
+
+        <div class="expense-month-mid">
+          <div class="expense-month-picker">
+            <select id="monthSelect" class="border rounded px-2 py-1 text-sm">
+              <option value="">(Monat wählen)</option>
+              <option value="01">Januar</option>
+              <option value="02">Februar</option>
+              <option value="03">März</option>
+              <option value="04">April</option>
+              <option value="05">Mai</option>
+              <option value="06">Juni</option>
+              <option value="07">Juli</option>
+              <option value="08">August</option>
+              <option value="09">September</option>
+              <option value="10">Oktober</option>
+              <option value="11">November</option>
+              <option value="12">Dezember</option>
+            </select>
+
+            <select id="yearSelect" class="border rounded px-2 py-1 text-sm">
+            </select>
+          </div>
+        </div>
+
+        <div class="expense-nav-right" aria-label="Monatnavigation rechts">
+          <button id="lockIcon" class="text-xl advanced-only expense-lock-btn" type="button" title="Monat ist entsperrt – Klick zum Sperren">🔓</button>
+          <button id="nextMonthBtn" class="expense-nav-btn" type="button" aria-label="Nächster Monat">►</button>
+        </div>
+      </div>
     </h1>
 </div>
 
@@ -510,6 +591,53 @@ const MONTH_NAMES = {
 
       // Versuche, Monat/Jahr aus vorhandenen Einträgen zu übernehmen
       determineMonthFromExpenses();
+    }
+
+    function ensureYearOption(year) {
+      if (!yearSelect) return;
+      const value = String(year);
+      const exists = Array.from(yearSelect.options).some(opt => opt.value === value);
+      if (!exists) {
+        const opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = value;
+        yearSelect.appendChild(opt);
+      }
+    }
+
+    function shiftSelectedMonth(delta) {
+      if (!monthSelect || !yearSelect) return;
+
+      const now = new Date();
+      let month = parseInt(monthSelect.value || '', 10);
+      let year = parseInt(yearSelect.value || '', 10);
+
+      if (!month || isNaN(month)) month = now.getMonth() + 1;
+      if (!year || isNaN(year)) year = now.getFullYear();
+
+      month += delta;
+
+      if (month < 1) {
+        month = 12;
+        year -= 1;
+      } else if (month > 12) {
+        month = 1;
+        year += 1;
+      }
+
+      ensureYearOption(year);
+      yearSelect.value = String(year);
+      monthSelect.value = String(month).padStart(2, '0');
+
+      handleMonthYearChange();
+    }
+
+    function prevMonth() {
+      shiftSelectedMonth(-1);
+    }
+
+    function nextMonth() {
+      shiftSelectedMonth(1);
     }
 
     function save() {
@@ -1684,6 +1812,16 @@ function handleMonthYearChange() {
     }
     if (yearSelect) {
       yearSelect.addEventListener('change', handleMonthYearChange);
+    }
+
+    const prevMonthBtn = document.getElementById('prevMonthBtn');
+    const nextMonthBtn = document.getElementById('nextMonthBtn');
+
+    if (prevMonthBtn) {
+      prevMonthBtn.addEventListener('click', prevMonth);
+    }
+    if (nextMonthBtn) {
+      nextMonthBtn.addEventListener('click', nextMonth);
     }
 
     document.getElementById('printBtn').addEventListener('click', () => {
