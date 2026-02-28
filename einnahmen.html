@@ -18,33 +18,35 @@ h1 { margin-top:0; }
   border-radius:8px;
 }
 
-#month-nav { font-size:1.4em; margin:10px 0; display:flex; align-items:center; justify-content:space-between; }
-/* Monat/Jahr Direktwahl (Variante A) */
+#month-nav {
+  font-size:1.4em;
+  margin:10px 0;
+  display:grid;
+  grid-template-columns:auto minmax(0, 1fr) auto;
+  align-items:center;
+  column-gap:10px;
+}
+/* Monat/Jahr Direktwahl (EXE-sichere Grid-Variante) */
 .month-mid{
-  display:flex;
-  flex-direction: column;
+  min-width:0;
+  display:grid;
+  grid-template-columns:minmax(0, auto) auto;
+  grid-template-areas:
+    "picker lock"
+    "scroll scroll";
   align-items:center;
   justify-content:center;
-  gap:6px;
-  flex:1;
-  min-width: 0;
-}
-
-.nav-right{
-  display:flex;
-  flex-direction: column;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-  margin-left: 10px;
-}
-.nav-right #month-lock-toggle{
-  margin-left: 0 !important;
+  justify-items:center;
+  column-gap:10px;
+  row-gap:4px;
 }
 
 #month-picker{
+  grid-area:picker;
   display:inline-flex;
   align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
   gap:8px;
 }
 
@@ -271,12 +273,20 @@ input[type="text"]:focus {
 .nav-btn {
   font-size: 1.4em;
   padding: 6px 12px;
-  margin: 0 10px;
+  margin: 0;
   cursor: pointer;
   font-weight: bold;
   border: 2px solid #444;
   background: #eee;
   border-radius: 6px;
+}
+
+#month-nav > .nav-btn:first-of-type {
+  justify-self:start;
+}
+
+#month-nav > .nav-btn:last-of-type {
+  justify-self:end;
 }
 
 
@@ -391,6 +401,7 @@ td[id^="sum-"] {
    Optik wie der Pfeil "zur Monatsübersicht" (kleiner Kreis + Beschriftung).
    Hier als Sprung "zum letzten Eintrag". */
 .month-scroll-last {
+  grid-area: scroll;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
@@ -1763,7 +1774,7 @@ function _getSelectedArchiveYear(){
 function _buildYearArchiveData(year){
   const data = {
     app: "Einnahmen",
-    version: "V159.02.26",
+    version: "V170.02.26",
     year: year,
     createdAt: new Date().toISOString(),
     days: {},
@@ -2060,6 +2071,30 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
   font-weight: bold;
 }
 
+
+@media (max-width: 640px) {
+  #month-nav {
+    column-gap: 8px;
+  }
+
+  .month-mid {
+    column-gap: 8px;
+  }
+
+  .month-select {
+    font-size: 1.15em;
+    padding: 6px 8px;
+  }
+
+  .nav-btn {
+    padding: 6px 10px;
+  }
+
+  .month-scroll-last .scroll-text {
+    font-size: 0.85em;
+  }
+}
+
 </style>
 </head>
 <body class="bg-darkblue" onload="updateMonth()">
@@ -2077,6 +2112,10 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
   <!-- Wird weiterhin von Export/Druck-Funktionen genutzt (Text: "Monat Jahr") -->
   <span id="selected-month" class="sr-only"></span>
 
+  <span id="month-lock-toggle" onclick="toggleLock()"
+        style="cursor:pointer; font-size: 1.4em; margin-left: 0; grid-area: lock; align-self: center;"
+        title="Monat bearbeiten/sperren">🔓</span>
+
   <span id="month-scroll-last" class="scroll-to-summary month-scroll-last"
         onclick="scrollBackToLastEntry()" title="Zum letzten Eintrag springen">
     <span class="scroll-circle">↓</span>
@@ -2084,13 +2123,7 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
   </span>
 </div>
 
-<div class="nav-right" aria-label="Monatnavigation rechts">
-  <span id="month-lock-toggle" onclick="toggleLock()"
-        style="cursor:pointer; font-size: 1.4em;"
-        title="Monat bearbeiten/sperren">🔓</span>
-
-  <button class="nav-btn" onclick="nextMonth()">►</button>
-</div>
+<button class="nav-btn" onclick="nextMonth()">►</button>
 </div>
 <table id="main-table">
 <thead>

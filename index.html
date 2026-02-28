@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Einnahmen-Ausgaben (Offline) – Version 160.02.26</title>
+  <title>Einnahmen-Ausgaben (Offline) – Version 170.02.26</title>
   <style>
     :root{
       /* Moderner, klar sichtbarer Rand (deutlich, aber nicht "hart"). */
@@ -13,14 +13,15 @@
     }
     html, body { height: 100%; margin: 0; padding: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#e5e7eb; }
     #topbar {
-      height: 52px;
+      min-height: 52px;
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 0 12px;
+      padding: 8px 12px;
       background: #ffffff;
       border-bottom: 1px solid #cbd5e1;
       box-sizing: border-box;
+      flex-wrap: wrap;
     }
     #brand {
       font-weight: 900;
@@ -50,10 +51,21 @@
       color: #111827;
     }
     .navbtn:hover { background: #f8fafc; }
+    .navbtn.is-active {
+      background: #111827;
+      border-color: #111827;
+      color: #ffffff;
+    }
+    .topbar-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
     .hidden { display:none !important; }
 
     #main {
-      height: calc(100% - 52px);
+      height: calc(100% - 69px);
     }
     iframe {
       width: 100%;
@@ -103,7 +115,7 @@
 
     #tileGrid {
       display:grid;
-      grid-template-columns: repeat(2, minmax(0,1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 14px;
       margin-top: 14px;
     }
@@ -138,6 +150,114 @@
     .tileTitle { font-weight: 900; color:#0f172a; }
     .tileDesc { margin-top: 4px; color:#64748b; font-weight: 600; font-size: 13px; line-height: 1.25rem; }
 
+
+    #yearOverviewCard {
+      margin-top: 14px;
+      background:#ffffff;
+      border: 2px solid var(--border-strong);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow:
+        inset 0 0 0 1px var(--inner-highlight),
+        0 12px 28px rgba(0,0,0,0.07);
+    }
+    .summaryHead {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .summaryTitle {
+      font-weight: 900;
+      color:#0f172a;
+      font-size: 18px;
+      letter-spacing: -0.01em;
+    }
+    .summarySub {
+      margin-top: 4px;
+      color:#64748b;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .summaryControls {
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      color:#475569;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .summaryYearSelect {
+      appearance: none;
+      border: 2px solid var(--border-strong);
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-weight: 800;
+      color: #0f172a;
+      min-width: 92px;
+    }
+    .summaryTableWrap {
+      margin-top: 12px;
+      overflow-x: auto;
+    }
+    #yearOverviewTable {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 520px;
+    }
+    #yearOverviewTable th,
+    #yearOverviewTable td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 14px;
+    }
+    #yearOverviewTable th {
+      text-align: left;
+      color:#475569;
+      font-weight: 800;
+      background:#f8fafc;
+      position: sticky;
+      top: 0;
+    }
+    #yearOverviewTable td {
+      color:#0f172a;
+      font-weight: 700;
+    }
+    #yearOverviewTable td.num,
+    #yearOverviewTable th.num {
+      text-align: right;
+    }
+    #yearOverviewTable tbody tr:last-child td {
+      border-bottom: none;
+    }
+    #yearOverviewTable .muted {
+      color:#94a3b8;
+      font-weight: 700;
+    }
+    #yearOverviewTable tfoot td {
+      border-top: 2px solid #cbd5e1;
+      border-bottom: 0;
+      background:#f8fafc;
+      font-weight: 900;
+    }
+    #yearOverviewMeta {
+      margin-top: 12px;
+      display:flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      color:#475569;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    #yearOverviewMeta strong {
+      color:#0f172a;
+    }
+
+
     @media (max-width: 820px) {
       #tileGrid { grid-template-columns: 1fr; }
     }
@@ -145,20 +265,24 @@
 </head>
 <body>
   <div id="topbar">
-    <button id="btnHome" class="navbtn hidden" type="button">Start</button>
     <div id="brand">Einnahmen-Ausgaben</div>
+    <div class="topbar-nav" aria-label="Seiten wechseln">
+      <button id="btnTopEinnahmen" class="navbtn" type="button">Einnahmen</button>
+      <button id="btnTopAusgaben" class="navbtn" type="button">Ausgaben</button>
+      <button id="btnTopJahresuebersicht" class="navbtn" type="button">Jahresübersicht</button>
+    </div>
     <div id="spacer"></div>
-    <div id="verBadge">v160.02.26</div>
+    <div id="verBadge">v170.02.26</div>
   </div>
 
   <div id="main">
-    <div id="homeScreen" class="active">
+    <div id="homeScreen">
       <div id="homeInner">
         <div id="hero">
           <div class="heroRow">
             <div class="heroIcon">€</div>
             <div>
-              <div class="heroKicker">Offline • Version <span id="homeVer">160.02.26</span></div>
+              <div class="heroKicker">Offline • Version <span id="homeVer">170.02.26</span></div>
               <h1>Einnahmen-Ausgaben</h1>
               <div class="heroSub">Wähle einen Bereich aus.</div>
             </div>
@@ -185,56 +309,119 @@
               </div>
             </div>
           </button>
+
+          <button class="tileBtn" id="tileJahresuebersicht" type="button">
+            <div class="tileTop">
+              <div class="tileIcon" aria-hidden="true">📊</div>
+              <div>
+                <div class="tileTitle">Jahresübersicht</div>
+                <div class="tileDesc">Einfache Jahresansicht mit Einnahmen, Ausgaben und Kunden pro Monat.</div>
+              </div>
+            </div>
+          </button>
         </div>
+
+
       </div>
     </div>
 
     <iframe id="frameEinnahmen" title="Einnahmen"></iframe>
     <iframe id="frameAusgaben" title="Ausgaben"></iframe>
+    <iframe id="frameYearOverview" title="Jahresübersicht"></iframe>
   </div>
 
   <script>
-    const version = "160.02.26";
+    const version = "170.02.26";
     const homeScreen = document.getElementById('homeScreen');
     const btnHome = document.getElementById('btnHome');
     const tileEinnahmen = document.getElementById('tileEinnahmen');
     const tileAusgaben = document.getElementById('tileAusgaben');
+    const tileJahresuebersicht = document.getElementById('tileJahresuebersicht');
+    const btnTopEinnahmen = document.getElementById('btnTopEinnahmen');
+    const btnTopAusgaben = document.getElementById('btnTopAusgaben');
+    const btnTopJahresuebersicht = document.getElementById('btnTopJahresuebersicht');
 
     const frameEinnahmen = document.getElementById('frameEinnahmen');
     const frameAusgaben = document.getElementById('frameAusgaben');
+    const frameYearOverview = document.getElementById('frameYearOverview');
 
     function injectElectronAPI(frame) {
       try {
         if (window.electronAPI && frame && frame.contentWindow) {
           frame.contentWindow.electronAPI = window.electronAPI;
         }
-      } catch(e) {}
+      } catch (e) {}
+    }
+
+    function refreshYearOverviewPage() {
+      try {
+        if (frameYearOverview && frameYearOverview.contentWindow && typeof frameYearOverview.contentWindow.refreshJahresuebersicht === 'function') {
+          frameYearOverview.contentWindow.refreshJahresuebersicht();
+        }
+      } catch (e) {}
+    }
+
+    function setActiveTopButton(which) {
+      if (btnHome) btnHome.classList.toggle('is-active', which === 'home');
+      btnTopEinnahmen.classList.toggle('is-active', which === 'einnahmen');
+      btnTopAusgaben.classList.toggle('is-active', which === 'ausgaben');
+      btnTopJahresuebersicht.classList.toggle('is-active', which === 'jahresuebersicht');
+    }
+
+    function resizeMainForTopbar() {
+      const topbar = document.getElementById('topbar');
+      const main = document.getElementById('main');
+      if (!topbar || !main) return;
+      main.style.height = `calc(100% - ${topbar.offsetHeight}px)`;
     }
 
     function show(which) {
       const isHome = which === 'home';
       const isAusgaben = which === 'ausgaben';
       const isEinnahmen = which === 'einnahmen';
+      const isYearOverview = which === 'jahresuebersicht';
 
       homeScreen.classList.toggle('active', isHome);
       frameAusgaben.classList.toggle('active', isAusgaben);
       frameEinnahmen.classList.toggle('active', isEinnahmen);
+      frameYearOverview.classList.toggle('active', isYearOverview);
 
-      btnHome.classList.toggle('hidden', isHome);
+      setActiveTopButton(which);
+      resizeMainForTopbar();
+
+      if (isYearOverview) {
+        refreshYearOverviewPage();
+      }
     }
 
-    // iframes laden (separate Dateien – robust, keine String-Einbettung)
     frameEinnahmen.src = 'einnahmen.html';
     frameAusgaben.src = 'ausgaben.html';
+    frameYearOverview.src = 'jahresuebersicht.html';
 
     frameEinnahmen.addEventListener('load', () => injectElectronAPI(frameEinnahmen));
     frameAusgaben.addEventListener('load', () => injectElectronAPI(frameAusgaben));
+    frameYearOverview.addEventListener('load', () => {
+      injectElectronAPI(frameYearOverview);
+      refreshYearOverviewPage();
+    });
 
-    btnHome.addEventListener('click', () => show('home'));
+    window.addEventListener('focus', refreshYearOverviewPage);
+
+    if (btnHome) btnHome.addEventListener('click', () => show('home'));
+    btnTopEinnahmen.addEventListener('click', () => show('einnahmen'));
+    btnTopAusgaben.addEventListener('click', () => show('ausgaben'));
+    btnTopJahresuebersicht.addEventListener('click', () => show('jahresuebersicht'));
     tileEinnahmen.addEventListener('click', () => show('einnahmen'));
     tileAusgaben.addEventListener('click', () => show('ausgaben'));
+    tileJahresuebersicht.addEventListener('click', () => show('jahresuebersicht'));
 
-    show('home');
+    const homeVer = document.getElementById('homeVer');
+    if (homeVer) homeVer.textContent = version;
+
+    window.showAppSection = show;
+    window.addEventListener('resize', resizeMainForTopbar);
+
+    show('einnahmen');
   </script>
 </body>
 </html>

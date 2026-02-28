@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jahresübersicht – Einnahmen-Ausgaben 170.02.26</title>
+  <style>
+    :root {
+      --border-strong: #94a3b8;
+      --inner-highlight: rgba(255,255,255,0.70);
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#e5e7eb;
+      color:#0f172a;
+    }
+    #page {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 24px 18px 30px;
+      box-sizing: border-box;
+    }
+    .panel {
+      background:#ffffff;
+      border: 2px solid var(--border-strong);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow:
+        inset 0 0 0 1px var(--inner-highlight),
+        0 12px 28px rgba(0,0,0,0.07);
+    }
+    .head {
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .headLeft {
+      display:flex;
+      align-items:flex-start;
+      gap: 12px;
+    }
+    .icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#111827;
+      color:#ffffff;
+      font-size: 20px;
+      font-weight: 900;
+      flex: 0 0 auto;
+    }
+    .kicker {
+      color:#64748b;
+      font-weight: 800;
+      font-size: 12px;
+    }
+    h1 {
+      margin: 2px 0 4px;
+      font-size: 24px;
+      letter-spacing: -0.02em;
+    }
+    .sub {
+      color:#475569;
+      font-weight: 600;
+    }
+    .controls {
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      color:#475569;
+      font-weight: 700;
+      font-size: 13px;
+      padding-top: 4px;
+    }
+    select {
+      appearance: none;
+      border: 2px solid var(--border-strong);
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-weight: 800;
+      color: #0f172a;
+      min-width: 92px;
+    }
+    .tableWrap {
+      margin-top: 14px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 720px;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 14px;
+    }
+    th {
+      text-align: left;
+      color:#475569;
+      font-weight: 800;
+      background:#f8fafc;
+      position: sticky;
+      top: 0;
+    }
+    td {
+      color:#0f172a;
+      font-weight: 700;
+    }
+    .num {
+      text-align: right;
+    }
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .muted {
+      color:#94a3b8;
+      font-weight: 700;
+    }
+    tfoot td {
+      border-top: 2px solid #cbd5e1;
+      border-bottom: 0;
+      background:#f8fafc;
+      font-weight: 900;
+    }
+
+    .summaryLine {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background:#f8fafc;
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      gap: 8px;
+      font-size: 14px;
+      flex-wrap: wrap;
+    }
+    .summaryLabel {
+      color:#475569;
+      font-weight: 800;
+    }
+    .summaryValue {
+      color:#0f172a;
+      font-size: 14px;
+      font-weight: 400;
+    }
+  </style>
+</head>
+<body>
+  <div id="page">
+    <div class="panel">
+      <div class="head">
+        <div class="headLeft">
+          <div class="icon">📊</div>
+          <div>
+            <div class="kicker">Offline • Version 170.02.26</div>
+            <h1>Jahresübersicht</h1>
+            <div class="sub">Einfache Tabellenansicht mit Einnahmen, Ausgaben, Ausgaben ohne Miete und Swaprad sowie Kunden pro Monat.</div>
+          </div>
+        </div>
+        <div class="controls">
+          <label for="overviewYearSelect">Jahr</label>
+          <select id="overviewYearSelect" aria-label="Jahr für Jahresübersicht"></select>
+        </div>
+      </div>
+
+      <div class="tableWrap">
+        <table aria-label="Jahresübersicht">
+          <thead>
+            <tr>
+              <th>Monat</th>
+              <th class="num">Einnahmen</th>
+              <th class="num">Ausgaben</th>
+              <th class="num">Ohne Miete und Swaprad</th>
+              <th class="num">Kunden</th>
+            </tr>
+          </thead>
+          <tbody id="yearOverviewBody"></tbody>
+          <tfoot>
+            <tr>
+              <td>Gesamt</td>
+              <td class="num" id="yearIncomeTotal">–</td>
+              <td class="num" id="yearExpenseTotal">–</td>
+              <td class="num" id="yearExpenseWithoutFixedTotal">–</td>
+              <td class="num" id="yearCustomerTotal">–</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="summaryLine" aria-label="Durchschnittliche Kundenanzahl pro Monat">
+        <span class="summaryLabel">Ø Kunden / Monat:</span>
+        <span id="yearCustomerAverage" class="summaryValue">–</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const overviewYearSelect = document.getElementById('overviewYearSelect');
+    const yearOverviewBody = document.getElementById('yearOverviewBody');
+    const yearIncomeTotal = document.getElementById('yearIncomeTotal');
+    const yearExpenseTotal = document.getElementById('yearExpenseTotal');
+    const yearExpenseWithoutFixedTotal = document.getElementById('yearExpenseWithoutFixedTotal');
+    const yearCustomerTotal = document.getElementById('yearCustomerTotal');
+    const yearCustomerAverage = document.getElementById('yearCustomerAverage');
+
+    const monthNames = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+
+    function parseFlexibleAmount(value) {
+      if (typeof value !== 'string') value = String(value ?? '');
+      value = value.trim();
+      if (!value) return 0;
+
+      const hasComma = value.includes(',');
+      const hasDot = value.includes('.');
+
+      if (hasComma && hasDot) {
+        value = value.replace(/\./g, '').replace(',', '.');
+      } else if (hasComma && !hasDot) {
+        value = value.replace(',', '.');
+      }
+
+      const n = parseFloat(value);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function formatEuro(value) {
+      return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value || 0);
+    }
+
+    function formatDecimal(value) {
+      return new Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(value || 0);
+    }
+
+    function getOverviewYears() {
+      const years = new Set();
+      years.add(new Date().getFullYear());
+
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i) || '';
+
+          let match = key.match(/^day-(\d{4})-\d{1,2}-\d{1,2}$/);
+          if (match) {
+            years.add(parseInt(match[1], 10));
+            continue;
+          }
+
+          if (key === 'all_expenses') {
+            try {
+              const allExpenses = JSON.parse(localStorage.getItem('all_expenses') || '{}');
+              Object.keys(allExpenses || {}).forEach(expKey => {
+                const expMatch = String(expKey).match(/^(\d{4})-(\d{2})$/);
+                if (expMatch) years.add(parseInt(expMatch[1], 10));
+              });
+            } catch (_) {}
+          }
+        }
+      } catch (_) {}
+
+      return Array.from(years)
+        .filter(y => Number.isFinite(y))
+        .sort((a, b) => b - a);
+    }
+
+    function populateOverviewYearSelect() {
+      const years = getOverviewYears();
+      const currentValue = overviewYearSelect.value;
+      overviewYearSelect.innerHTML = '';
+
+      years.forEach(year => {
+        const opt = document.createElement('option');
+        opt.value = String(year);
+        opt.textContent = String(year);
+        overviewYearSelect.appendChild(opt);
+      });
+
+      const currentYear = String(new Date().getFullYear());
+      if (currentValue && years.includes(parseInt(currentValue, 10))) {
+        overviewYearSelect.value = currentValue;
+      } else if (years.includes(parseInt(currentYear, 10))) {
+        overviewYearSelect.value = currentYear;
+      } else if (years.length) {
+        overviewYearSelect.value = String(years[0]);
+      }
+    }
+
+    function computeIncomeOverview(year) {
+      const byMonth = Array.from({ length: 12 }, () => ({ income: 0, customers: 0 }));
+
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i) || '';
+          const match = key.match(/^day-(\d{4})-(\d{1,2})-(\d{1,2})$/);
+          if (!match) continue;
+
+          const itemYear = parseInt(match[1], 10);
+          const monthIndex = parseInt(match[2], 10);
+          if (itemYear !== year || monthIndex < 0 || monthIndex > 11) continue;
+
+          let rows = [];
+          try {
+            rows = JSON.parse(localStorage.getItem(key) || '[]');
+          } catch (_) {
+            rows = [];
+          }
+          if (!Array.isArray(rows)) continue;
+
+          rows.forEach(row => {
+            const n1 = parseFlexibleAmount(row?.amount1 ?? row?.a1 ?? '');
+            const n2 = parseFlexibleAmount(row?.amount2 ?? row?.a2 ?? '');
+            const tip = parseFlexibleAmount(row?.amountTip ?? '');
+            byMonth[monthIndex].income += n1 + n2 + tip;
+            if (n1 > 0 || n2 > 0 || tip > 0) {
+              byMonth[monthIndex].customers += 1;
+            }
+          });
+        }
+      } catch (_) {}
+
+      return byMonth;
+    }
+
+    function computeExpenseOverview(year) {
+      const byMonth = Array.from({ length: 12 }, () => ({ expenses: 0, expensesWithoutFixed: 0 }));
+
+      let allExpenses = {};
+      try {
+        allExpenses = JSON.parse(localStorage.getItem('all_expenses') || '{}');
+      } catch (_) {
+        allExpenses = {};
+      }
+
+      Object.entries(allExpenses || {}).forEach(([key, list]) => {
+        const match = String(key).match(/^(\d{4})-(\d{2})$/);
+        if (!match) return;
+
+        const itemYear = parseInt(match[1], 10);
+        const monthIndex = parseInt(match[2], 10) - 1;
+        if (itemYear !== year || monthIndex < 0 || monthIndex > 11 || !Array.isArray(list)) return;
+
+        let total = 0;
+        let totalWithoutFixed = 0;
+        list.forEach(exp => {
+          if (!exp) return;
+
+          const dateRaw = String(exp.date ?? '').trim();
+          const amountRaw = String(exp.amount ?? '').trim();
+          const descRaw = String(exp.desc ?? '').trim();
+          const receiptRaw = String(exp.receipt ?? '').trim();
+          if (!(dateRaw || amountRaw || descRaw || receiptRaw)) return;
+
+          const amount = parseFlexibleAmount(exp.amount);
+          const isRentHidden = exp.isRent === true && exp.rentHidden === true;
+          const isSwapradHidden = exp.isSwaprad === true && exp.swapradHidden === true;
+
+          if (!isRentHidden && !isSwapradHidden) {
+            total += amount;
+          }
+
+          if (exp.isRent !== true && exp.isSwaprad !== true) {
+            totalWithoutFixed += amount;
+          }
+        });
+
+        byMonth[monthIndex].expenses += total;
+        byMonth[monthIndex].expensesWithoutFixed += totalWithoutFixed;
+      });
+
+      return byMonth;
+    }
+
+    function renderYearOverview() {
+      populateOverviewYearSelect();
+      const year = parseInt(overviewYearSelect.value || String(new Date().getFullYear()), 10);
+      const incomeByMonth = computeIncomeOverview(year);
+      const expenseByMonth = computeExpenseOverview(year);
+
+      yearOverviewBody.innerHTML = '';
+
+      let totalIncome = 0;
+      let totalExpenses = 0;
+      let totalExpensesWithoutFixed = 0;
+      let totalCustomers = 0;
+      let activeCustomerMonths = 0;
+
+      for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
+        const income = incomeByMonth[monthIndex]?.income || 0;
+        const expenses = expenseByMonth[monthIndex]?.expenses || 0;
+        const expensesWithoutFixed = expenseByMonth[monthIndex]?.expensesWithoutFixed || 0;
+        const customers = incomeByMonth[monthIndex]?.customers || 0;
+
+        totalIncome += income;
+        totalExpenses += expenses;
+        totalExpensesWithoutFixed += expensesWithoutFixed;
+        totalCustomers += customers;
+        if (customers > 0) activeCustomerMonths += 1;
+
+        const tr = document.createElement('tr');
+        const hasAnyData = income !== 0 || expenses !== 0 || expensesWithoutFixed !== 0 || customers !== 0;
+
+        tr.innerHTML = `
+          <td>${monthNames[monthIndex]}</td>
+          <td class="num ${income !== 0 ? '' : 'muted'}">${income !== 0 ? formatEuro(income) : '–'}</td>
+          <td class="num ${expenses !== 0 ? '' : 'muted'}">${expenses !== 0 ? formatEuro(expenses) : '–'}</td>
+          <td class="num ${expensesWithoutFixed !== 0 ? '' : 'muted'}">${expensesWithoutFixed !== 0 ? formatEuro(expensesWithoutFixed) : '–'}</td>
+          <td class="num ${hasAnyData ? '' : 'muted'}">${customers > 0 ? customers : '–'}</td>
+        `;
+        yearOverviewBody.appendChild(tr);
+      }
+
+      yearIncomeTotal.textContent = totalIncome !== 0 ? formatEuro(totalIncome) : '–';
+      yearExpenseTotal.textContent = totalExpenses !== 0 ? formatEuro(totalExpenses) : '–';
+      yearExpenseWithoutFixedTotal.textContent = totalExpensesWithoutFixed !== 0 ? formatEuro(totalExpensesWithoutFixed) : '–';
+      yearCustomerTotal.textContent = totalCustomers > 0 ? String(totalCustomers) : '–';
+      yearCustomerAverage.textContent = activeCustomerMonths > 0 ? formatDecimal(totalCustomers / activeCustomerMonths) : '–';
+    }
+
+    overviewYearSelect.addEventListener('change', renderYearOverview);
+    window.addEventListener('storage', renderYearOverview);
+    window.addEventListener('focus', renderYearOverview);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) renderYearOverview();
+    });
+
+    window.refreshJahresuebersicht = renderYearOverview;
+
+    renderYearOverview();
+  </script>
+</body>
+</html>
