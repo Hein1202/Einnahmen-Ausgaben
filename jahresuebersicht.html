@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jahresübersicht – Einnahmen-Ausgaben 170.02.26</title>
+  <title>Jahresübersicht – Einnahmen-Ausgaben 171.02.26</title>
   <style>
     :root {
       --border-strong: #94a3b8;
@@ -166,9 +166,9 @@
         <div class="headLeft">
           <div class="icon">📊</div>
           <div>
-            <div class="kicker">Offline • Version 170.02.26</div>
+            <div class="kicker">Offline • Version 171.02.26</div>
             <h1>Jahresübersicht</h1>
-            <div class="sub">Einfache Tabellenansicht mit Einnahmen, Ausgaben, Ausgaben ohne Miete und Swaprad sowie Kunden pro Monat.</div>
+            <div class="sub">Einfache Tabellenansicht mit Einnahmen, Ausgaben, Ausgaben ohne Miete und Swaprad sowie Kunden pro Monat und Kunden / Tag.</div>
           </div>
         </div>
         <div class="controls">
@@ -186,6 +186,7 @@
               <th class="num">Ausgaben</th>
               <th class="num">Ohne Miete und Swaprad</th>
               <th class="num">Kunden</th>
+              <th class="num">Kunden / Tag</th>
             </tr>
           </thead>
           <tbody id="yearOverviewBody"></tbody>
@@ -196,6 +197,7 @@
               <td class="num" id="yearExpenseTotal">–</td>
               <td class="num" id="yearExpenseWithoutFixedTotal">–</td>
               <td class="num" id="yearCustomerTotal">–</td>
+              <td class="num" id="yearCustomerPerDayAverage">–</td>
             </tr>
           </tfoot>
         </table>
@@ -216,6 +218,7 @@
     const yearExpenseWithoutFixedTotal = document.getElementById('yearExpenseWithoutFixedTotal');
     const yearCustomerTotal = document.getElementById('yearCustomerTotal');
     const yearCustomerAverage = document.getElementById('yearCustomerAverage');
+    const yearCustomerPerDayAverage = document.getElementById('yearCustomerPerDayAverage');
 
     const monthNames = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 
@@ -299,7 +302,7 @@
     }
 
     function computeIncomeOverview(year) {
-      const byMonth = Array.from({ length: 12 }, () => ({ income: 0, customers: 0 }));
+      const byMonth = Array.from({ length: 12 }, () => ({ income: 0, customers: 0, workdays: 0 }));
 
       try {
         for (let i = 0; i < localStorage.length; i++) {
@@ -319,15 +322,23 @@
           }
           if (!Array.isArray(rows)) continue;
 
+          let hasWorkdayEntry = false;
+
           rows.forEach(row => {
             const n1 = parseFlexibleAmount(row?.amount1 ?? row?.a1 ?? '');
             const n2 = parseFlexibleAmount(row?.amount2 ?? row?.a2 ?? '');
             const tip = parseFlexibleAmount(row?.amountTip ?? '');
-            byMonth[monthIndex].income += n1 + n2 + tip;
-            if (n1 > 0 || n2 > 0 || tip > 0) {
+            const sum = n1 + n2 + tip;
+            byMonth[monthIndex].income += sum;
+            if (sum > 0) {
               byMonth[monthIndex].customers += 1;
+              hasWorkdayEntry = true;
             }
           });
+
+          if (hasWorkdayEntry) {
+            byMonth[monthIndex].workdays += 1;
+          }
         }
       } catch (_) {}
 
@@ -395,6 +406,7 @@
       let totalExpenses = 0;
       let totalExpensesWithoutFixed = 0;
       let totalCustomers = 0;
+      let totalWorkdays = 0;
       let activeCustomerMonths = 0;
 
       for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
@@ -402,11 +414,14 @@
         const expenses = expenseByMonth[monthIndex]?.expenses || 0;
         const expensesWithoutFixed = expenseByMonth[monthIndex]?.expensesWithoutFixed || 0;
         const customers = incomeByMonth[monthIndex]?.customers || 0;
+        const workdays = incomeByMonth[monthIndex]?.workdays || 0;
+        const customersPerDay = workdays > 0 ? customers / workdays : 0;
 
         totalIncome += income;
         totalExpenses += expenses;
         totalExpensesWithoutFixed += expensesWithoutFixed;
         totalCustomers += customers;
+        totalWorkdays += workdays;
         if (customers > 0) activeCustomerMonths += 1;
 
         const tr = document.createElement('tr');
@@ -418,6 +433,7 @@
           <td class="num ${expenses !== 0 ? '' : 'muted'}">${expenses !== 0 ? formatEuro(expenses) : '–'}</td>
           <td class="num ${expensesWithoutFixed !== 0 ? '' : 'muted'}">${expensesWithoutFixed !== 0 ? formatEuro(expensesWithoutFixed) : '–'}</td>
           <td class="num ${hasAnyData ? '' : 'muted'}">${customers > 0 ? customers : '–'}</td>
+          <td class="num ${workdays > 0 ? '' : 'muted'}">${workdays > 0 ? formatDecimal(customersPerDay) : '–'}</td>
         `;
         yearOverviewBody.appendChild(tr);
       }
@@ -426,6 +442,7 @@
       yearExpenseTotal.textContent = totalExpenses !== 0 ? formatEuro(totalExpenses) : '–';
       yearExpenseWithoutFixedTotal.textContent = totalExpensesWithoutFixed !== 0 ? formatEuro(totalExpensesWithoutFixed) : '–';
       yearCustomerTotal.textContent = totalCustomers > 0 ? String(totalCustomers) : '–';
+      yearCustomerPerDayAverage.textContent = totalWorkdays > 0 ? formatDecimal(totalCustomers / totalWorkdays) : '–';
       yearCustomerAverage.textContent = activeCustomerMonths > 0 ? formatDecimal(totalCustomers / activeCustomerMonths) : '–';
     }
 
