@@ -584,9 +584,15 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 <script>
 // --- Globale Variablen ---
 const monthNames = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
-let now = new Date();
-let selMonth = now.getMonth();
-let selYear = now.getFullYear();
+function getDefaultStartMonthYear(){
+  const base = new Date();
+  base.setDate(1);
+  base.setMonth(base.getMonth() - 1);
+  return { month: base.getMonth(), year: base.getFullYear() };
+}
+const defaultStart = getDefaultStartMonthYear();
+let selMonth = defaultStart.month;
+let selYear = defaultStart.year;
 let selDays = 0;
 let holidays = {};
 
@@ -1774,7 +1780,7 @@ function _getSelectedArchiveYear(){
 function _buildYearArchiveData(year){
   const data = {
     app: "Einnahmen",
-    version: "V170.02.26",
+    version: "V174.03.26",
     year: year,
     createdAt: new Date().toISOString(),
     days: {},

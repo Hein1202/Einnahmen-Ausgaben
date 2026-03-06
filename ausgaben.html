@@ -542,6 +542,16 @@ const MONTH_NAMES = {
       "12": "Dezember"
     };
 
+    function getDefaultExpenseMonthYear() {
+      const base = new Date();
+      base.setDate(1);
+      base.setMonth(base.getMonth() - 1);
+      return {
+        month: String(base.getMonth() + 1).padStart(2, '0'),
+        year: String(base.getFullYear())
+      };
+    }
+
     function determineMonthFromExpenses() {
       if (!Array.isArray(expenses) || expenses.length === 0) return;
       for (const exp of expenses) {
@@ -562,9 +572,9 @@ const MONTH_NAMES = {
     }
 
     function initMonthSelector() {
-      const now = new Date();
-      const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
-      const currentYear = now.getFullYear();
+      const defaultPeriod = getDefaultExpenseMonthYear();
+      const currentMonth = defaultPeriod.month;
+      const currentYear = parseInt(defaultPeriod.year, 10);
 
       if (yearSelect) {
         yearSelect.innerHTML = '';
@@ -608,12 +618,12 @@ const MONTH_NAMES = {
     function shiftSelectedMonth(delta) {
       if (!monthSelect || !yearSelect) return;
 
-      const now = new Date();
+      const defaultPeriod = getDefaultExpenseMonthYear();
       let month = parseInt(monthSelect.value || '', 10);
       let year = parseInt(yearSelect.value || '', 10);
 
-      if (!month || isNaN(month)) month = now.getMonth() + 1;
-      if (!year || isNaN(year)) year = now.getFullYear();
+      if (!month || isNaN(month)) month = parseInt(defaultPeriod.month, 10);
+      if (!year || isNaN(year)) year = parseInt(defaultPeriod.year, 10);
 
       month += delta;
 
@@ -816,13 +826,13 @@ const MONTH_NAMES = {
           day = parts[2];
         }
       }
-      const now = new Date();
+      const defaultPeriod = getDefaultExpenseMonthYear();
       const year = (yearSelect && yearSelect.value)
         ? yearSelect.value
-        : String(now.getFullYear());
+        : defaultPeriod.year;
       const month = (monthSelect && monthSelect.value)
         ? monthSelect.value
-        : String(now.getMonth() + 1).padStart(2, '0');
+        : defaultPeriod.month;
       return { year, month, day };
     }
 
