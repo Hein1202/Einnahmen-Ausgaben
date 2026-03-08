@@ -518,6 +518,18 @@ function updateEditability() {
   const importBtn = document.getElementById('importBtn');
   if (importBtn) importBtn.disabled = locked;
 
+  // Export/Druck bleiben auch bei Sperre erlaubt
+  ['printBtn', 'exportBtn', 'excelExportBtn', 'quarterPrintBtn', 'quarterExcelBtn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.disabled = false;
+  });
+
+  // Auswahl fuer Export/Druck ebenfalls erlaubt
+  ['monthSelect', 'quarterSelect', 'yearSelect'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = false;
+  });
+
   // Hide the "Diesen Monat löschen" button completely when locked
   const clearBtn = document.getElementById('clearAllBtn');
   if (clearBtn) {
@@ -1844,24 +1856,16 @@ function handleMonthYearChange() {
   const defaultFilename = 'Ausgaben_Alle_Monate.json';
 
   // Electron (Desktop): immer mit "Speichern unter..."-Dialog
-  try {
-    if (window.electronAPI && typeof window.electronAPI.saveBinaryFile === 'function') {
-      const res = await window.electronAPI.saveBinaryFile({
-        title: 'Ausgaben speichern',
-        defaultName: defaultFilename,
-        data: jsonText,
-        encoding: 'utf8',
-        filters: [{ name: 'JSON', extensions: ['json'] }]
-      });
-      if (res && res.ok) return;
-      if (res && res.canceled) return;
-      if (res && res.error) {
-        alert('Speichern fehlgeschlagen: ' + res.error);
-        return;
-      }
-    }
-  } catch (e) {
-    console.warn('JSON-Speichern (Desktop) fehlgeschlagen – Fallback auf Browser-Download.', e);
+  if (window.electronAPI && typeof window.electronAPI.saveBinaryFile === 'function') {
+    const res = await window.electronAPI.saveBinaryFile({
+      defaultFilename,
+      data: new TextEncoder().encode(jsonText),
+      filters: [{ name: 'JSON', extensions: ['json'] }]
+    });
+    if (res && res.ok) return;
+    if (res && res.canceled) return;
+    if (res && res.error) alert('Speichern fehlgeschlagen: ' + res.error);
+    return;
   }
 
   // Browser-Fallback

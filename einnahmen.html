@@ -1780,7 +1780,7 @@ function _getSelectedArchiveYear(){
 function _buildYearArchiveData(year){
   const data = {
     app: "Einnahmen",
-    version: "V177.03.26",
+    version: "V181.03.26",
     year: year,
     createdAt: new Date().toISOString(),
     days: {},
@@ -2179,7 +2179,7 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 </tr>
 
 </table>
-<div id="onscreen-totals" style="margin-top:16px;">
+<div id="onscreen-totals" style="margin-top:20px;">
 <h3>Monatsübersicht</h3>
 <table>
 <tr><th>Gesamtsumme</th><td id="grand-total"></td></tr>
@@ -3665,6 +3665,19 @@ function applyLockStatus() {
       : "Monat ist offen. Klick zum Sperren.";
   }
 
+  const isAllowedWhileLocked = (el) => {
+    try {
+      if (!el) return false;
+      if (el.id === 'unlock-code') return true;
+      if (el.id === 'year-archive-select' || el.id === 'quarter-select') return true;
+      if (el.closest && el.closest('#primary-controls')) return true;
+      const onclick = String(el.getAttribute && el.getAttribute('onclick') || '');
+      return /generateReducedPrint|exportJSON|generateQuarterReducedPrint|generateYearOverview|exportQuarterExcel|exportExcel|exportYearArchive/.test(onclick);
+    } catch (_) {
+      return false;
+    }
+  };
+
   // In Electron kann nach Import/Loeschen gelegentlich ein 'disabled'-Zustand haengen bleiben.
   // Daher setzen wir IMMER explizit disabled=true/false und entfernen/setzen auch das Attribut.
   const controls = document.querySelectorAll("input, button, select, textarea");
@@ -3676,8 +3689,9 @@ function applyLockStatus() {
       if (el.id === "month-lock-toggle") return;
       if (el.closest && el.closest("#month-nav")) return;
 
-      el.disabled = !!locked;
-      if (locked) el.setAttribute("disabled", "");
+      const shouldLock = !!locked && !isAllowedWhileLocked(el);
+      el.disabled = shouldLock;
+      if (shouldLock) el.setAttribute("disabled", "");
       else el.removeAttribute("disabled");
     } catch (_) {
       // Nichts: einzelne Sonderfaelle sollen die UI nicht blockieren
