@@ -1844,16 +1844,24 @@ function handleMonthYearChange() {
   const defaultFilename = 'Ausgaben_Alle_Monate.json';
 
   // Electron (Desktop): immer mit "Speichern unter..."-Dialog
-  if (window.electronAPI && typeof window.electronAPI.saveTextFile === 'function') {
-    const res = await window.electronAPI.saveTextFile({
-      defaultFilename,
-      content: jsonText,
-      filters: [{ name: 'JSON', extensions: ['json'] }]
-    });
-    if (res && res.ok) return;
-    if (res && res.canceled) return;
-    if (res && res.error) alert('Speichern fehlgeschlagen: ' + res.error);
-    return;
+  try {
+    if (window.electronAPI && typeof window.electronAPI.saveBinaryFile === 'function') {
+      const res = await window.electronAPI.saveBinaryFile({
+        title: 'Ausgaben speichern',
+        defaultName: defaultFilename,
+        data: jsonText,
+        encoding: 'utf8',
+        filters: [{ name: 'JSON', extensions: ['json'] }]
+      });
+      if (res && res.ok) return;
+      if (res && res.canceled) return;
+      if (res && res.error) {
+        alert('Speichern fehlgeschlagen: ' + res.error);
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('JSON-Speichern (Desktop) fehlgeschlagen – Fallback auf Browser-Download.', e);
   }
 
   // Browser-Fallback
