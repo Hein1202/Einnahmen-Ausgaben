@@ -1780,7 +1780,7 @@ function _getSelectedArchiveYear(){
 function _buildYearArchiveData(year){
   const data = {
     app: "Einnahmen",
-    version: "V174.03.26",
+    version: "V177.03.26",
     year: year,
     createdAt: new Date().toISOString(),
     days: {},
@@ -2179,6 +2179,14 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 </tr>
 
 </table>
+<div id="onscreen-totals" style="margin-top:16px;">
+<h3>Monatsübersicht</h3>
+<table>
+<tr><th>Gesamtsumme</th><td id="grand-total"></td></tr>
+<tr><th>Netto</th><td id="net-total"></td></tr>
+<tr><th>MwSt</th><td id="tax-total"></td></tr>
+</table>
+</div>
 <div style="margin-top:20px;">
 <div id="primary-controls" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
 <button class="modern-btn" onclick="generateReducedPrint()">🖨️ Reduzierter Druck</button>
@@ -2238,14 +2246,6 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 <input autocomplete="off" id="unlock-code" inputmode="numeric" maxlength="4" placeholder="••••" style="width:90px; text-align:center; margin-left:6px; padding:4px 6px;" type="password"/>
 <span style="font-size:0.85em; margin-left:6px; opacity:0.85;">(weitere Funktionen)</span>
 </div>
-</div>
-<div id="onscreen-totals" style="margin-top:20px;">
-<h3>Monatsübersicht</h3>
-<table>
-<tr><th>Gesamtsumme</th><td id="grand-total"></td></tr>
-<tr><th>Netto</th><td id="net-total"></td></tr>
-<tr><th>MwSt</th><td id="tax-total"></td></tr>
-</table>
 </div>
 <div class="print-summary" style="display:none;">
 <h3>Monatsübersicht (Druck)</h3>
