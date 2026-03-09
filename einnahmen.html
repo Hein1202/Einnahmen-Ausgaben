@@ -698,6 +698,7 @@ function checkInput(input){
 }
 
 function toggleAmount2(btn, day){
+  if (isMonthLocked(selYear, selMonth)) return;
   const wrapper = btn.parentElement.querySelector(".amount2-wrapper");
   const input = wrapper.querySelector(".amount2");
   if(wrapper.style.display === "none" || wrapper.style.display === ""){
@@ -718,6 +719,7 @@ function toggleAmount2(btn, day){
 
 
 function toggleTipUI(btn){
+  if (isMonthLocked(selYear, selMonth)) return;
   const wrapper = btn.parentElement.querySelector(".amountTip-wrapper");
   const input = wrapper ? wrapper.querySelector(".amountTip") : null;
   if (wrapper && input) {
@@ -798,6 +800,10 @@ function updateAmount2ButtonsVisibility(){
 
 
 function handleEnter(e){
+  if (isMonthLocked(selYear, selMonth)) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    return;
+  }
   // Auf Desktop funktioniert Enter normal, auf vielen Smartphones sendet die
   // Action-Taste der Bildschirmtastatur jedoch "Next"/Tab. Wir behandeln
   // deshalb sowohl Enter als auch Tab (keyCode 13 bzw. 9) als Auslöser.
@@ -900,6 +906,7 @@ document.addEventListener('keydown', function(e) {
 // "cf-YYYY-MM-DD" im localStorage gespeichert und der Wert gibt die Art des
 // freien Tages an ("urlaub" oder "krank").
 function toggleFreeDay(day){
+  if (isMonthLocked(selYear, selMonth)) return;
   const key = "cf-" + selYear + "-" + selMonth + "-" + day;
   const current = localStorage.getItem(key);
 
@@ -1419,27 +1426,6 @@ function updateDay(day){
   }
 }
 
-function incomeMonthSummaryKey(year, month){
-  return `income-month-${year}-${String(month + 1).padStart(2, "0")}`;
-}
-
-function saveCurrentMonthSummary(summary){
-  try {
-    const payload = summary || {
-      total: 0,
-      customers: 0,
-      workdays: 0,
-      tip: 0,
-      net: 0,
-      tax: 0
-    };
-    payload.year = selYear;
-    payload.month = selMonth;
-    payload.updatedAt = new Date().toISOString();
-    localStorage.setItem(incomeMonthSummaryKey(selYear, selMonth), JSON.stringify(payload));
-  } catch (_) {}
-}
-
 function saveDay(day){
   const rows = [...document.querySelectorAll("#day-" + day + " .entry-row")].map(row => ({
     amount1: row.querySelector(".amount1")?.value || "",
@@ -1560,18 +1546,8 @@ for(let d = 1; d <= selDays; d++){
   if (grandTipEl) grandTipEl.innerText = totalTip.toFixed(2);
 
 const net = total / 1.19;
-  const tax = total - net;
   document.getElementById("net-total").innerText = net.toFixed(2);
-  document.getElementById("tax-total").innerText = tax.toFixed(2);
-
-  saveCurrentMonthSummary({
-    total,
-    customers: totalCustomers,
-    workdays: totalWorkdays,
-    tip: totalTip,
-    net,
-    tax
-  });
+  document.getElementById("tax-total").innerText = (total - net).toFixed(2);
 
   // Beschriftung des Zurück-Pfeils abhängig davon, ob Daten vorhanden sind
   updateBackArrowLabel();
@@ -1766,14 +1742,14 @@ function exportCSV(){
 // Jahresarchiv (Backup)
 // ======================
 
-// Ermittelt alle Jahre, die aktuell im localStorage vorkommen (day-/cf-/locked-/income-month-Keys)
+// Ermittelt alle Jahre, die aktuell im localStorage vorkommen (day-/cf-/locked-Keys)
 function getArchiveYearsFromStorage(){
   const years = new Set();
   try{
     for(let i = 0; i < localStorage.length; i++){
       const k = localStorage.key(i);
       if(!k) continue;
-      const m = k.match(/^(day|cf|locked)-(\d{4})-/) || k.match(/^income-month-(\d{4})-/);
+      const m = k.match(/^(day|cf|locked)-(\d{4})-/);
       if(m) years.add(parseInt(m[2], 10));
     }
   } catch(e){}
@@ -1811,13 +1787,12 @@ function _getSelectedArchiveYear(){
 function _buildYearArchiveData(year){
   const data = {
     app: "Einnahmen",
-    version: "V195.03.26",
+    version: "V175.03.26",
     year: year,
     createdAt: new Date().toISOString(),
     days: {},
     free: {},
-    locked: {},
-    monthlySummaries: {}
+    locked: {}
   };
 
   for(let i = 0; i < localStorage.length; i++){
@@ -1837,12 +1812,6 @@ function _buildYearArchiveData(year){
       // lock key: locked-YYYY-M
       const v = localStorage.getItem(k);
       if(v != null) data.locked[k] = v;
-    } else if(k.startsWith(`income-month-${year}-`)){
-      const raw = localStorage.getItem(k);
-      if(raw){
-        try { data.monthlySummaries[k] = JSON.parse(raw); }
-        catch(e){ data.monthlySummaries[k] = raw; }
-      }
     }
   }
   return data;
@@ -1956,12 +1925,6 @@ function importYearArchive(ev){
           }
         }
       }
-      if(payload && payload.monthlySummaries){
-        for(const key in payload.monthlySummaries){
-          const val = payload.monthlySummaries[key];
-          localStorage.setItem(key, typeof val === "string" ? val : JSON.stringify(val));
-        }
-      }
 
       alert("Jahres-Import erfolgreich.");
       try { hideMissingDayHint(); } catch(e) {}
@@ -2002,7 +1965,7 @@ async function archiveAndDeleteYear(){
   for(let i = 0; i < localStorage.length; i++){
     const k = localStorage.key(i);
     if(!k) continue;
-    if(k.startsWith(`day-${year}-`) || k.startsWith(`cf-${year}-`) || k.startsWith(`locked-${year}-`) || k.startsWith(`income-month-${year}-`)){
+    if(k.startsWith(`day-${year}-`) || k.startsWith(`cf-${year}-`) || k.startsWith(`locked-${year}-`)){
       keysToRemove.push(k);
     }
   }
@@ -3361,6 +3324,7 @@ function removeTrailingEmptyRow(day) {
  * Der Button steht links neben dem Feld und bezieht den passenden Tag über den Parameter day.
  */
 function setStandardAmountForRow(button, value, day) {
+  if (isMonthLocked(selYear, selMonth)) return;
   const wrapper = button.closest('.amount1-wrapper');
   if (!wrapper) return;
   const input = wrapper.querySelector('.amount1');
@@ -3709,24 +3673,68 @@ function applyLockStatus() {
       : "Monat ist offen. Klick zum Sperren.";
   }
 
-  // In Electron kann nach Import/Loeschen gelegentlich ein 'disabled'-Zustand haengen bleiben.
-  // Daher setzen wir IMMER explizit disabled=true/false und entfernen/setzen auch das Attribut.
-  const controls = document.querySelectorAll("input, button, select, textarea");
-  controls.forEach((el) => {
+  const tableInputs = document.querySelectorAll('#main-table input.amount1, #main-table input.amount2, #main-table input.amountTip');
+  tableInputs.forEach((el) => {
     try {
-      if (!el) return;
-      // Navigation/Schloss nicht sperren
-      if (el.classList && el.classList.contains("nav-btn")) return;
-      if (el.id === "month-lock-toggle") return;
-      if (el.id === "unlock-code") return;
-      if (el.closest && el.closest("#month-nav")) return;
-
       el.disabled = !!locked;
-      if (locked) el.setAttribute("disabled", "");
-      else el.removeAttribute("disabled");
-    } catch (_) {
-      // Nichts: einzelne Sonderfaelle sollen die UI nicht blockieren
-    }
+      el.readOnly = !!locked;
+      if (locked) el.setAttribute('disabled', '');
+      else el.removeAttribute('disabled');
+      if (locked) el.setAttribute('readonly', '');
+      else el.removeAttribute('readonly');
+    } catch (_) {}
+  });
+
+  const editButtons = document.querySelectorAll('#main-table .toggle-amount2, #main-table .toggle-tip, #main-table .std-amount-btn');
+  editButtons.forEach((el) => {
+    try {
+      el.disabled = !!locked;
+      if (locked) el.setAttribute('disabled', '');
+      else el.removeAttribute('disabled');
+    } catch (_) {}
+  });
+
+  document.querySelectorAll('#main-table .day-cell').forEach((cell) => {
+    try {
+      cell.style.pointerEvents = locked ? 'none' : '';
+      cell.style.opacity = locked ? '0.85' : '';
+      cell.style.cursor = locked ? 'default' : '';
+    } catch (_) {}
+  });
+
+  const rowActionButtons = document.querySelectorAll('#main-table button:not(.toggle-amount2):not(.toggle-tip):not(.std-amount-btn)');
+  rowActionButtons.forEach((el) => {
+    try {
+      el.disabled = !!locked;
+      if (locked) el.setAttribute('disabled', '');
+      else el.removeAttribute('disabled');
+    } catch (_) {}
+  });
+
+  const alwaysActiveSelectors = [
+    '#primary-controls button',
+    '#advanced-controls button',
+    '#advanced-controls select',
+    '#advanced-controls input',
+    '#admin-code-wrapper input',
+    '#month-nav button',
+    '#month-nav select',
+    '#month-lock-toggle',
+    '#month-scroll-last',
+    '.scroll-back-wrapper'
+  ];
+  document.querySelectorAll(alwaysActiveSelectors.join(', ')).forEach((el) => {
+    try {
+      el.disabled = false;
+      if ('readOnly' in el && el.id !== 'unlock-code') el.readOnly = false;
+      el.removeAttribute('disabled');
+      if (el.id !== 'unlock-code') el.removeAttribute('readonly');
+      if (el.style && (el.classList.contains('scroll-back-wrapper') || el.id === 'month-scroll-last')) {
+        el.style.pointerEvents = '';
+        el.style.opacity = '';
+        el.style.cursor = 'pointer';
+      }
+    } catch (_) {}
   });
 }
 
