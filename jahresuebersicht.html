@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jahresübersicht – Einnahmen-Ausgaben 175.03.26</title>
+  <title>Jahresübersicht – Einnahmen-Ausgaben 192.03.26</title>
   <style>
     :root {
       --border-strong: #94a3b8;
@@ -18,10 +18,16 @@
       color:#0f172a;
     }
     #page {
-      max-width: 980px;
+      max-width: 1380px;
       margin: 0 auto;
       padding: 24px 18px 30px;
       box-sizing: border-box;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.8fr) minmax(320px, 1fr);
+      gap: 18px;
+      align-items: start;
     }
     .panel {
       background:#ffffff;
@@ -134,7 +140,6 @@
       background:#f8fafc;
       font-weight: 900;
     }
-
     .summaryLine {
       margin-top: 14px;
       padding: 12px 14px;
@@ -157,55 +162,133 @@
       font-size: 14px;
       font-weight: 400;
     }
+    .taxPanelTitle {
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .taxPanelTitle .icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      font-size: 18px;
+    }
+    .taxGroups {
+      display:flex;
+      flex-direction:column;
+      gap: 14px;
+    }
+    .taxQuarter {
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background:#f8fafc;
+      padding: 12px 14px;
+    }
+    .taxQuarterTitle {
+      font-weight: 900;
+      color:#0f172a;
+      margin-bottom: 8px;
+    }
+    .taxRow,
+    .taxQuarterSum,
+    .taxYearSum {
+      display:grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items:center;
+      gap: 12px;
+      padding: 6px 0;
+      font-size: 14px;
+    }
+    .taxRow + .taxRow {
+      border-top: 1px solid #e2e8f0;
+    }
+    .taxQuarterSum {
+      margin-top: 8px;
+      padding-top: 10px;
+      border-top: 2px solid #cbd5e1;
+      font-weight: 900;
+      color:#0f172a;
+    }
+    .taxYearSum {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 2px solid #cbd5e1;
+      font-weight: 900;
+      color:#0f172a;
+    }
+    .taxMuted {
+      color:#94a3b8;
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
   <div id="page">
-    <div class="panel">
-      <div class="head">
-        <div class="headLeft">
-          <div class="icon">📊</div>
-          <div>
-            <div class="kicker">Offline • Version 175.03.26</div>
-            <h1>Jahresübersicht</h1>
-            <div class="sub">Einfache Tabellenansicht mit Einnahmen, Ausgaben, Ausgaben ohne Miete und Swaprad sowie Kunden pro Monat und Kunden / Tag.</div>
+    <div class="layout">
+      <div class="panel">
+        <div class="head">
+          <div class="headLeft">
+            <div class="icon">📊</div>
+            <div>
+              <div class="kicker">Offline • Version 192.03.26</div>
+              <h1>Jahresübersicht</h1>
+              <div class="sub">Einfache Tabellenansicht mit Einnahmen, Ausgaben, Ausgaben ohne Miete und Swaprad sowie Kunden pro Monat und Kunden / Tag.</div>
+            </div>
+          </div>
+          <div class="controls">
+            <label for="overviewYearSelect">Jahr</label>
+            <select id="overviewYearSelect" aria-label="Jahr für Jahresübersicht"></select>
           </div>
         </div>
-        <div class="controls">
-          <label for="overviewYearSelect">Jahr</label>
-          <select id="overviewYearSelect" aria-label="Jahr für Jahresübersicht"></select>
+
+        <div class="tableWrap">
+          <table aria-label="Jahresübersicht">
+            <thead>
+              <tr>
+                <th>Monat</th>
+                <th class="num">Einnahmen</th>
+                <th class="num">Ausgaben</th>
+                <th class="num">Ohne Miete und Swaprad</th>
+                <th class="num">Kunden</th>
+                <th class="num">Kunden / Tag</th>
+              </tr>
+            </thead>
+            <tbody id="yearOverviewBody"></tbody>
+            <tfoot>
+              <tr>
+                <td>Gesamt</td>
+                <td class="num" id="yearIncomeTotal">–</td>
+                <td class="num" id="yearExpenseTotal">–</td>
+                <td class="num" id="yearExpenseWithoutFixedTotal">–</td>
+                <td class="num" id="yearCustomerTotal">–</td>
+                <td class="num" id="yearCustomerPerDayTotal">–</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="summaryLine" aria-label="Durchschnittliche Kundenanzahl pro Monat">
+          <span class="summaryLabel">Ø Kunden / Monat:</span>
+          <span id="yearCustomerAverage" class="summaryValue">–</span>
         </div>
       </div>
 
-      <div class="tableWrap">
-        <table aria-label="Jahresübersicht">
-          <thead>
-            <tr>
-              <th>Monat</th>
-              <th class="num">Einnahmen</th>
-              <th class="num">Ausgaben</th>
-              <th class="num">Ohne Miete und Swaprad</th>
-              <th class="num">Kunden</th>
-              <th class="num">Kunden / Tag</th>
-            </tr>
-          </thead>
-          <tbody id="yearOverviewBody"></tbody>
-          <tfoot>
-            <tr>
-              <td>Gesamt</td>
-              <td class="num" id="yearIncomeTotal">–</td>
-              <td class="num" id="yearExpenseTotal">–</td>
-              <td class="num" id="yearExpenseWithoutFixedTotal">–</td>
-              <td class="num" id="yearCustomerTotal">–</td>
-              <td class="num" id="yearCustomerPerDayTotal">–</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+      <div class="panel" aria-label="Umsatzsteuer an Finanzamt">
+        <div class="taxPanelTitle">
+          <div class="icon">🧾</div>
+          <div>
+            <div class="kicker">Quartalsweise Übersicht</div>
+            <h1>Umsatzsteuer an Finanzamt</h1>
+            <div class="sub">Monatswerte mit Quartalssumme – jetzt als Umsatzsteuer aus Einnahmen minus Vorsteuer aus Ausgaben.</div>
+          </div>
+        </div>
 
-      <div class="summaryLine" aria-label="Durchschnittliche Kundenanzahl pro Monat">
-        <span class="summaryLabel">Ø Kunden / Monat:</span>
-        <span id="yearCustomerAverage" class="summaryValue">–</span>
+        <div id="taxQuarterGroups" class="taxGroups"></div>
+        <div class="taxYearSum">
+          <span>Gesamt Jahr</span>
+          <span id="taxYearTotal">–</span>
+        </div>
       </div>
     </div>
   </div>
@@ -219,6 +302,8 @@
     const yearCustomerTotal = document.getElementById('yearCustomerTotal');
     const yearCustomerPerDayTotal = document.getElementById('yearCustomerPerDayTotal');
     const yearCustomerAverage = document.getElementById('yearCustomerAverage');
+    const taxQuarterGroups = document.getElementById('taxQuarterGroups');
+    const taxYearTotal = document.getElementById('taxYearTotal');
 
     const monthNames = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 
@@ -246,6 +331,12 @@
 
     function formatDecimal(value) {
       return new Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(value || 0);
+    }
+
+    function calculateVatFromGross(gross) {
+      const amount = Number(gross) || 0;
+      if (amount === 0) return 0;
+      return amount - (amount / 1.19);
     }
 
     function getOverviewYears() {
@@ -301,10 +392,38 @@
       }
     }
 
+    function getIncomeSummaryKey(year, monthIndex) {
+      return `income-summary-${year}-${monthIndex}`;
+    }
+
+    function normalizeMonthSummary(raw) {
+      if (!raw || typeof raw !== 'object') return null;
+      const income = Number(raw.total);
+      const customers = Number(raw.customers);
+      const workdays = Number(raw.workdays);
+      return {
+        income: Number.isFinite(income) ? income : 0,
+        customers: Number.isFinite(customers) ? customers : 0,
+        workdays: Number.isFinite(workdays) ? workdays : 0
+      };
+    }
+
     function computeIncomeOverview(year) {
       const byMonth = Array.from({ length: 12 }, () => ({ income: 0, customers: 0, workdays: 0 }));
+      const summaryMonths = new Set();
 
       try {
+        for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
+          const raw = localStorage.getItem(getIncomeSummaryKey(year, monthIndex));
+          if (!raw) continue;
+          try {
+            const parsed = normalizeMonthSummary(JSON.parse(raw));
+            if (!parsed) continue;
+            byMonth[monthIndex] = parsed;
+            summaryMonths.add(monthIndex);
+          } catch (_) {}
+        }
+
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i) || '';
           const match = key.match(/^day-(\d{4})-(\d{1,2})-(\d{1,2})$/);
@@ -312,7 +431,7 @@
 
           const itemYear = parseInt(match[1], 10);
           const monthIndex = parseInt(match[2], 10);
-          if (itemYear !== year || monthIndex < 0 || monthIndex > 11) continue;
+          if (itemYear !== year || monthIndex < 0 || monthIndex > 11 || summaryMonths.has(monthIndex)) continue;
 
           let rows = [];
           try {
@@ -327,8 +446,9 @@
             const n1 = parseFlexibleAmount(row?.amount1 ?? row?.a1 ?? '');
             const n2 = parseFlexibleAmount(row?.amount2 ?? row?.a2 ?? '');
             const tip = parseFlexibleAmount(row?.amountTip ?? '');
-            byMonth[monthIndex].income += n1 + n2 + tip;
-            if (n1 > 0 || n2 > 0 || tip > 0) {
+            const dayIncome = n1 + n2 + tip;
+            if (dayIncome > 0) {
+              byMonth[monthIndex].income += dayIncome;
               byMonth[monthIndex].customers += 1;
               hasWorkday = true;
             }
@@ -340,11 +460,15 @@
         }
       } catch (_) {}
 
+      byMonth.forEach(month => {
+        month.income = Number((month.income || 0).toFixed(2));
+      });
+
       return byMonth;
     }
 
     function computeExpenseOverview(year) {
-      const byMonth = Array.from({ length: 12 }, () => ({ expenses: 0, expensesWithoutFixed: 0 }));
+      const byMonth = Array.from({ length: 12 }, () => ({ expenses: 0, expensesWithoutFixed: 0, inputTax: 0 }));
 
       let allExpenses = {};
       try {
@@ -387,9 +511,70 @@
 
         byMonth[monthIndex].expenses += total;
         byMonth[monthIndex].expensesWithoutFixed += totalWithoutFixed;
+        byMonth[monthIndex].inputTax += calculateVatFromGross(total);
+      });
+
+      byMonth.forEach(month => {
+        month.expenses = Number((month.expenses || 0).toFixed(2));
+        month.expensesWithoutFixed = Number((month.expensesWithoutFixed || 0).toFixed(2));
+        month.inputTax = Number((month.inputTax || 0).toFixed(2));
       });
 
       return byMonth;
+    }
+
+    function renderTaxQuarterOverview(incomeByMonth, expenseByMonth) {
+      const quarterRanges = [
+        { title: '1. Quartal', months: [0, 1, 2] },
+        { title: '2. Quartal', months: [3, 4, 5] },
+        { title: '3. Quartal', months: [6, 7, 8] },
+        { title: '4. Quartal', months: [9, 10, 11] }
+      ];
+
+      let yearlyTax = 0;
+      taxQuarterGroups.innerHTML = '';
+
+      quarterRanges.forEach(group => {
+        const quarter = document.createElement('div');
+        quarter.className = 'taxQuarter';
+
+        const title = document.createElement('div');
+        title.className = 'taxQuarterTitle';
+        title.textContent = group.title;
+        quarter.appendChild(title);
+
+        let quarterSum = 0;
+        group.months.forEach(monthIndex => {
+          const income = incomeByMonth[monthIndex]?.income || 0;
+          const expenses = expenseByMonth[monthIndex]?.expenses || 0;
+          const outputTax = calculateVatFromGross(income);
+          const inputTax = calculateVatFromGross(expenses);
+          const tax = Number((outputTax - inputTax).toFixed(2));
+          quarterSum += tax;
+          yearlyTax += tax;
+
+          const row = document.createElement('div');
+          row.className = 'taxRow';
+          row.innerHTML = `
+            <span>${monthNames[monthIndex]}</span>
+            <span class="${tax !== 0 ? '' : 'taxMuted'}">${tax !== 0 ? formatEuro(tax) : '–'}</span>
+          `;
+          quarter.appendChild(row);
+        });
+
+        const sumRow = document.createElement('div');
+        sumRow.className = 'taxQuarterSum';
+        sumRow.innerHTML = `
+          <span>Summe</span>
+          <span>${quarterSum !== 0 ? formatEuro(quarterSum) : '–'}</span>
+        `;
+        quarter.appendChild(sumRow);
+
+        taxQuarterGroups.appendChild(quarter);
+      });
+
+      yearlyTax = Number(yearlyTax.toFixed(2));
+      taxYearTotal.textContent = yearlyTax !== 0 ? formatEuro(yearlyTax) : '–';
     }
 
     function renderYearOverview() {
@@ -399,6 +584,7 @@
       const expenseByMonth = computeExpenseOverview(year);
 
       yearOverviewBody.innerHTML = '';
+      renderTaxQuarterOverview(incomeByMonth, expenseByMonth);
 
       let totalIncome = 0;
       let totalExpenses = 0;
