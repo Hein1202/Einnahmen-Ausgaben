@@ -1504,6 +1504,25 @@ function loadAllDays(){
 }
 
 // Gesamtsummen
+function getIncomeSummaryKey(year, month){
+  return `income-summary-${year}-${month}`;
+}
+
+function persistMonthSummary(total, totalCustomers, totalWorkdays, totalTip){
+  try {
+    const payload = {
+      year: selYear,
+      month: selMonth,
+      total: Number((Number(total) || 0).toFixed(2)),
+      customers: Number(totalCustomers) || 0,
+      workdays: Number(totalWorkdays) || 0,
+      tip: Number((Number(totalTip) || 0).toFixed(2)),
+      updatedAt: new Date().toISOString()
+    };
+    localStorage.setItem(getIncomeSummaryKey(selYear, selMonth), JSON.stringify(payload));
+  } catch (_) {}
+}
+
 function updateTotals(){
   let total = 0;
   let totalCustomers = 0;
@@ -1545,6 +1564,8 @@ for(let d = 1; d <= selDays; d++){
 const net = total / 1.19;
   document.getElementById("net-total").innerText = net.toFixed(2);
   document.getElementById("tax-total").innerText = (total - net).toFixed(2);
+
+  persistMonthSummary(total, totalCustomers, totalWorkdays, totalTip);
 
   // Beschriftung des Zurück-Pfeils abhängig davon, ob Daten vorhanden sind
   updateBackArrowLabel();
@@ -1703,6 +1724,7 @@ function clearAllData(){
     localStorage.removeItem(cf);
   }
   localStorage.removeItem("totalTip");
+  localStorage.removeItem(getIncomeSummaryKey(selYear, selMonth));
 
   alert("Backup erstellt. Alle Daten für den Monat " + monthLabel + " wurden gelöscht.");
   try { hideMissingDayHint(); } catch(e) {}
@@ -1746,7 +1768,7 @@ function getArchiveYearsFromStorage(){
     for(let i = 0; i < localStorage.length; i++){
       const k = localStorage.key(i);
       if(!k) continue;
-      const m = k.match(/^(day|cf|locked)-(\d{4})-/);
+      const m = k.match(/^(day|cf|locked|income-summary)-(\d{4})-/);
       if(m) years.add(parseInt(m[2], 10));
     }
   } catch(e){}
@@ -1784,12 +1806,13 @@ function _getSelectedArchiveYear(){
 function _buildYearArchiveData(year){
   const data = {
     app: "Einnahmen",
-    version: "V175.03.26",
+    version: "V191.03.26",
     year: year,
     createdAt: new Date().toISOString(),
     days: {},
     free: {},
-    locked: {}
+    locked: {},
+    summaries: {}
   };
 
   for(let i = 0; i < localStorage.length; i++){
@@ -1809,6 +1832,12 @@ function _buildYearArchiveData(year){
       // lock key: locked-YYYY-M
       const v = localStorage.getItem(k);
       if(v != null) data.locked[k] = v;
+    } else if(k.startsWith(`income-summary-${year}-`)){
+      const raw = localStorage.getItem(k);
+      if(raw){
+        try { data.summaries[k] = JSON.parse(raw); }
+        catch(e){ data.summaries[k] = raw; }
+      }
     }
   }
   return data;
@@ -1922,6 +1951,11 @@ function importYearArchive(ev){
           }
         }
       }
+      if(payload && payload.summaries){
+        for(const key in payload.summaries){
+          localStorage.setItem(key, JSON.stringify(payload.summaries[key]));
+        }
+      }
 
       alert("Jahres-Import erfolgreich.");
       try { hideMissingDayHint(); } catch(e) {}
@@ -1962,7 +1996,7 @@ async function archiveAndDeleteYear(){
   for(let i = 0; i < localStorage.length; i++){
     const k = localStorage.key(i);
     if(!k) continue;
-    if(k.startsWith(`day-${year}-`) || k.startsWith(`cf-${year}-`) || k.startsWith(`locked-${year}-`)){
+    if(k.startsWith(`day-${year}-`) || k.startsWith(`cf-${year}-`) || k.startsWith(`locked-${year}-`) || k.startsWith(`income-summary-${year}-`)){
       keysToRemove.push(k);
     }
   }
