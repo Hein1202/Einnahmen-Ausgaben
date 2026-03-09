@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jahresübersicht – Einnahmen-Ausgaben 192.03.26</title>
+  <title>Jahresübersicht – Einnahmen-Ausgaben 195.03.26</title>
   <style>
     :root {
       --border-strong: #94a3b8;
@@ -231,7 +231,7 @@
           <div class="headLeft">
             <div class="icon">📊</div>
             <div>
-              <div class="kicker">Offline • Version 192.03.26</div>
+              <div class="kicker">Offline • Version 195.03.26</div>
               <h1>Jahresübersicht</h1>
               <div class="sub">Einfache Tabellenansicht mit Einnahmen, Ausgaben, Ausgaben ohne Miete und Swaprad sowie Kunden pro Monat und Kunden / Tag.</div>
             </div>
@@ -280,7 +280,7 @@
           <div>
             <div class="kicker">Quartalsweise Übersicht</div>
             <h1>Umsatzsteuer an Finanzamt</h1>
-            <div class="sub">Monatswerte mit Quartalssumme – jetzt als Umsatzsteuer aus Einnahmen minus Vorsteuer aus Ausgaben.</div>
+            <div class="sub">Monatswerte mit Quartalssumme – identisch zur Umsatzsteuer-Logik der Quartalsausdrucke.</div>
           </div>
         </div>
 
@@ -392,35 +392,27 @@
       }
     }
 
-    function getIncomeSummaryKey(year, monthIndex) {
-      return `income-summary-${year}-${monthIndex}`;
-    }
-
-    function normalizeMonthSummary(raw) {
-      if (!raw || typeof raw !== 'object') return null;
-      const income = Number(raw.total);
-      const customers = Number(raw.customers);
-      const workdays = Number(raw.workdays);
-      return {
-        income: Number.isFinite(income) ? income : 0,
-        customers: Number.isFinite(customers) ? customers : 0,
-        workdays: Number.isFinite(workdays) ? workdays : 0
-      };
+    function incomeMonthSummaryKey(year, monthIndex) {
+      return `income-month-${year}-${String(monthIndex + 1).padStart(2, '0')}`;
     }
 
     function computeIncomeOverview(year) {
       const byMonth = Array.from({ length: 12 }, () => ({ income: 0, customers: 0, workdays: 0 }));
-      const summaryMonths = new Set();
+      const monthsWithSavedSummary = new Set();
 
       try {
         for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
-          const raw = localStorage.getItem(getIncomeSummaryKey(year, monthIndex));
-          if (!raw) continue;
+          const rawSummary = localStorage.getItem(incomeMonthSummaryKey(year, monthIndex));
+          if (!rawSummary) continue;
           try {
-            const parsed = normalizeMonthSummary(JSON.parse(raw));
-            if (!parsed) continue;
-            byMonth[monthIndex] = parsed;
-            summaryMonths.add(monthIndex);
+            const summary = JSON.parse(rawSummary);
+            const income = Number(summary?.total);
+            const customers = Number(summary?.customers);
+            const workdays = Number(summary?.workdays);
+            byMonth[monthIndex].income = Number.isFinite(income) ? income : 0;
+            byMonth[monthIndex].customers = Number.isFinite(customers) ? customers : 0;
+            byMonth[monthIndex].workdays = Number.isFinite(workdays) ? workdays : 0;
+            monthsWithSavedSummary.add(monthIndex);
           } catch (_) {}
         }
 
@@ -431,7 +423,7 @@
 
           const itemYear = parseInt(match[1], 10);
           const monthIndex = parseInt(match[2], 10);
-          if (itemYear !== year || monthIndex < 0 || monthIndex > 11 || summaryMonths.has(monthIndex)) continue;
+          if (itemYear !== year || monthIndex < 0 || monthIndex > 11 || monthsWithSavedSummary.has(monthIndex)) continue;
 
           let rows = [];
           try {
@@ -446,9 +438,8 @@
             const n1 = parseFlexibleAmount(row?.amount1 ?? row?.a1 ?? '');
             const n2 = parseFlexibleAmount(row?.amount2 ?? row?.a2 ?? '');
             const tip = parseFlexibleAmount(row?.amountTip ?? '');
-            const dayIncome = n1 + n2 + tip;
-            if (dayIncome > 0) {
-              byMonth[monthIndex].income += dayIncome;
+            byMonth[monthIndex].income += n1 + n2 + tip;
+            if (n1 > 0 || n2 > 0 || tip > 0) {
               byMonth[monthIndex].customers += 1;
               hasWorkday = true;
             }
@@ -460,15 +451,11 @@
         }
       } catch (_) {}
 
-      byMonth.forEach(month => {
-        month.income = Number((month.income || 0).toFixed(2));
-      });
-
       return byMonth;
     }
 
     function computeExpenseOverview(year) {
-      const byMonth = Array.from({ length: 12 }, () => ({ expenses: 0, expensesWithoutFixed: 0, inputTax: 0 }));
+      const byMonth = Array.from({ length: 12 }, () => ({ expenses: 0, expensesWithoutFixed: 0 }));
 
       let allExpenses = {};
       try {
@@ -511,19 +498,12 @@
 
         byMonth[monthIndex].expenses += total;
         byMonth[monthIndex].expensesWithoutFixed += totalWithoutFixed;
-        byMonth[monthIndex].inputTax += calculateVatFromGross(total);
-      });
-
-      byMonth.forEach(month => {
-        month.expenses = Number((month.expenses || 0).toFixed(2));
-        month.expensesWithoutFixed = Number((month.expensesWithoutFixed || 0).toFixed(2));
-        month.inputTax = Number((month.inputTax || 0).toFixed(2));
       });
 
       return byMonth;
     }
 
-    function renderTaxQuarterOverview(incomeByMonth, expenseByMonth) {
+    function renderTaxQuarterOverview(incomeByMonth) {
       const quarterRanges = [
         { title: '1. Quartal', months: [0, 1, 2] },
         { title: '2. Quartal', months: [3, 4, 5] },
@@ -546,10 +526,7 @@
         let quarterSum = 0;
         group.months.forEach(monthIndex => {
           const income = incomeByMonth[monthIndex]?.income || 0;
-          const expenses = expenseByMonth[monthIndex]?.expenses || 0;
-          const outputTax = calculateVatFromGross(income);
-          const inputTax = calculateVatFromGross(expenses);
-          const tax = Number((outputTax - inputTax).toFixed(2));
+          const tax = calculateVatFromGross(income);
           quarterSum += tax;
           yearlyTax += tax;
 
@@ -573,7 +550,6 @@
         taxQuarterGroups.appendChild(quarter);
       });
 
-      yearlyTax = Number(yearlyTax.toFixed(2));
       taxYearTotal.textContent = yearlyTax !== 0 ? formatEuro(yearlyTax) : '–';
     }
 
@@ -584,7 +560,7 @@
       const expenseByMonth = computeExpenseOverview(year);
 
       yearOverviewBody.innerHTML = '';
-      renderTaxQuarterOverview(incomeByMonth, expenseByMonth);
+      renderTaxQuarterOverview(incomeByMonth);
 
       let totalIncome = 0;
       let totalExpenses = 0;

@@ -900,10 +900,6 @@ document.addEventListener('keydown', function(e) {
 // "cf-YYYY-MM-DD" im localStorage gespeichert und der Wert gibt die Art des
 // freien Tages an ("urlaub" oder "krank").
 function toggleFreeDay(day){
-  if (isMonthLocked(selYear, selMonth)) {
-    return;
-  }
-
   const key = "cf-" + selYear + "-" + selMonth + "-" + day;
   const current = localStorage.getItem(key);
 
@@ -1423,6 +1419,27 @@ function updateDay(day){
   }
 }
 
+function incomeMonthSummaryKey(year, month){
+  return `income-month-${year}-${String(month + 1).padStart(2, "0")}`;
+}
+
+function saveCurrentMonthSummary(summary){
+  try {
+    const payload = summary || {
+      total: 0,
+      customers: 0,
+      workdays: 0,
+      tip: 0,
+      net: 0,
+      tax: 0
+    };
+    payload.year = selYear;
+    payload.month = selMonth;
+    payload.updatedAt = new Date().toISOString();
+    localStorage.setItem(incomeMonthSummaryKey(selYear, selMonth), JSON.stringify(payload));
+  } catch (_) {}
+}
+
 function saveDay(day){
   const rows = [...document.querySelectorAll("#day-" + day + " .entry-row")].map(row => ({
     amount1: row.querySelector(".amount1")?.value || "",
@@ -1504,25 +1521,6 @@ function loadAllDays(){
 }
 
 // Gesamtsummen
-function getIncomeSummaryKey(year, month){
-  return `income-summary-${year}-${month}`;
-}
-
-function persistMonthSummary(total, totalCustomers, totalWorkdays, totalTip){
-  try {
-    const payload = {
-      year: selYear,
-      month: selMonth,
-      total: Number((Number(total) || 0).toFixed(2)),
-      customers: Number(totalCustomers) || 0,
-      workdays: Number(totalWorkdays) || 0,
-      tip: Number((Number(totalTip) || 0).toFixed(2)),
-      updatedAt: new Date().toISOString()
-    };
-    localStorage.setItem(getIncomeSummaryKey(selYear, selMonth), JSON.stringify(payload));
-  } catch (_) {}
-}
-
 function updateTotals(){
   let total = 0;
   let totalCustomers = 0;
@@ -1562,10 +1560,18 @@ for(let d = 1; d <= selDays; d++){
   if (grandTipEl) grandTipEl.innerText = totalTip.toFixed(2);
 
 const net = total / 1.19;
+  const tax = total - net;
   document.getElementById("net-total").innerText = net.toFixed(2);
-  document.getElementById("tax-total").innerText = (total - net).toFixed(2);
+  document.getElementById("tax-total").innerText = tax.toFixed(2);
 
-  persistMonthSummary(total, totalCustomers, totalWorkdays, totalTip);
+  saveCurrentMonthSummary({
+    total,
+    customers: totalCustomers,
+    workdays: totalWorkdays,
+    tip: totalTip,
+    net,
+    tax
+  });
 
   // Beschriftung des Zurück-Pfeils abhängig davon, ob Daten vorhanden sind
   updateBackArrowLabel();
@@ -1724,7 +1730,6 @@ function clearAllData(){
     localStorage.removeItem(cf);
   }
   localStorage.removeItem("totalTip");
-  localStorage.removeItem(getIncomeSummaryKey(selYear, selMonth));
 
   alert("Backup erstellt. Alle Daten für den Monat " + monthLabel + " wurden gelöscht.");
   try { hideMissingDayHint(); } catch(e) {}
@@ -1761,14 +1766,14 @@ function exportCSV(){
 // Jahresarchiv (Backup)
 // ======================
 
-// Ermittelt alle Jahre, die aktuell im localStorage vorkommen (day-/cf-/locked-Keys)
+// Ermittelt alle Jahre, die aktuell im localStorage vorkommen (day-/cf-/locked-/income-month-Keys)
 function getArchiveYearsFromStorage(){
   const years = new Set();
   try{
     for(let i = 0; i < localStorage.length; i++){
       const k = localStorage.key(i);
       if(!k) continue;
-      const m = k.match(/^(day|cf|locked|income-summary)-(\d{4})-/);
+      const m = k.match(/^(day|cf|locked)-(\d{4})-/) || k.match(/^income-month-(\d{4})-/);
       if(m) years.add(parseInt(m[2], 10));
     }
   } catch(e){}
@@ -1806,13 +1811,13 @@ function _getSelectedArchiveYear(){
 function _buildYearArchiveData(year){
   const data = {
     app: "Einnahmen",
-    version: "V192.03.26",
+    version: "V195.03.26",
     year: year,
     createdAt: new Date().toISOString(),
     days: {},
     free: {},
     locked: {},
-    summaries: {}
+    monthlySummaries: {}
   };
 
   for(let i = 0; i < localStorage.length; i++){
@@ -1832,11 +1837,11 @@ function _buildYearArchiveData(year){
       // lock key: locked-YYYY-M
       const v = localStorage.getItem(k);
       if(v != null) data.locked[k] = v;
-    } else if(k.startsWith(`income-summary-${year}-`)){
+    } else if(k.startsWith(`income-month-${year}-`)){
       const raw = localStorage.getItem(k);
       if(raw){
-        try { data.summaries[k] = JSON.parse(raw); }
-        catch(e){ data.summaries[k] = raw; }
+        try { data.monthlySummaries[k] = JSON.parse(raw); }
+        catch(e){ data.monthlySummaries[k] = raw; }
       }
     }
   }
@@ -1951,9 +1956,10 @@ function importYearArchive(ev){
           }
         }
       }
-      if(payload && payload.summaries){
-        for(const key in payload.summaries){
-          localStorage.setItem(key, JSON.stringify(payload.summaries[key]));
+      if(payload && payload.monthlySummaries){
+        for(const key in payload.monthlySummaries){
+          const val = payload.monthlySummaries[key];
+          localStorage.setItem(key, typeof val === "string" ? val : JSON.stringify(val));
         }
       }
 
@@ -1996,7 +2002,7 @@ async function archiveAndDeleteYear(){
   for(let i = 0; i < localStorage.length; i++){
     const k = localStorage.key(i);
     if(!k) continue;
-    if(k.startsWith(`day-${year}-`) || k.startsWith(`cf-${year}-`) || k.startsWith(`locked-${year}-`) || k.startsWith(`income-summary-${year}-`)){
+    if(k.startsWith(`day-${year}-`) || k.startsWith(`cf-${year}-`) || k.startsWith(`locked-${year}-`) || k.startsWith(`income-month-${year}-`)){
       keysToRemove.push(k);
     }
   }
@@ -2217,20 +2223,10 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 </tr>
 
 </table>
-
-<div id="onscreen-totals" style="margin-top:20px;">
-<h3>Monatsübersicht</h3>
-<table>
-<tr><th>Gesamtsumme</th><td id="grand-total"></td></tr>
-<tr><th>Netto</th><td id="net-total"></td></tr>
-<tr><th>MwSt</th><td id="tax-total"></td></tr>
-</table>
-</div>
-
 <div style="margin-top:20px;">
 <div id="primary-controls" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-<button class="modern-btn" data-allow-locked="true" onclick="generateReducedPrint()">🖨️ Reduzierter Druck</button>
-<button class="modern-btn" data-allow-locked="true" onclick="exportJSON()">Datei speichern</button>
+<button class="modern-btn" onclick="generateReducedPrint()">🖨️ Reduzierter Druck</button>
+<button class="modern-btn" onclick="exportJSON()">Datei speichern</button>
 </div>
 <!-- Schnell-Zurück: immer sichtbar -->
 <div style="margin-top:4px; text-align:right; padding-right:10px;">
@@ -2270,14 +2266,14 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 <option value="4">Q4 (Okt–Dez)</option>
 </select>
 <div style="display:inline-block; margin-left:10px;">
-<button class="modern-btn" data-allow-locked="true" onclick="generateQuarterReducedPrint()">🖨️ Quartal drucken</button>
+<button class="modern-btn" onclick="generateQuarterReducedPrint()">🖨️ Quartal drucken</button>
 <br/>
-<button class="modern-btn" data-allow-locked="true" onclick="generateYearOverview()" style="margin-top:6px;">🧮 Jahresübersicht drucken</button>
+<button class="modern-btn" onclick="generateYearOverview()" style="margin-top:6px;">🧮 Jahresübersicht drucken</button>
 </div>
 <div style="display:inline-block; margin-left:10px;">
-<button class="excel-btn" data-allow-locked="true" onclick="exportQuarterExcel()">📊 Quartal Excel</button>
+<button class="excel-btn" onclick="exportQuarterExcel()">📊 Quartal Excel</button>
 <br/>
-<button class="excel-btn" data-allow-locked="true" onclick="exportExcel()" style="margin-top:6px;">📊 Excel speichern</button>
+<button class="excel-btn" onclick="exportExcel()" style="margin-top:6px;">📊 Excel speichern</button>
 </div>
 </div>
 </div>
@@ -2286,7 +2282,16 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 <input autocomplete="off" id="unlock-code" inputmode="numeric" maxlength="4" placeholder="••••" style="width:90px; text-align:center; margin-left:6px; padding:4px 6px;" type="password"/>
 <span style="font-size:0.85em; margin-left:6px; opacity:0.85;">(weitere Funktionen)</span>
 </div>
-</div><div class="print-summary" style="display:none;">
+</div>
+<div id="onscreen-totals" style="margin-top:20px;">
+<h3>Monatsübersicht</h3>
+<table>
+<tr><th>Gesamtsumme</th><td id="grand-total"></td></tr>
+<tr><th>Netto</th><td id="net-total"></td></tr>
+<tr><th>MwSt</th><td id="tax-total"></td></tr>
+</table>
+</div>
+<div class="print-summary" style="display:none;">
 <h3>Monatsübersicht (Druck)</h3>
 <table>
 <tr><th>Gesamtsumme</th><td id="grand-total-print"></td></tr>
@@ -3684,36 +3689,8 @@ function setMonthLocked(year, month, locked) {
   }
 }
 
-function isUnlockCodeValid() {
-  const input = document.getElementById('unlock-code');
-  return !!input && String(input.value || '').trim() === '1202';
-}
-
-function isAllowedWhenLocked(el) {
-  if (!el) return false;
-  if (el.classList && el.classList.contains('nav-btn')) return true;
-  if (el.id === 'month-lock-toggle') return true;
-  if (el.id === 'unlock-code') return true;
-  if (el.closest && el.closest('#month-nav')) return true;
-  if (el.closest && el.closest('#advanced-controls')) return true;
-  if (el.dataset && el.dataset.allowLocked === 'true') return true;
-  return false;
-}
-
 function toggleLock() {
   const locked = isMonthLocked(selYear, selMonth);
-
-  // Entsperren nur nach korrekter Code-Eingabe erlauben.
-  if (locked && !isUnlockCodeValid()) {
-    try { alert('Zum Entsperren bitte zuerst den Code eingeben.'); } catch (_) {}
-    const input = document.getElementById('unlock-code');
-    if (input) {
-      try { input.focus(); } catch (_) {}
-      try { input.select(); } catch (_) {}
-    }
-    return;
-  }
-
   setMonthLocked(selYear, selMonth, !locked);
   if (typeof requestAnimationFrame === 'function') {
     requestAnimationFrame(() => applyLockStatus());
@@ -3728,7 +3705,7 @@ function applyLockStatus() {
   if (lockIcon) {
     lockIcon.textContent = locked ? "🔒" : "🔓";
     lockIcon.title = locked
-      ? "Monat ist gesperrt. Zum Entsperren zuerst Code eingeben."
+      ? "Monat ist gesperrt. Klick zum Entsperren."
       : "Monat ist offen. Klick zum Sperren.";
   }
 
@@ -3738,11 +3715,11 @@ function applyLockStatus() {
   controls.forEach((el) => {
     try {
       if (!el) return;
-      if (isAllowedWhenLocked(el)) {
-        el.disabled = false;
-        el.removeAttribute('disabled');
-        return;
-      }
+      // Navigation/Schloss nicht sperren
+      if (el.classList && el.classList.contains("nav-btn")) return;
+      if (el.id === "month-lock-toggle") return;
+      if (el.id === "unlock-code") return;
+      if (el.closest && el.closest("#month-nav")) return;
 
       el.disabled = !!locked;
       if (locked) el.setAttribute("disabled", "");
@@ -3750,14 +3727,6 @@ function applyLockStatus() {
     } catch (_) {
       // Nichts: einzelne Sonderfaelle sollen die UI nicht blockieren
     }
-  });
-
-  document.querySelectorAll('.day-cell').forEach((cell) => {
-    try {
-      if (!cell) return;
-      cell.style.pointerEvents = locked ? 'none' : '';
-      cell.style.cursor = locked ? 'default' : 'pointer';
-    } catch (_) {}
   });
 }
 
