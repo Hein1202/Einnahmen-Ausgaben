@@ -2118,7 +2118,7 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
   <!-- Wird weiterhin von Export/Druck-Funktionen genutzt (Text: "Monat Jahr") -->
   <span id="selected-month" class="sr-only"></span>
 
-  <span id="month-lock-toggle" onclick="toggleLock(event)"
+  <span id="month-lock-toggle" onclick="toggleLock()"
         style="cursor:pointer; font-size: 1.4em; margin-left: 0; grid-area: lock; align-self: center;"
         title="Monat bearbeiten/sperren">🔓</span>
 
@@ -2179,6 +2179,14 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 </tr>
 
 </table>
+<div id="onscreen-totals" style="margin-top:20px;">
+<h3>Monatsübersicht</h3>
+<table>
+<tr><th>Gesamtsumme</th><td id="grand-total"></td></tr>
+<tr><th>Netto</th><td id="net-total"></td></tr>
+<tr><th>MwSt</th><td id="tax-total"></td></tr>
+</table>
+</div>
 <div style="margin-top:20px;">
 <div id="primary-controls" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
 <button class="modern-btn" onclick="generateReducedPrint()">🖨️ Reduzierter Druck</button>
@@ -2238,14 +2246,6 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 <input autocomplete="off" id="unlock-code" inputmode="numeric" maxlength="4" placeholder="••••" style="width:90px; text-align:center; margin-left:6px; padding:4px 6px;" type="password"/>
 <span style="font-size:0.85em; margin-left:6px; opacity:0.85;">(weitere Funktionen)</span>
 </div>
-</div>
-<div id="onscreen-totals" style="margin-top:20px;">
-<h3>Monatsübersicht</h3>
-<table>
-<tr><th>Gesamtsumme</th><td id="grand-total"></td></tr>
-<tr><th>Netto</th><td id="net-total"></td></tr>
-<tr><th>MwSt</th><td id="tax-total"></td></tr>
-</table>
 </div>
 <div class="print-summary" style="display:none;">
 <h3>Monatsübersicht (Druck)</h3>
@@ -3645,18 +3645,7 @@ function setMonthLocked(year, month, locked) {
   }
 }
 
-function isLockCodeAccepted() {
-  try {
-    const input = document.getElementById('unlock-code');
-    return String(input && input.value || '').trim() === '1202';
-  } catch (_) {
-    return false;
-  }
-}
-
-function toggleLock(event) {
-  if (event && typeof event.preventDefault === 'function') event.preventDefault();
-  if (!isLockCodeAccepted()) return;
+function toggleLock() {
   const locked = isMonthLocked(selYear, selMonth);
   setMonthLocked(selYear, selMonth, !locked);
   if (typeof requestAnimationFrame === 'function') {
@@ -3669,23 +3658,11 @@ function toggleLock(event) {
 function applyLockStatus() {
   const locked = isMonthLocked(selYear, selMonth);
   const lockIcon = document.getElementById("month-lock-toggle");
-  const lockCodeAccepted = isLockCodeAccepted();
   if (lockIcon) {
     lockIcon.textContent = locked ? "🔒" : "🔓";
-    if (lockCodeAccepted) {
-      lockIcon.title = locked
-        ? "Monat ist gesperrt. Klick zum Entsperren."
-        : "Monat ist offen. Klick zum Sperren.";
-      lockIcon.style.opacity = '1';
-      lockIcon.style.filter = '';
-      lockIcon.style.cursor = 'pointer';
-    } else {
-      lockIcon.title = 'Schloss sichtbar, aber erst nach Code 1202 aktivierbar';
-      lockIcon.style.opacity = '0.55';
-      lockIcon.style.filter = 'grayscale(0.2)';
-      lockIcon.style.cursor = 'not-allowed';
-    }
-    lockIcon.setAttribute('aria-disabled', lockCodeAccepted ? 'false' : 'true');
+    lockIcon.title = locked
+      ? "Monat ist gesperrt. Klick zum Entsperren."
+      : "Monat ist offen. Klick zum Sperren.";
   }
 
   // In Electron kann nach Import/Loeschen gelegentlich ein 'disabled'-Zustand haengen bleiben.
@@ -3694,12 +3671,10 @@ function applyLockStatus() {
   controls.forEach((el) => {
     try {
       if (!el) return;
-      // Navigation/Schloss/Admin-Code nicht sperren
+      // Navigation/Schloss nicht sperren
       if (el.classList && el.classList.contains("nav-btn")) return;
       if (el.id === "month-lock-toggle") return;
-      if (el.id === "unlock-code") return;
       if (el.closest && el.closest("#month-nav")) return;
-      if (el.closest && el.closest("#admin-code-wrapper")) return;
 
       el.disabled = !!locked;
       if (locked) el.setAttribute("disabled", "");
@@ -4052,11 +4027,10 @@ function generateYearOverview() {
   document.addEventListener('input', function(e){
     if(e && e.target && e.target.id === 'unlock-code'){
       updateAdvancedControlsVisibility();
-      try { applyLockStatus(); } catch(_) {}
     }
   });
 
-  document.addEventListener('DOMContentLoaded', function(){ updateAdvancedControlsVisibility(); try { applyLockStatus(); } catch(_) {} });
+  document.addEventListener('DOMContentLoaded', updateAdvancedControlsVisibility);
 })();
 </script>
 </body>
