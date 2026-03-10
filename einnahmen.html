@@ -185,6 +185,60 @@ tr.entry-row td {
   cursor: pointer;
 }
 
+/* Hinweis für den Fall, dass ein Tag mit bestehenden Einträgen als Urlaub/Krankheit markiert wird. */
+/* Das Element mit der ID "free-day-warning" wird mit absoluter Position links des Tabellencontainers platziert. */
+.free-day-warning {
+  position: absolute;
+  background: #fff6f6;
+  border: 1px solid #b30000;
+  padding: 8px 12px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 1000;
+  max-width: 240px;
+  font-size: 0.9em;
+  color: #b30000;
+  display: none;
+}
+.free-day-warning .close-btn {
+  float: right;
+  background: none;
+  border: none;
+  font-weight: bold;
+  color: #b30000;
+  cursor: pointer;
+  margin-left: 8px;
+  padding: 0 4px;
+}
+
+/* Inline‑Warnmeldung (wird nicht mehr verwendet, bleibt aber zur Sicherheit im CSS, falls ältere Einträge vorhanden sind) */
+.inline-warning {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  margin-left: 8px;
+  background: #fff6f6;
+  border: 1px solid #b30000;
+  padding: 6px 10px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 1000;
+  max-width: 220px;
+  font-size: 0.9em;
+  color: #b30000;
+  white-space: normal;
+}
+.inline-warning .close-btn {
+  float: right;
+  background: none;
+  border: none;
+  font-weight: bold;
+  color: #b30000;
+  cursor: pointer;
+  margin-left: 8px;
+  padding: 0 4px;
+}
+
 .empty-input { background-color:lightgray; }
 .amount1:not(.empty-input) {
   font-weight: bold;
@@ -203,7 +257,12 @@ tr.entry-row td {
 .customfree .day-cell small .label-krank {
   color: #3a5f85;
 }
-.day-cell { cursor:pointer; font-weight:bold; }
+.day-cell {
+  cursor: pointer;
+  font-weight: bold;
+  /* Position relative, damit Warnhinweise absolut innerhalb der Zelle positioniert werden können */
+  position: relative;
+}
 
 /* Sonntage und Feiertage: Tageszahl + Text in Rot darstellen */
 .weekend.sunday .day-cell,
@@ -698,7 +757,6 @@ function checkInput(input){
 }
 
 function toggleAmount2(btn, day){
-  if (isMonthLocked(selYear, selMonth)) return;
   const wrapper = btn.parentElement.querySelector(".amount2-wrapper");
   const input = wrapper.querySelector(".amount2");
   if(wrapper.style.display === "none" || wrapper.style.display === ""){
@@ -719,7 +777,6 @@ function toggleAmount2(btn, day){
 
 
 function toggleTipUI(btn){
-  if (isMonthLocked(selYear, selMonth)) return;
   const wrapper = btn.parentElement.querySelector(".amountTip-wrapper");
   const input = wrapper ? wrapper.querySelector(".amountTip") : null;
   if (wrapper && input) {
@@ -800,10 +857,6 @@ function updateAmount2ButtonsVisibility(){
 
 
 function handleEnter(e){
-  if (isMonthLocked(selYear, selMonth)) {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    return;
-  }
   // Auf Desktop funktioniert Enter normal, auf vielen Smartphones sendet die
   // Action-Taste der Bildschirmtastatur jedoch "Next"/Tab. Wir behandeln
   // deshalb sowohl Enter als auch Tab (keyCode 13 bzw. 9) als Auslöser.
@@ -906,7 +959,6 @@ document.addEventListener('keydown', function(e) {
 // "cf-YYYY-MM-DD" im localStorage gespeichert und der Wert gibt die Art des
 // freien Tages an ("urlaub" oder "krank").
 function toggleFreeDay(day){
-  if (isMonthLocked(selYear, selMonth)) return;
   const key = "cf-" + selYear + "-" + selMonth + "-" + day;
   const current = localStorage.getItem(key);
 
@@ -918,6 +970,15 @@ function toggleFreeDay(day){
   } else if(current === "krank"){
     next = null;
   }
+  // Prüfen, ob nach dem Umschalten des Status eine Warnung angezeigt werden soll.
+  let shouldWarn = false;
+  try {
+    if (next !== null && typeof dayHasAnyEntry === 'function' && dayHasAnyEntry(day)) {
+      shouldWarn = true;
+    }
+  } catch (_) {
+    shouldWarn = false;
+  }
 
   if(next === null){
     localStorage.removeItem(key);
@@ -926,12 +987,79 @@ function toggleFreeDay(day){
   }
 
   updateMonth();  // neu aufbauen
+  // Nach dem Neuaufbau bei Bedarf die Warnung erneut anzeigen, damit sie nicht durch das Update der Tabelle verloren geht.
+  try {
+    if (shouldWarn && typeof showFreeDayWarning === 'function') {
+      showFreeDayWarning(day);
+    } else {
+      if (typeof hideFreeDayWarning === 'function') hideFreeDayWarning();
+    }
+  } catch (_) {}
 }
 
 // Liefert den Typ des eigenen freien Tages ("urlaub", "krank") oder null, wenn
 // der Tag kein eigener freier Tag ist.
 function getFreeDayType(day){
   return localStorage.getItem("cf-" + selYear + "-" + selMonth + "-" + day);
+}
+
+// Zeigt eine Warnung an, wenn ein Tag mit bestehenden Einträgen als Urlaub oder Krankheit markiert wird.
+// Die Warnung wird inline rechts neben der jeweiligen Tageszelle angezeigt und kann per Klick geschlossen werden.
+function showFreeDayWarning(day){
+  try {
+    // Entferne alle bestehenden Inline-Warnungen (falls aus einer früheren Version vorhanden)
+    document.querySelectorAll('.inline-warning').forEach(function(el){ el.remove(); });
+    const warn = document.getElementById('free-day-warning');
+    if(!warn) return;
+    // Die Zelle des betreffenden Tages ermitteln
+    const cell = document.querySelector('td.day-cell[data-day="' + day + '"]');
+    if(!cell) return;
+    // Datumsstring zusammenstellen
+    const dateStr = String(day).padStart(2, '0') + '.' + String(selMonth + 1).padStart(2, '0') + '.' + selYear;
+    warn.innerHTML =
+      '<button type="button" class="close-btn" aria-label="Schließen">×</button>' +
+      'Hinweis: Für den Tag ' + dateStr + ' existieren bereits Einträge. ' +
+      'Wenn du ihn als Urlaub oder Krankheit markierst, bleiben die Eingaben erhalten.';
+    // Schließen durch Klick auf den X-Button
+    const closeBtn = warn.querySelector('.close-btn');
+    if (closeBtn) {
+      closeBtn.onclick = function(e){
+        e.stopPropagation();
+        hideFreeDayWarning();
+      };
+    }
+    // Schließen durch Klick irgendwo im Hinweis (ausserhalb des Buttons)
+    warn.onclick = function(e){
+      if(e && e.target && e.target.classList && e.target.classList.contains('close-btn')) return;
+      hideFreeDayWarning();
+      e.stopPropagation();
+    };
+    // Position des Hinweises berechnen: oberhalb/unterhalb des Tages
+    const rect = cell.getBoundingClientRect();
+    const tableRect = document.getElementById('main-table').getBoundingClientRect();
+    // Content muss im DOM sichtbar sein, um die Breite zu messen
+    warn.style.display = 'block';
+    // Scroll offsets berücksichtigen
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+    const scrollX = window.scrollX || document.documentElement.scrollLeft;
+    // Linke Position: links vom Table, geringerer Abstand von 10px
+    const warnWidth = warn.offsetWidth;
+    const left = tableRect.left + scrollX - warnWidth - 10;
+    warn.style.left = (left < 0 ? 0 : left) + 'px';
+    // Obere Position: auf Höhe der Zelle
+    warn.style.top = (rect.top + scrollY) + 'px';
+  } catch (_) {}
+}
+
+function hideFreeDayWarning(){
+  try {
+    const warn = document.getElementById('free-day-warning');
+    if(warn){
+      warn.style.display = 'none';
+    }
+    // Vorsichtshalber auch alle Inline-Warnungen entfernen
+    document.querySelectorAll('.inline-warning').forEach(function(el){ el.remove(); });
+  } catch (_) {}
 }
 
 // Prüft, ob der Tag als eigener freier Tag markiert ist (unabhängig vom Typ).
@@ -1234,7 +1362,7 @@ function buildTable(){
     if(isHoliday){
       const holidayName = holidays[ds] || "Feiertag";
       tb.innerHTML = `<tr class="holiday">
-        <td class="day-cell" onclick="toggleFreeDay(${day})">${day}<br><small>${weekdayLabel} – ${holidayName}</small></td>
+        <td class="day-cell" data-day="${day}" onclick="toggleFreeDay(${day})">${day}<br><small>${weekdayLabel} – ${holidayName}</small></td>
         <td colspan="4">Kein Arbeitstag</td>
       </tr>
         <tr class="day-summary">
@@ -1247,7 +1375,7 @@ function buildTable(){
     } else if(isWeekend){
       const weekendClass = isSunday ? "weekend sunday" : "weekend";
       tb.innerHTML = `<tr class="${weekendClass}">
-        <td class="day-cell" onclick="toggleFreeDay(${day})">${day}<br><small>${weekdayLabel}</small></td>
+        <td class="day-cell" data-day="${day}" onclick="toggleFreeDay(${day})">${day}<br><small>${weekdayLabel}</small></td>
         <td colspan="4">Kein Arbeitstag</td>
       </tr>
         <tr class="day-summary">
@@ -1266,7 +1394,7 @@ function buildTable(){
            : "Eigener freier Tag");
       // Bei eigenen freien Tagen soll die Beschriftung "Kein Arbeitstag" entfallen.
       tb.innerHTML = `<tr class="customfree">
-        <td class="day-cell" onclick="toggleFreeDay(${day})">${day}<br><small>${label}</small></td>
+        <td class="day-cell" data-day="${day}" onclick="toggleFreeDay(${day})">${day}<br><small>${label}</small></td>
         <td colspan="4"></td>
       </tr>
         <tr class="day-summary">
@@ -1279,7 +1407,7 @@ function buildTable(){
     } else {
       tb.innerHTML = `
         <tr class="entry-row">
-          <td class="day-cell" onclick="toggleFreeDay(${day})">${day}</td>
+          <td class="day-cell" data-day="${day}" onclick="toggleFreeDay(${day})">${day}</td>
           <td><div class="amount1-wrapper"><button type="button" class="std-amount-btn" onclick="setStandardAmountForRow(this, 16, ${day})" title="16 € einfügen">16</button><button type="button" class="std-amount-btn" onclick="setStandardAmountForRow(this, 22, ${day})" title="22 € einfügen">22</button><button type="button" class="std-amount-btn" onclick="setStandardAmountForRow(this, 33, ${day})" title="33 € einfügen">33</button><input class="amount1 empty-input" type="number" step="0.01" lang="de" enterkeyhint="enter" oninput="checkInput(this); updateDay(${day})" onfocus="setCurrentAmount1Row(this)" onkeydown="handleEnter(event)" onblur="handleExit(event)"></div></td>
           <td>
             <div class="amount2-wrapper" style="display:none;">
@@ -1426,6 +1554,27 @@ function updateDay(day){
   }
 }
 
+function incomeMonthSummaryKey(year, month){
+  return `income-month-${year}-${String(month + 1).padStart(2, "0")}`;
+}
+
+function saveCurrentMonthSummary(summary){
+  try {
+    const payload = summary || {
+      total: 0,
+      customers: 0,
+      workdays: 0,
+      tip: 0,
+      net: 0,
+      tax: 0
+    };
+    payload.year = selYear;
+    payload.month = selMonth;
+    payload.updatedAt = new Date().toISOString();
+    localStorage.setItem(incomeMonthSummaryKey(selYear, selMonth), JSON.stringify(payload));
+  } catch (_) {}
+}
+
 function saveDay(day){
   const rows = [...document.querySelectorAll("#day-" + day + " .entry-row")].map(row => ({
     amount1: row.querySelector(".amount1")?.value || "",
@@ -1506,6 +1655,7 @@ function loadAllDays(){
   updateAmount2ButtonsVisibility();
 }
 
+
 // Gesamtsummen
 function updateTotals(){
   let total = 0;
@@ -1546,8 +1696,18 @@ for(let d = 1; d <= selDays; d++){
   if (grandTipEl) grandTipEl.innerText = totalTip.toFixed(2);
 
 const net = total / 1.19;
+  const tax = total - net;
   document.getElementById("net-total").innerText = net.toFixed(2);
-  document.getElementById("tax-total").innerText = (total - net).toFixed(2);
+  document.getElementById("tax-total").innerText = tax.toFixed(2);
+
+  saveCurrentMonthSummary({
+    total,
+    customers: totalCustomers,
+    workdays: totalWorkdays,
+    tip: totalTip,
+    net,
+    tax
+  });
 
   // Beschriftung des Zurück-Pfeils abhängig davon, ob Daten vorhanden sind
   updateBackArrowLabel();
@@ -1742,14 +1902,14 @@ function exportCSV(){
 // Jahresarchiv (Backup)
 // ======================
 
-// Ermittelt alle Jahre, die aktuell im localStorage vorkommen (day-/cf-/locked-Keys)
+// Ermittelt alle Jahre, die aktuell im localStorage vorkommen (day-/cf-/locked-/income-month-Keys)
 function getArchiveYearsFromStorage(){
   const years = new Set();
   try{
     for(let i = 0; i < localStorage.length; i++){
       const k = localStorage.key(i);
       if(!k) continue;
-      const m = k.match(/^(day|cf|locked)-(\d{4})-/);
+      const m = k.match(/^(day|cf|locked)-(\d{4})-/) || k.match(/^income-month-(\d{4})-/);
       if(m) years.add(parseInt(m[2], 10));
     }
   } catch(e){}
@@ -1787,12 +1947,13 @@ function _getSelectedArchiveYear(){
 function _buildYearArchiveData(year){
   const data = {
     app: "Einnahmen",
-    version: "V175.03.26",
+    version: "V201.03.26",
     year: year,
     createdAt: new Date().toISOString(),
     days: {},
     free: {},
-    locked: {}
+    locked: {},
+    monthlySummaries: {}
   };
 
   for(let i = 0; i < localStorage.length; i++){
@@ -1812,6 +1973,12 @@ function _buildYearArchiveData(year){
       // lock key: locked-YYYY-M
       const v = localStorage.getItem(k);
       if(v != null) data.locked[k] = v;
+    } else if(k.startsWith(`income-month-${year}-`)){
+      const raw = localStorage.getItem(k);
+      if(raw){
+        try { data.monthlySummaries[k] = JSON.parse(raw); }
+        catch(e){ data.monthlySummaries[k] = raw; }
+      }
     }
   }
   return data;
@@ -1925,6 +2092,12 @@ function importYearArchive(ev){
           }
         }
       }
+      if(payload && payload.monthlySummaries){
+        for(const key in payload.monthlySummaries){
+          const val = payload.monthlySummaries[key];
+          localStorage.setItem(key, typeof val === "string" ? val : JSON.stringify(val));
+        }
+      }
 
       alert("Jahres-Import erfolgreich.");
       try { hideMissingDayHint(); } catch(e) {}
@@ -1965,7 +2138,7 @@ async function archiveAndDeleteYear(){
   for(let i = 0; i < localStorage.length; i++){
     const k = localStorage.key(i);
     if(!k) continue;
-    if(k.startsWith(`day-${year}-`) || k.startsWith(`cf-${year}-`) || k.startsWith(`locked-${year}-`)){
+    if(k.startsWith(`day-${year}-`) || k.startsWith(`cf-${year}-`) || k.startsWith(`locked-${year}-`) || k.startsWith(`income-month-${year}-`)){
       keysToRemove.push(k);
     }
   }
@@ -1982,6 +2155,8 @@ async function archiveAndDeleteYear(){
 }
 
 </script>
+<!-- Warnung: wird eingeblendet, wenn ein Tag mit vorhandenen Einträgen als Urlaub/Krank markiert wird -->
+<div id="free-day-warning" class="free-day-warning" style="display:none;"></div>
 <style>
 /*
  * Im Druckmodus wird nur der Bereich "#reduced-print" ausgegeben. Auf einigen
@@ -2186,6 +2361,15 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 </tr>
 
 </table>
+<div id="onscreen-totals" style="margin-top:20px;">
+<h3>Monatsübersicht</h3>
+<table>
+<tr><th>Gesamtsumme</th><td id="grand-total"></td></tr>
+<tr><th>Netto</th><td id="net-total"></td></tr>
+<tr><th>MwSt</th><td id="tax-total"></td></tr>
+</table>
+</div>
+
 <div style="margin-top:20px;">
 <div id="primary-controls" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
 <button class="modern-btn" onclick="generateReducedPrint()">🖨️ Reduzierter Druck</button>
@@ -2245,14 +2429,6 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 <input autocomplete="off" id="unlock-code" inputmode="numeric" maxlength="4" placeholder="••••" style="width:90px; text-align:center; margin-left:6px; padding:4px 6px;" type="password"/>
 <span style="font-size:0.85em; margin-left:6px; opacity:0.85;">(weitere Funktionen)</span>
 </div>
-</div>
-<div id="onscreen-totals" style="margin-top:20px;">
-<h3>Monatsübersicht</h3>
-<table>
-<tr><th>Gesamtsumme</th><td id="grand-total"></td></tr>
-<tr><th>Netto</th><td id="net-total"></td></tr>
-<tr><th>MwSt</th><td id="tax-total"></td></tr>
-</table>
 </div>
 <div class="print-summary" style="display:none;">
 <h3>Monatsübersicht (Druck)</h3>
@@ -3324,7 +3500,6 @@ function removeTrailingEmptyRow(day) {
  * Der Button steht links neben dem Feld und bezieht den passenden Tag über den Parameter day.
  */
 function setStandardAmountForRow(button, value, day) {
-  if (isMonthLocked(selYear, selMonth)) return;
   const wrapper = button.closest('.amount1-wrapper');
   if (!wrapper) return;
   const input = wrapper.querySelector('.amount1');
@@ -3673,66 +3848,57 @@ function applyLockStatus() {
       : "Monat ist offen. Klick zum Sperren.";
   }
 
-  const tableInputs = document.querySelectorAll('#main-table input.amount1, #main-table input.amount2, #main-table input.amountTip');
-  tableInputs.forEach((el) => {
-    try {
-      el.disabled = !!locked;
-      el.readOnly = !!locked;
-      if (locked) el.setAttribute('disabled', '');
-      else el.removeAttribute('disabled');
-      if (locked) el.setAttribute('readonly', '');
-      else el.removeAttribute('readonly');
-    } catch (_) {}
+  const entryRows = document.querySelectorAll('tbody[id^="day-"] tr.entry-row');
+  entryRows.forEach((row) => {
+    const dayCell = row.querySelector('.day-cell');
+    if (dayCell) {
+      dayCell.style.pointerEvents = locked ? 'none' : '';
+      dayCell.style.opacity = locked ? '0.75' : '';
+      dayCell.style.cursor = locked ? 'default' : '';
+    }
+
+    row.querySelectorAll('input.amount1, input.amount2, input.amountTip').forEach((el) => {
+      try {
+        el.disabled = !!locked;
+        if (locked) el.setAttribute('disabled', '');
+        else el.removeAttribute('disabled');
+      } catch (_) {}
+    });
+
+    row.querySelectorAll('button.toggle-amount2, button.toggle-tip, button.std-amount-btn').forEach((btn) => {
+      try {
+        btn.disabled = !!locked;
+        if (locked) btn.setAttribute('disabled', '');
+        else btn.removeAttribute('disabled');
+      } catch (_) {}
+    });
   });
 
-  const editButtons = document.querySelectorAll('#main-table .toggle-amount2, #main-table .toggle-tip, #main-table .std-amount-btn');
-  editButtons.forEach((el) => {
+  const controls = document.querySelectorAll("input, button, select, textarea");
+  controls.forEach((el) => {
     try {
-      el.disabled = !!locked;
-      if (locked) el.setAttribute('disabled', '');
-      else el.removeAttribute('disabled');
-    } catch (_) {}
-  });
+      if (!el) return;
 
-  document.querySelectorAll('#main-table .day-cell').forEach((cell) => {
-    try {
-      cell.style.pointerEvents = locked ? 'none' : '';
-      cell.style.opacity = locked ? '0.85' : '';
-      cell.style.cursor = locked ? 'default' : '';
-    } catch (_) {}
-  });
+      const isAlwaysAllowed =
+        (el.classList && el.classList.contains("nav-btn")) ||
+        el.id === "month-lock-toggle" ||
+        el.id === "unlock-code" ||
+        (el.closest && el.closest("#month-nav")) ||
+        (el.closest && el.closest("#primary-controls")) ||
+        (el.closest && el.closest("#advanced-controls")) ||
+        (el.closest && el.closest("#admin-code-wrapper")) ||
+        el.id === "data-file-input" ||
+        el.id === "year-archive-input" ||
+        el.id === "quarter-select";
 
-  const rowActionButtons = document.querySelectorAll('#main-table button:not(.toggle-amount2):not(.toggle-tip):not(.std-amount-btn)');
-  rowActionButtons.forEach((el) => {
-    try {
-      el.disabled = !!locked;
-      if (locked) el.setAttribute('disabled', '');
-      else el.removeAttribute('disabled');
-    } catch (_) {}
-  });
+      const isEditField =
+        (el.matches && el.matches('input.amount1, input.amount2, input.amountTip, button.toggle-amount2, button.toggle-tip, button.std-amount-btn'));
 
-  const alwaysActiveSelectors = [
-    '#primary-controls button',
-    '#advanced-controls button',
-    '#advanced-controls select',
-    '#advanced-controls input',
-    '#admin-code-wrapper input',
-    '#month-nav button',
-    '#month-nav select',
-    '#month-lock-toggle',
-    '#month-scroll-last',
-    '.scroll-back-wrapper'
-  ];
-  document.querySelectorAll(alwaysActiveSelectors.join(', ')).forEach((el) => {
-    try {
-      el.disabled = false;
-      if ('readOnly' in el && el.id !== 'unlock-code') el.readOnly = false;
-      el.removeAttribute('disabled');
-      if (el.id !== 'unlock-code') el.removeAttribute('readonly');
-      if (el.style && (el.classList.contains('scroll-back-wrapper') || el.id === 'month-scroll-last')) {
-        el.style.pointerEvents = '';
-        el.style.opacity = '';
-        el.style.cursor = 'pointer';
+      if (isAlwaysAllowed && !isEditField) {
+        el.disabled = false;
+        el.removeAttribute("disabled");
+        if ('readOnly' in el) el.readOnly = false;
+        el.removeAttribute('readonly');
       }
     } catch (_) {}
   });
