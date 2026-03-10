@@ -994,6 +994,23 @@ function toggleFreeDay(day){
   } else if(current === "krank"){
     next = null;
   }
+  // Wenn der Tag bereits Einträge (Betrag 1, Betrag 2 oder Trinkgeld) enthält und der Benutzer
+  // versucht, ihn als Urlaub oder Krank zu markieren (next !== null), dann wird die Umschaltung
+  // blockiert. Stattdessen wird eine spezielle Warnung angezeigt und die Funktion beendet.
+  try {
+    if (next !== null && typeof dayHasAnyEntry === 'function' && dayHasAnyEntry(day)) {
+      if (typeof showBlockFreeDayWarning === 'function') {
+        showBlockFreeDayWarning(day);
+      } else if (typeof showFreeDayWarning === 'function') {
+        // Fallback: nutze die bestehende Warnfunktion, falls block‑Funktion nicht definiert ist.
+        showFreeDayWarning(day);
+      }
+      return;
+    }
+  } catch (_) {
+    // wenn dayHasAnyEntry nicht definiert ist, verfahren wie bisher
+  }
+
   // Prüfen, ob nach dem Umschalten des Status eine Warnung angezeigt werden soll.
   let shouldWarn = false;
   try {
@@ -1046,7 +1063,7 @@ function showFreeDayWarning(day){
     warn.className = 'multi-warning';
     warn.innerHTML = '<button type="button" class="close-btn" aria-label="Schließen">×</button>' +
       'Hinweis: Für den Tag ' + dateStr + ' existieren bereits Einträge. ' +
-      'Wenn du ihn als Urlaub oder Krankheit markierst, bleiben die Eingaben erhalten.';
+      'Bitte lösche diese, bevor du den Tag als Urlaub oder Krankheit markierst.';
     // Schließen durch Klick auf den X‑Button
     const closeBtn = warn.querySelector('.close-btn');
     if(closeBtn){
@@ -1064,6 +1081,59 @@ function showFreeDayWarning(day){
     // Zunächst anhängen, um Breite zu messen
     document.body.appendChild(warn);
     // Scroll offsets berücksichtigen
+    const rect = cell.getBoundingClientRect();
+    const tableRect = document.getElementById('main-table').getBoundingClientRect();
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+    const scrollX = window.scrollX || document.documentElement.scrollLeft;
+    const warnWidth = warn.offsetWidth;
+    // Linke Position: links vom Table, mit 10px Abstand
+    const left = tableRect.left + scrollX - warnWidth - 10;
+    warn.style.left = (left < 0 ? 0 : left) + 'px';
+    // Obere Position: auf Höhe der Zelle
+    warn.style.top = (rect.top + scrollY) + 'px';
+  } catch (_) {}
+}
+
+// Zeigt eine blockierende Warnung an, wenn versucht wird, einen Tag mit bestehenden
+// Einträgen als Urlaub oder Krankheit zu markieren. Die Warnung erscheint
+// inline links vom Tabellencontainer auf Höhe der Tageszelle und weist darauf hin,
+// dass zuerst alle Beträge entfernt werden müssen.
+function showBlockFreeDayWarning(day){
+  try {
+    // Entferne alle bestehenden Inline‑Warnungen und globale Warnungen, um Mehrfachmeldungen zu vermeiden
+    hideFreeDayWarning();
+    // Ermitteln der Zelle des betreffenden Tages
+    const cell = document.querySelector('td.day-cell[data-day="' + day + '"]');
+    if(!cell) return;
+    // Eindeutigen ID für die Warnung zusammenstellen, damit pro Tag nur eine vorhanden ist
+    const warnId = 'blocked-warning-' + selYear + '-' + selMonth + '-' + day;
+    if (document.getElementById(warnId)) return;
+    // Datumsstring erstellen
+    const dateStr = String(day).padStart(2, '0') + '.' + String(selMonth + 1).padStart(2, '0') + '.' + selYear;
+    // Warnungs‑Element erstellen
+    const warn = document.createElement('div');
+    warn.id = warnId;
+    warn.className = 'multi-warning';
+    warn.innerHTML = '<button type="button" class="close-btn" aria-label="Schließen">×</button>' +
+      'Hinweis: Für den Tag ' + dateStr + ' existieren bereits Einträge. ' +
+      'Eine Änderung zu Urlaub oder Krankheit ist nicht möglich. Bitte lösche zunächst alle Eingaben.';
+    // Schließen durch Klick auf den X‑Button
+    const closeBtn = warn.querySelector('.close-btn');
+    if(closeBtn){
+      closeBtn.onclick = function(e){
+        e.stopPropagation();
+        warn.remove();
+      };
+    }
+    // Schließen durch Klick irgendwo im Hinweis (außerhalb des Buttons)
+    warn.onclick = function(e){
+      if(e && e.target && e.target.classList && e.target.classList.contains('close-btn')) return;
+      warn.remove();
+      e.stopPropagation();
+    };
+    // Anhängen, um Abmessungen zu ermitteln
+    document.body.appendChild(warn);
+    // Position berechnen: links neben der Tabelle, oberhalb der Tageszelle
     const rect = cell.getBoundingClientRect();
     const tableRect = document.getElementById('main-table').getBoundingClientRect();
     const scrollY = window.scrollY || document.documentElement.scrollTop;
