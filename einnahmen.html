@@ -239,6 +239,30 @@ tr.entry-row td {
   padding: 0 4px;
 }
 
+/* Mehrere Warnmeldungen gleichzeitig (eine pro Tag). */
+.multi-warning {
+  position: absolute;
+  background: #fff6f6;
+  border: 1px solid #b30000;
+  padding: 8px 12px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 1000;
+  max-width: 240px;
+  font-size: 0.9em;
+  color: #b30000;
+}
+.multi-warning .close-btn {
+  float: right;
+  background: none;
+  border: none;
+  font-weight: bold;
+  color: #b30000;
+  cursor: pointer;
+  margin-left: 8px;
+  padding: 0 4px;
+}
+
 .empty-input { background-color:lightgray; }
 .amount1:not(.empty-input) {
   font-weight: bold;
@@ -987,13 +1011,12 @@ function toggleFreeDay(day){
   }
 
   updateMonth();  // neu aufbauen
-  // Nach dem Neuaufbau bei Bedarf die Warnung erneut anzeigen, damit sie nicht durch das Update der Tabelle verloren geht.
+  // Nach dem Neuaufbau: Falls eine Warnung angezeigt werden soll, erzeugen.
   try {
     if (shouldWarn && typeof showFreeDayWarning === 'function') {
       showFreeDayWarning(day);
-    } else {
-      if (typeof hideFreeDayWarning === 'function') hideFreeDayWarning();
     }
+    // Wenn shouldWarn false, keinerlei bestehende Warnungen entfernen – sie bleiben bestehen, bis sie vom Nutzer geschlossen werden.
   } catch (_) {}
 }
 
@@ -1009,41 +1032,44 @@ function showFreeDayWarning(day){
   try {
     // Entferne alle bestehenden Inline-Warnungen (falls aus einer früheren Version vorhanden)
     document.querySelectorAll('.inline-warning').forEach(function(el){ el.remove(); });
-    const warn = document.getElementById('free-day-warning');
-    if(!warn) return;
-    // Die Zelle des betreffenden Tages ermitteln
+    // Ermitteln der Zelle des betreffenden Tages
     const cell = document.querySelector('td.day-cell[data-day="' + day + '"]');
     if(!cell) return;
+    // Ermitteln eines eindeutigen Bezeichners für diese Warnung (Jahr‑Monat‑Tag)
+    const warnId = 'multi-warning-' + selYear + '-' + selMonth + '-' + day;
+    if (document.getElementById(warnId)) return; // Warnung für diesen Tag existiert bereits
     // Datumsstring zusammenstellen
     const dateStr = String(day).padStart(2, '0') + '.' + String(selMonth + 1).padStart(2, '0') + '.' + selYear;
-    warn.innerHTML =
-      '<button type="button" class="close-btn" aria-label="Schließen">×</button>' +
+    // Element erzeugen
+    const warn = document.createElement('div');
+    warn.id = warnId;
+    warn.className = 'multi-warning';
+    warn.innerHTML = '<button type="button" class="close-btn" aria-label="Schließen">×</button>' +
       'Hinweis: Für den Tag ' + dateStr + ' existieren bereits Einträge. ' +
       'Wenn du ihn als Urlaub oder Krankheit markierst, bleiben die Eingaben erhalten.';
-    // Schließen durch Klick auf den X-Button
+    // Schließen durch Klick auf den X‑Button
     const closeBtn = warn.querySelector('.close-btn');
-    if (closeBtn) {
+    if(closeBtn){
       closeBtn.onclick = function(e){
         e.stopPropagation();
-        hideFreeDayWarning();
+        warn.remove();
       };
     }
     // Schließen durch Klick irgendwo im Hinweis (ausserhalb des Buttons)
     warn.onclick = function(e){
       if(e && e.target && e.target.classList && e.target.classList.contains('close-btn')) return;
-      hideFreeDayWarning();
+      warn.remove();
       e.stopPropagation();
     };
-    // Position des Hinweises berechnen: oberhalb/unterhalb des Tages
+    // Zunächst anhängen, um Breite zu messen
+    document.body.appendChild(warn);
+    // Scroll offsets berücksichtigen
     const rect = cell.getBoundingClientRect();
     const tableRect = document.getElementById('main-table').getBoundingClientRect();
-    // Content muss im DOM sichtbar sein, um die Breite zu messen
-    warn.style.display = 'block';
-    // Scroll offsets berücksichtigen
     const scrollY = window.scrollY || document.documentElement.scrollTop;
     const scrollX = window.scrollX || document.documentElement.scrollLeft;
-    // Linke Position: links vom Table, geringerer Abstand von 10px
     const warnWidth = warn.offsetWidth;
+    // Linke Position: links vom Table, mit 10px Abstand
     const left = tableRect.left + scrollX - warnWidth - 10;
     warn.style.left = (left < 0 ? 0 : left) + 'px';
     // Obere Position: auf Höhe der Zelle
@@ -1053,12 +1079,12 @@ function showFreeDayWarning(day){
 
 function hideFreeDayWarning(){
   try {
-    const warn = document.getElementById('free-day-warning');
-    if(warn){
-      warn.style.display = 'none';
+    // Entfernt alle bestehenden Warnungen (global und inline). Kann genutzt werden, wenn alle Warnungen gleichzeitig entfernt werden sollen.
+    const globalWarn = document.getElementById('free-day-warning');
+    if(globalWarn){
+      globalWarn.style.display = 'none';
     }
-    // Vorsichtshalber auch alle Inline-Warnungen entfernen
-    document.querySelectorAll('.inline-warning').forEach(function(el){ el.remove(); });
+    document.querySelectorAll('.inline-warning, .multi-warning').forEach(function(el){ el.remove(); });
   } catch (_) {}
 }
 
