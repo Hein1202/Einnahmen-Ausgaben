@@ -512,7 +512,7 @@ function computeIncomeOverview(year) {
       return byMonth;
     }
 
-    function renderTaxQuarterOverview(incomeByMonth) {
+    function renderTaxQuarterOverview(incomeByMonth, expenseByMonth) {
       const quarterRanges = [
         { title: '1. Quartal', months: [0, 1, 2] },
         { title: '2. Quartal', months: [3, 4, 5] },
@@ -535,7 +535,10 @@ function computeIncomeOverview(year) {
         let quarterSum = 0;
         group.months.forEach(monthIndex => {
           const income = incomeByMonth[monthIndex]?.income || 0;
-          const tax = calculateVatFromGross(income);
+          const vatIncome = calculateVatFromGross(income);
+          const expenses = expenseByMonth[monthIndex]?.expenses || 0;
+          const vatExpense = calculateVatFromGross(expenses);
+          const tax = vatIncome - vatExpense;
           quarterSum += tax;
           yearlyTax += tax;
 
@@ -569,7 +572,7 @@ function computeIncomeOverview(year) {
       const expenseByMonth = computeExpenseOverview(year);
 
       yearOverviewBody.innerHTML = '';
-      renderTaxQuarterOverview(incomeByMonth);
+      renderTaxQuarterOverview(incomeByMonth, expenseByMonth);
 
       let totalIncome = 0;
       let totalExpenses = 0;
