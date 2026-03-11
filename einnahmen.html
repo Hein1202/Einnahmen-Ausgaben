@@ -1082,13 +1082,15 @@ function showFreeDayWarning(day){
     document.body.appendChild(warn);
     // Scroll offsets berücksichtigen
     const rect = cell.getBoundingClientRect();
-    const tableRect = document.getElementById('main-table').getBoundingClientRect();
+    const container = document.querySelector('.container') || document.body;
+    const containerRect = container.getBoundingClientRect();
     const scrollY = window.scrollY || document.documentElement.scrollTop;
     const scrollX = window.scrollX || document.documentElement.scrollLeft;
     const warnWidth = warn.offsetWidth;
-    // Linke Position: links vom Table, mit 10px Abstand
-    const left = tableRect.left + scrollX - warnWidth - 10;
-    warn.style.left = (left < 0 ? 0 : left) + 'px';
+    // Position: immer links neben dem Container mit 10px Abstand, aber nicht über den linken Fensterrand hinaus
+    let left = containerRect.left + scrollX - warnWidth - 10;
+    if (left < 0) left = 0;
+    warn.style.left = left + 'px';
     // Obere Position: auf Höhe der Zelle
     warn.style.top = (rect.top + scrollY) + 'px';
   } catch (_) {}
@@ -1133,15 +1135,16 @@ function showBlockFreeDayWarning(day){
     };
     // Anhängen, um Abmessungen zu ermitteln
     document.body.appendChild(warn);
-    // Position berechnen: links neben der Tabelle, oberhalb der Tageszelle
+    // Position: immer links neben dem Container mit 10px Abstand.
     const rect = cell.getBoundingClientRect();
-    const tableRect = document.getElementById('main-table').getBoundingClientRect();
+    const container = document.querySelector('.container') || document.body;
+    const containerRect = container.getBoundingClientRect();
     const scrollY = window.scrollY || document.documentElement.scrollTop;
     const scrollX = window.scrollX || document.documentElement.scrollLeft;
     const warnWidth = warn.offsetWidth;
-    // Linke Position: links vom Table, mit 10px Abstand
-    const left = tableRect.left + scrollX - warnWidth - 10;
-    warn.style.left = (left < 0 ? 0 : left) + 'px';
+    let left = containerRect.left + scrollX - warnWidth - 10;
+    if (left < 0) left = 0;
+    warn.style.left = left + 'px';
     // Obere Position: auf Höhe der Zelle
     warn.style.top = (rect.top + scrollY) + 'px';
   } catch (_) {}
