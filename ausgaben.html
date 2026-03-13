@@ -212,6 +212,14 @@
       padding: 0 2px;
       cursor: pointer;
       line-height: 1;
+      opacity: 1 !important;
+      filter: none !important;
+    }
+
+    .expense-lock-btn.lock-code-required {
+      opacity: 1 !important;
+      filter: none !important;
+      cursor: pointer;
     }
 
     @media (max-width: 700px) {
@@ -263,7 +271,7 @@
         </div>
 
         <div class="expense-nav-right" aria-label="Monatnavigation rechts">
-          <button id="lockIcon" class="text-xl advanced-only expense-lock-btn" type="button" title="Monat ist entsperrt – Klick zum Sperren">🔓</button>
+          <button id="lockIcon" class="text-xl expense-lock-btn" type="button" title="Monat ist entsperrt – Klick zum Sperren">🔓</button>
           <button id="nextMonthBtn" class="expense-nav-btn" type="button" aria-label="Nächster Monat">►</button>
         </div>
       </div>
@@ -393,6 +401,10 @@
     const advancedStatus = document.getElementById('advancedStatus');
     const advancedLockBtn = document.getElementById('advancedLockBtn');
 
+    function isAdvancedUnlocked() {
+      return document.body.classList.contains('advanced-unlocked');
+    }
+
     function setAdvancedUnlocked(isUnlocked) {
       document.body.classList.toggle('advanced-unlocked', !!isUnlocked);
       if (advancedStatus) advancedStatus.style.display = isUnlocked ? 'inline' : 'none';
@@ -483,6 +495,7 @@ function isLocked(key) {
 
 function toggleLock() {
   if (!currentKey) return;
+  if (!isAdvancedUnlocked()) return;
   lockedMonths[currentKey] = !isLocked(currentKey);
   saveLocks();
   updateLockIcon();
@@ -492,8 +505,22 @@ function toggleLock() {
 function updateLockIcon() {
   const icon = document.getElementById('lockIcon');
   if (!icon) return;
-  icon.textContent = isLocked(currentKey) ? '🔒' : '🔓';
-  icon.title = isLocked(currentKey) ? 'Monat ist gesperrt – Klick zum Entsperren' : 'Monat ist entsperrt – Klick zum Sperren';
+
+  const advancedUnlocked = isAdvancedUnlocked();
+  const monthLocked = isLocked(currentKey);
+
+  icon.textContent = monthLocked ? '🔒' : '🔓';
+  icon.classList.toggle('lock-code-required', !advancedUnlocked);
+  icon.setAttribute('aria-disabled', advancedUnlocked ? 'false' : 'true');
+
+  if (!advancedUnlocked) {
+    icon.title = 'Schloss sichtbar – Code 1202 eingeben, um Sperren/Entsperren zu aktivieren';
+    return;
+  }
+
+  icon.title = monthLocked
+    ? 'Monat ist gesperrt – Klick zum Entsperren'
+    : 'Monat ist entsperrt – Klick zum Sperren';
 }
 
 function updateEditability() {
@@ -517,18 +544,6 @@ function updateEditability() {
   // Import is blocked when locked
   const importBtn = document.getElementById('importBtn');
   if (importBtn) importBtn.disabled = locked;
-
-  // Export/Druck bleiben auch bei Sperre erlaubt
-  ['printBtn', 'exportBtn', 'excelExportBtn', 'quarterPrintBtn', 'quarterExcelBtn'].forEach(id => {
-    const btn = document.getElementById(id);
-    if (btn) btn.disabled = false;
-  });
-
-  // Auswahl fuer Export/Druck ebenfalls erlaubt
-  ['monthSelect', 'quarterSelect', 'yearSelect'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.disabled = false;
-  });
 
   // Hide the "Diesen Monat löschen" button completely when locked
   const clearBtn = document.getElementById('clearAllBtn');
@@ -1859,7 +1874,7 @@ function handleMonthYearChange() {
   if (window.electronAPI && typeof window.electronAPI.saveBinaryFile === 'function') {
     const res = await window.electronAPI.saveBinaryFile({
       defaultFilename,
-      data: new TextEncoder().encode(jsonText),
+      content: jsonText,
       filters: [{ name: 'JSON', extensions: ['json'] }]
     });
     if (res && res.ok) return;
