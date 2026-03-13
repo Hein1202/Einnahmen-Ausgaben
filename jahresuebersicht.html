@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jahresübersicht – Einnahmen-Ausgaben 201.03.26</title>
+  <title>Jahresübersicht – Einnahmen-Ausgaben 173.03.26</title>
   <style>
     :root {
       --border-strong: #94a3b8;
@@ -105,7 +105,7 @@
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      min-width: 720px;
+      min-width: 980px;
     }
     th, td {
       padding: 10px 12px;
@@ -231,7 +231,7 @@
           <div class="headLeft">
             <div class="icon">📊</div>
             <div>
-              <div class="kicker">Offline • Version 201.03.26</div>
+              <div class="kicker">Offline • Version 173.03.26</div>
               <h1>Jahresübersicht</h1>
               <div class="sub">Einfache Tabellenansicht mit Einnahmen, Ausgaben, Ausgaben ohne Miete und Swaprad sowie Kunden pro Monat und Kunden / Tag.</div>
             </div>
@@ -248,7 +248,9 @@
               <tr>
                 <th>Monat</th>
                 <th class="num">Einnahmen</th>
+                <th class="num">USt Einnahmen</th>
                 <th class="num">Ausgaben</th>
+                <th class="num">Vorsteuer</th>
                 <th class="num">Ohne Miete und Swaprad</th>
                 <th class="num">Kunden</th>
                 <th class="num">Kunden / Tag</th>
@@ -259,7 +261,9 @@
               <tr>
                 <td>Gesamt</td>
                 <td class="num" id="yearIncomeTotal">–</td>
+                <td class="num" id="yearIncomeVatTotal">–</td>
                 <td class="num" id="yearExpenseTotal">–</td>
+                <td class="num" id="yearExpenseVatTotal">–</td>
                 <td class="num" id="yearExpenseWithoutFixedTotal">–</td>
                 <td class="num" id="yearCustomerTotal">–</td>
                 <td class="num" id="yearCustomerPerDayTotal">–</td>
@@ -297,7 +301,9 @@
     const overviewYearSelect = document.getElementById('overviewYearSelect');
     const yearOverviewBody = document.getElementById('yearOverviewBody');
     const yearIncomeTotal = document.getElementById('yearIncomeTotal');
+    const yearIncomeVatTotal = document.getElementById('yearIncomeVatTotal');
     const yearExpenseTotal = document.getElementById('yearExpenseTotal');
+    const yearExpenseVatTotal = document.getElementById('yearExpenseVatTotal');
     const yearExpenseWithoutFixedTotal = document.getElementById('yearExpenseWithoutFixedTotal');
     const yearCustomerTotal = document.getElementById('yearCustomerTotal');
     const yearCustomerPerDayTotal = document.getElementById('yearCustomerPerDayTotal');
@@ -575,7 +581,9 @@ function computeIncomeOverview(year) {
       renderTaxQuarterOverview(incomeByMonth, expenseByMonth);
 
       let totalIncome = 0;
+      let totalIncomeVat = 0;
       let totalExpenses = 0;
+      let totalExpenseVat = 0;
       let totalExpensesWithoutFixed = 0;
       let totalCustomers = 0;
       let totalWorkdays = 0;
@@ -583,14 +591,18 @@ function computeIncomeOverview(year) {
 
       for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
         const income = incomeByMonth[monthIndex]?.income || 0;
+        const incomeVat = calculateVatFromGross(income);
         const expenses = expenseByMonth[monthIndex]?.expenses || 0;
+        const expenseVat = calculateVatFromGross(expenses);
         const expensesWithoutFixed = expenseByMonth[monthIndex]?.expensesWithoutFixed || 0;
         const customers = incomeByMonth[monthIndex]?.customers || 0;
         const workdays = incomeByMonth[monthIndex]?.workdays || 0;
         const customersPerDay = workdays > 0 ? (customers / workdays) : 0;
 
         totalIncome += income;
+        totalIncomeVat += incomeVat;
         totalExpenses += expenses;
+        totalExpenseVat += expenseVat;
         totalExpensesWithoutFixed += expensesWithoutFixed;
         totalCustomers += customers;
         totalWorkdays += workdays;
@@ -602,7 +614,9 @@ function computeIncomeOverview(year) {
         tr.innerHTML = `
           <td>${monthNames[monthIndex]}</td>
           <td class="num ${income !== 0 ? '' : 'muted'}">${income !== 0 ? formatEuro(income) : '–'}</td>
+          <td class="num ${incomeVat !== 0 ? '' : 'muted'}">${incomeVat !== 0 ? formatEuro(incomeVat) : '–'}</td>
           <td class="num ${expenses !== 0 ? '' : 'muted'}">${expenses !== 0 ? formatEuro(expenses) : '–'}</td>
+          <td class="num ${expenseVat !== 0 ? '' : 'muted'}">${expenseVat !== 0 ? formatEuro(expenseVat) : '–'}</td>
           <td class="num ${expensesWithoutFixed !== 0 ? '' : 'muted'}">${expensesWithoutFixed !== 0 ? formatEuro(expensesWithoutFixed) : '–'}</td>
           <td class="num ${hasAnyData ? '' : 'muted'}">${customers > 0 ? customers : '–'}</td>
           <td class="num ${workdays > 0 ? '' : 'muted'}">${workdays > 0 ? formatDecimal(customersPerDay) : '–'}</td>
@@ -611,7 +625,9 @@ function computeIncomeOverview(year) {
       }
 
       yearIncomeTotal.textContent = totalIncome !== 0 ? formatEuro(totalIncome) : '–';
+      yearIncomeVatTotal.textContent = totalIncomeVat !== 0 ? formatEuro(totalIncomeVat) : '–';
       yearExpenseTotal.textContent = totalExpenses !== 0 ? formatEuro(totalExpenses) : '–';
+      yearExpenseVatTotal.textContent = totalExpenseVat !== 0 ? formatEuro(totalExpenseVat) : '–';
       yearExpenseWithoutFixedTotal.textContent = totalExpensesWithoutFixed !== 0 ? formatEuro(totalExpensesWithoutFixed) : '–';
       yearCustomerTotal.textContent = totalCustomers > 0 ? String(totalCustomers) : '–';
       yearCustomerPerDayTotal.textContent = totalWorkdays > 0 ? formatDecimal(totalCustomers / totalWorkdays) : '–';
