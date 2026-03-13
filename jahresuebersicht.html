@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jahresübersicht – Einnahmen-Ausgaben 174.03.26</title>
+  <title>Jahresübersicht – Einnahmen-Ausgaben 175.03.26</title>
   <style>
     :root {
       --border-strong: #94a3b8;
@@ -18,14 +18,14 @@
       color:#0f172a;
     }
     #page {
-      max-width: 1380px;
+      max-width: 1760px;
       margin: 0 auto;
-      padding: 24px 18px 30px;
+      padding: 24px 22px 30px;
       box-sizing: border-box;
     }
     .layout {
       display: grid;
-      grid-template-columns: minmax(0, 1.8fr) minmax(320px, 1fr);
+      grid-template-columns: minmax(0, 2.55fr) minmax(290px, 0.92fr);
       gap: 18px;
       align-items: start;
     }
@@ -99,19 +99,19 @@
     }
     .tableWrap {
       margin-top: 14px;
-      overflow-x: auto;
+      overflow-x: visible;
     }
     table {
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      min-width: 1180px;
+      min-width: 0;
     }
     th, td {
-      padding: 10px 12px;
+      padding: 10px 10px;
       border-bottom: 1px solid #e2e8f0;
-      font-size: 14px;
-      white-space: nowrap;
+      font-size: 13px;
+      white-space: normal;
     }
     th {
       text-align: left;
@@ -127,6 +127,7 @@
     }
     .num {
       text-align: right;
+      white-space: nowrap;
     }
     tbody tr:last-child td {
       border-bottom: none;
@@ -222,6 +223,21 @@
       color:#94a3b8;
       font-weight: 700;
     }
+
+    @media (max-width: 1360px) {
+      #page {
+        max-width: 1380px;
+      }
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .tableWrap {
+        overflow-x: auto;
+      }
+      table {
+        min-width: 1120px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -232,7 +248,7 @@
           <div class="headLeft">
             <div class="icon">📊</div>
             <div>
-              <div class="kicker">Offline • Version 174.03.26</div>
+              <div class="kicker">Offline • Version 175.03.26</div>
               <h1>Jahresübersicht</h1>
               <div class="sub">Einfache Tabellenansicht mit Einnahmen, Ausgaben, Ausgaben ohne Miete und Swaprad sowie Kunden pro Monat und Kunden / Tag.</div>
             </div>
