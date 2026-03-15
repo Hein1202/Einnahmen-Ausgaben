@@ -331,6 +331,11 @@
                 <strong>Gesamtsumme (Brutto):</strong>
                 <span id="total" class="ml-4"> 0.00</span>
               </div>
+              <div class="flex justify-between" style="padding-left:18px;">
+                <strong>Davon Quittungen:</strong>
+                <span id="receiptsTotal" class="ml-4"> 0.00</span>
+              </div>
+              <div style="height:6px;"></div>
               <div class="flex justify-between">
                 <strong>Nettobetrag:</strong>
                 <span id="net" class="ml-4"> 0.00</span>
@@ -359,6 +364,7 @@
 
     const expenseBody = document.getElementById('expenseBody');
     const totalDisplay = document.getElementById('total');
+    const receiptsDisplay = document.getElementById('receiptsTotal');
     const netDisplay = document.getElementById('net');
     const vatDisplay = document.getElementById('vat');
     const printArea = document.getElementById('printArea');
@@ -819,6 +825,7 @@ const MONTH_NAMES = {
 
     function recalcTotals() {
       let total = 0;
+      let receiptsTotal = 0;
 
       (expenses || []).forEach(exp => {
         if (!exp) return;
@@ -831,13 +838,19 @@ const MONTH_NAMES = {
         const receiptRaw = String(exp.receipt ?? '').trim();
         if (!(dateRaw || amountRaw || descRaw || receiptRaw)) return;
 
-        total += parseAmount(exp.amount);
+        const amount = parseAmount(exp.amount);
+        total += amount;
+
+        if (exp.isRent !== true && exp.isSwaprad !== true) {
+          receiptsTotal += amount;
+        }
       });
 
       const net = total / 1.19;
       const vat = total - net;
 
       totalDisplay.textContent = formatEuro(total);
+      if (receiptsDisplay) receiptsDisplay.textContent = formatEuro(receiptsTotal);
       netDisplay.textContent = formatEuro(net);
       vatDisplay.textContent = formatEuro(vat);
     }
@@ -1163,6 +1176,7 @@ function getPrintTitle() {
       const rows = (expenses || []).filter(exp => exp && !isHiddenRentRow(exp) && !isHiddenSwapradRow(exp));
 
       let rowsHtml = '';
+      let receiptsTotal = 0;
       rows.forEach(exp => {
         const dateRaw = String(exp.date ?? '').trim();
         const amountRaw = String(exp.amount ?? '').trim();
@@ -1171,6 +1185,9 @@ function getPrintTitle() {
         if (!(dateRaw || amountRaw || descRaw || receiptRaw)) return;
         const date = escHtml(getPrintDate(exp));
         const amountNumber = parseAmount(exp.amount);
+        if (exp.isRent !== true && exp.isSwaprad !== true) {
+          receiptsTotal += amountNumber;
+        }
         const amountFormatted = amountNumber ? (Math.round(amountNumber*100)/100).toFixed(2).replace('.', ',') : '';
         const desc = escHtml(exp.desc || '');
         const receipt = escHtml(exp.receipt || '');
@@ -1193,11 +1210,17 @@ function getPrintTitle() {
       const totalPlain = totalText.replace('€','').trim();
 const netPlain = netText.replace('€','').trim();
 const vatPlain = vatText.replace('€','').trim();
+const receiptsPlain = (Math.round(receiptsTotal * 100) / 100).toFixed(2).replace('.', ',');
 const summaryRows = rows.length ? `
         <tr>
           <td colspan="2" style="padding:40px 4px 4px 4px;font-weight:bold;">Gesamtsumme (Brutto gesamt):</td>
           <td style="padding:40px 4px 4px 4px;text-align:right;">${totalPlain}</td>
           <td style="padding:40px 4px 4px 4px;"></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:4px 4px 10px 22px;font-weight:bold;">Davon Quittungen:</td>
+          <td style="padding:4px 4px 10px 4px;text-align:right;">${receiptsPlain}</td>
+          <td style="padding:4px 4px 10px 4px;"></td>
         </tr>
         <tr>
           <td colspan="2" style="padding:4px;font-weight:bold;">Nettobetrag (gesamt):</td>
@@ -1239,6 +1262,7 @@ const summaryRows = rows.length ? `
 
       let rowsHtml = '';
       let total = 0;
+      let receiptsTotal = 0;
 
       (info.rows || []).forEach(exp => {
         if (exp && exp.__monthHeader) {
@@ -1254,6 +1278,7 @@ const summaryRows = rows.length ? `
         const date = escHtml(getPrintDate(exp));
         const amountNumber = parseAmount(exp.amount);
         total += amountNumber;
+        if (exp.isRent !== true && exp.isSwaprad !== true) receiptsTotal += amountNumber;
         const amountFormatted = amountNumber ? (Math.round(amountNumber * 100) / 100).toFixed(2).replace('.', ',') : '';
         const desc = escHtml(exp.desc || '');
         const receipt = escHtml(exp.receipt || '');
@@ -1274,12 +1299,18 @@ const summaryRows = rows.length ? `
       const totalPlain = (Math.round(total * 100) / 100).toFixed(2).replace('.', ',');
       const netPlain = (Math.round(net * 100) / 100).toFixed(2).replace('.', ',');
       const vatPlain = (Math.round(vat * 100) / 100).toFixed(2).replace('.', ',');
+      const receiptsPlain = (Math.round(receiptsTotal * 100) / 100).toFixed(2).replace('.', ',');
 
       const summaryRows = (info.rows || []).length ? `
         <tr>
           <td colspan="2" style="padding:40px 4px 4px 4px;font-weight:bold;">Gesamtsumme (Brutto gesamt):</td>
           <td style="padding:40px 4px 4px 4px;text-align:right;">${totalPlain}</td>
           <td style="padding:40px 4px 4px 4px;"></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:4px 4px 10px 22px;font-weight:bold;">Davon Quittungen:</td>
+          <td style="padding:4px 4px 10px 4px;text-align:right;">${receiptsPlain}</td>
+          <td style="padding:4px 4px 10px 4px;"></td>
         </tr>
         <tr>
           <td colspan="2" style="padding:4px;font-weight:bold;">Nettobetrag (gesamt):</td>
@@ -2010,6 +2041,7 @@ document.getElementById('lockIcon').addEventListener('click', toggleLock);
       ];
 
       let total = 0;
+      let receiptsTotal = 0;
 
       const rows = (expenses || []).filter(exp => exp && !isHiddenRentRow(exp) && !isHiddenSwapradRow(exp));
 
@@ -2022,6 +2054,7 @@ document.getElementById('lockIcon').addEventListener('click', toggleLock);
 
         const amount = parseAmount(exp?.amount);
         total += amount;
+        if (exp?.isRent !== true && exp?.isSwaprad !== true) receiptsTotal += amount;
 
         // Excel: echte Datumszelle (nicht Text)
         // Für Raummiete/Swaprad kann statt eines Tagesdatums ein Monats-Text (z.B. "Januar") stehen.
@@ -2060,6 +2093,7 @@ wsData.push([
 
       wsData.push([]);
       wsData.push(["Gesamtsumme (Brutto):", "", total, ""]);
+      wsData.push(["Davon Quittungen:", "", receiptsTotal, ""]);
       wsData.push(["Nettobetrag:", "", net, ""]);
       wsData.push(["Mehrwertsteuer (19%):", "", vat, ""]);
 
@@ -2118,6 +2152,7 @@ wsData.push([
       ];
 
       let total = 0;
+      let receiptsTotal = 0;
 
       (info.rows || []).forEach(exp => {
         if (exp && exp.__monthHeader) {
@@ -2162,6 +2197,7 @@ wsData.push([
 
       wsData.push([]);
       wsData.push(["Gesamtsumme (Brutto):", "", total, ""]);
+      wsData.push(["Davon Quittungen:", "", receiptsTotal, ""]);
       wsData.push(["Nettobetrag:", "", net, ""]);
       wsData.push(["Mehrwertsteuer (19%):", "", vat, ""]);
 
