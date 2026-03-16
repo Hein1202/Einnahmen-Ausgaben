@@ -823,21 +823,99 @@ const MONTH_NAMES = {
 
 
 
+    function hasAnyRowContent(exp) {
+      if (!exp) return false;
+      const dateRaw = String(exp.date ?? '').trim();
+      const amountRaw = String(exp.amount ?? '').trim();
+      const descRaw = String(exp.desc ?? '').trim();
+      const receiptRaw = String(exp.receipt ?? '').trim();
+      const periodRaw = String(exp.period ?? '').trim();
+      return !!(dateRaw || amountRaw || descRaw || receiptRaw || periodRaw);
+    }
+
+    function getMonthDefaults(key) {
+      let year = '';
+      let month = '';
+      if (key && typeof key === 'string') {
+        const parts = key.split('-');
+        if (parts.length === 2) {
+          year = parts[0] || '';
+          month = parts[1] || '';
+        }
+      }
+      const monthName = month ? (MONTH_NAMES[month] || '') : '';
+      return {
+        rentDate: (year && month) ? `${year}-${month}-01` : '',
+        rentPeriod: monthName,
+        rentAmount: 392.70,
+        rentDesc: 'Raummiete',
+        swapradDate: '',
+        swapradPeriod: monthName,
+        swapradAmount: 69.90,
+        swapradDesc: 'Swaprad Miete für E-Bike'
+      };
+    }
+
+    function isDefaultRentRow(exp, key) {
+      if (!exp || exp.isRent !== true) return false;
+      const defs = getMonthDefaults(key);
+      const desc = String(exp.desc ?? '').trim();
+      const period = String(exp.period ?? '').trim();
+      const date = String(exp.date ?? '').trim();
+      return parseAmount(exp.amount) === defs.rentAmount
+        && (!desc || desc === defs.rentDesc)
+        && (!period || period === defs.rentPeriod)
+        && (!date || date === defs.rentDate);
+    }
+
+    function isDefaultSwapradRow(exp, key) {
+      if (!exp || exp.isSwaprad !== true) return false;
+      const defs = getMonthDefaults(key);
+      const desc = String(exp.desc ?? '').trim();
+      const period = String(exp.period ?? '').trim();
+      const date = String(exp.date ?? '').trim();
+      return parseAmount(exp.amount) === defs.swapradAmount
+        && (!desc || desc === defs.swapradDesc)
+        && (!period || period === defs.swapradPeriod)
+        && (!date || date === defs.swapradDate);
+    }
+
+    function isMonthActivated(key, list) {
+      if (!Array.isArray(list)) return false;
+      if (key && isLocked(key)) return true;
+
+      return list.some(exp => {
+        if (!exp) return false;
+        if (exp.isRent === true) return !isDefaultRentRow(exp, key);
+        if (exp.isSwaprad === true) return !isDefaultSwapradRow(exp, key);
+        return hasAnyRowContent(exp);
+      });
+    }
+
+    function getEffectiveMonthRows(key, list) {
+      if (!Array.isArray(list)) return [];
+      const monthActive = isMonthActivated(key, list);
+
+      return list.filter(exp => {
+        if (!exp) return false;
+        if (isHiddenRentRow(exp)) return false;
+        if (isHiddenSwapradRow(exp)) return false;
+
+        if (exp.isRent === true || exp.isSwaprad === true) {
+          return monthActive;
+        }
+
+        return hasAnyRowContent(exp);
+      });
+    }
+
     function recalcTotals() {
       let total = 0;
       let receiptsTotal = 0;
 
-      (expenses || []).forEach(exp => {
-        if (!exp) return;
-        if (isHiddenRentRow(exp)) return;
-        if (isHiddenSwapradRow(exp)) return;
+      const rows = getEffectiveMonthRows(currentKey, expenses);
 
-        const dateRaw = String(exp.date ?? '').trim();
-        const amountRaw = String(exp.amount ?? '').trim();
-        const descRaw = String(exp.desc ?? '').trim();
-        const receiptRaw = String(exp.receipt ?? '').trim();
-        if (!(dateRaw || amountRaw || descRaw || receiptRaw)) return;
-
+      rows.forEach(exp => {
         const amount = parseAmount(exp.amount);
         total += amount;
 
@@ -913,48 +991,8 @@ function render() {
 
       const locked = isLocked(currentKey);
       const rentRow = (expenses || []).find(e => e && e.isRent === true) || null;
-      const rentHidden = !!(rentRow && rentRow.rentHidden === true);
 
       const swapradRow = (expenses || []).find(e => e && e.isSwaprad === true) || null;
-      const swapradHidden = !!(swapradRow && swapradRow.swapradHidden === true);
-
-      // Platzhalterzeile, wenn Raummiete ausgeblendet ist
-      if (rentRow && rentHidden) {
-        const ph = document.createElement('tr');
-        ph.innerHTML = `
-          <td class="border p-1 w-20 text-gray-400"></td>
-          <td class="border p-1 text-gray-500 italic">Raummiete ist ausgeblendet</td>
-          <td class="border p-1"></td>
-          <td class="border p-1"></td>
-          <td class="border p-1 text-center">
-            <div class="flex justify-center gap-2">
-              <button class="toggleRentBtn bg-gray-200 px-2 py-1 rounded" data-action="show" ${locked ? 'disabled' : ''}>
-                Raummiete einblenden
-              </button>
-            </div>
-          </td>
-        `;
-        expenseBody.appendChild(ph);
-      }
-
-      // Platzhalterzeile, wenn Swaprad-Miete ausgeblendet ist
-      if (swapradRow && swapradHidden) {
-        const ph2 = document.createElement('tr');
-        ph2.innerHTML = `
-          <td class="border p-1 w-20 text-gray-400"></td>
-          <td class="border p-1 text-gray-500 italic">Swaprad Miete für E-Bike ist ausgeblendet</td>
-          <td class="border p-1"></td>
-          <td class="border p-1"></td>
-          <td class="border p-1 text-center">
-            <div class="flex justify-center gap-2">
-              <button class="toggleSwapradBtn bg-gray-200 px-2 py-1 rounded" data-action="show" ${locked ? 'disabled' : ''}>
-                Swaprad einblenden
-              </button>
-            </div>
-          </td>
-        `;
-        expenseBody.appendChild(ph2);
-      }
 
       (expenses || []).forEach((exp, index) => {
         if (!exp) return;
@@ -1030,11 +1068,9 @@ function render() {
           <td class="border p-1 text-center">
             <div class="flex justify-center gap-2">
               ${
-                isRent
-                  ? `<button class="toggleRentBtn text-gray-700 underline" data-action="hide" ${locked ? 'disabled' : ''}>Ausblenden</button>`
-                  : isSwaprad
-                    ? `<button class="toggleSwapradBtn text-gray-700 underline" data-action="hide" ${locked ? 'disabled' : ''}>Ausblenden</button>`
-                    : `
+                (isRent || isSwaprad)
+                  ? `<span class="text-gray-400">–</span>`
+                  : `
                       <button
                         data-index="${index}"
                         class="insertBtn text-green-700"
@@ -1130,27 +1166,12 @@ function formatDateGerman(iso) {
       months.forEach(mm => {
         const key = `${year}-${mm}`;
         const list = allExpenses[key];
+        const monthRows = getEffectiveMonthRows(key, list);
+        if (!monthRows.length) return;
 
-        // Monatsüberschrift
         rows.push({ __monthHeader: true, month: mm, year });
-
-        if (Array.isArray(list)) {
-          list.forEach(exp => {
-            if (!exp) return;
-            const date = String(exp.date ?? '').trim();
-            const amount = String(exp.amount ?? '').trim();
-            const desc = String(exp.desc ?? '').trim();
-            const receipt = String(exp.receipt ?? '').trim();
-            if (exp.isRent === true && exp.rentHidden === true) return; // ausgeblendete Raummiete ignorieren
-            if (exp.isSwaprad === true && exp.swapradHidden === true) return; // ausgeblendete Swaprad-Miete ignorieren
-            if (!(date || amount || desc || receipt)) return; // komplett leere Zeilen ignorieren
-            rows.push(exp);
-          });
-        }
+        monthRows.forEach(exp => rows.push(exp));
       });
-
-      // Falls am Ende nur Überschriften hängen geblieben sind
-      while (rows.length && rows[rows.length - 1].__monthHeader) rows.pop();
 
       return { q, year, months, rows };
     }
@@ -1173,7 +1194,7 @@ function getPrintTitle() {
 
       const title = getPrintTitle();
 
-      const rows = (expenses || []).filter(exp => exp && !isHiddenRentRow(exp) && !isHiddenSwapradRow(exp));
+      const rows = getEffectiveMonthRows(currentKey, expenses);
 
       let rowsHtml = '';
       let receiptsTotal = 0;
@@ -1464,40 +1485,6 @@ expenseBody.addEventListener('focusin', (e) => {
       const btn = e.target.closest('button');
       if (!btn) return;
 
-      if (btn.classList.contains('toggleRentBtn')) {
-        if (isLocked(currentKey)) return;
-
-        // Raummiete-Zeile suchen
-        const rent = (expenses || []).find(e => e && e.isRent === true);
-        if (!rent) return;
-
-        const action = btn.dataset.action;
-        if (action === 'show') rent.rentHidden = false;
-        if (action === 'hide') rent.rentHidden = true;
-
-        save();
-        render();
-            updateLockIcon();
-            updateEditability();
-            return;
-      }
-
-      if (btn.classList.contains('toggleSwapradBtn')) {
-        if (isLocked(currentKey)) return;
-
-        // Swaprad-Zeile suchen
-        const sw = (expenses || []).find(e => e && e.isSwaprad === true);
-        if (!sw) return;
-
-        const action = btn.dataset.action;
-        if (action === 'show') sw.swapradHidden = false;
-        if (action === 'hide') sw.swapradHidden = true;
-
-        save();
-        render();
-        return;
-      }
-
       const index = parseInt(btn.dataset.index, 10);
 
       if (btn.classList.contains('insertBtn')) {
@@ -1527,7 +1514,7 @@ expenseBody.addEventListener('focusin', (e) => {
       return [
         {
           isRent: true,
-          rentHidden: true, // standardmäßig ausgeblendet
+          rentHidden: false, // standardmäßig eingeblendet
           date: rentDate,
           amount: "392,70",
           desc: "Raummiete",
@@ -1537,6 +1524,7 @@ expenseBody.addEventListener('focusin', (e) => {
         {
           isSwaprad: true,
           // Datum für diese Zeile soll manuell eingetragen werden
+          swapradHidden: false, // standardmäßig eingeblendet
           date: "",
           amount: "69,90",
           desc: "Swaprad Miete für E-Bike",
@@ -1554,13 +1542,13 @@ expenseBody.addEventListener('focusin', (e) => {
     }
 
 function isHiddenRentRow(exp) {
-      return !!(exp && exp.isRent === true && exp.rentHidden === true);
+      return false;
     }
 
     
 
     function isHiddenSwapradRow(exp) {
-      return !!(exp && exp.isSwaprad === true && exp.swapradHidden === true);
+      return false;
     }
 function normalizeRentRowForMonth(key, list) {
       if (!Array.isArray(list)) return list;
@@ -1586,7 +1574,7 @@ function normalizeRentRowForMonth(key, list) {
         }
       }
 
-// 1) Falls es KEINE Raummiete-Zeile gibt: an den Anfang einfügen (ausgeblendet)
+// 1) Falls es KEINE Raummiete-Zeile gibt: an den Anfang einfügen
       let rentIndex = list.findIndex(e => e && e.isRent === true);
 
       // Sanfte Migration: falls erste Zeile früher einfach "Raummiete" hieß (ohne isRent)
@@ -1595,8 +1583,8 @@ function normalizeRentRowForMonth(key, list) {
         if (first && String(first.desc || "").trim().toLowerCase() === "raummiete") {
           first.isRent = true;
           first.receipt = ""; // Belegnummer entfernen
-          if (first.rentHidden === undefined) {
-            first.rentHidden = true; // standardmäßig ausblenden (immer)
+          if (first.rentHidden !== false) {
+            first.rentHidden = false; // immer eingeblendet
             changed = true;
           }
           if (!String(first.date || "").trim() && rentDate) {
@@ -1623,7 +1611,7 @@ function normalizeRentRowForMonth(key, list) {
         // Neue Raummiete-Zeile einfügen
         list.unshift({
           isRent: true,
-          rentHidden: true, // standardmäßig ausgeblendet
+          rentHidden: false, // standardmäßig eingeblendet
           date: rentDate,
           period: rentPeriod,
           amount: "392,70",
@@ -1654,8 +1642,8 @@ function normalizeRentRowForMonth(key, list) {
           rentRow.receipt = "";
           changed = true;
         }
-        if (rentRow.rentHidden === undefined) {
-          rentRow.rentHidden = true; // standardmäßig ausblenden (immer)
+        if (rentRow.rentHidden !== false) {
+          rentRow.rentHidden = false; // immer eingeblendet
           changed = true;
         }
         if (!String(rentRow.desc || "").trim()) {
@@ -1678,7 +1666,7 @@ function normalizeRentRowForMonth(key, list) {
       }
 
       // --- Ensure at least one editable (non-rent) row exists ---
-      // Otherwise the UI would show only the "Raummiete ist ausgeblendet" placeholder and no inputs.
+      // Sicherstellen, dass mindestens eine normale Eingabezeile vorhanden ist.
       const hasNonRentRow = list.some(e => e && e.isRent !== true);
       if (!hasNonRentRow) {
         list.push({
@@ -1741,7 +1729,7 @@ function normalizeRentRowForMonth(key, list) {
       if (idx === -1) {
         list.splice(desiredPos, 0, {
           isSwaprad: true,
-          swapradHidden: true, // standardmäßig ausgeblendet
+          swapradHidden: false, // standardmäßig eingeblendet
           date: "",          // Datum manuell eintragen
           period: swapradPeriod,
           amount: "69,90",
@@ -1770,8 +1758,8 @@ function normalizeRentRowForMonth(key, list) {
           changed = true;
         }
 
-        if (row.swapradHidden === undefined) {
-          row.swapradHidden = true; // standardmäßig ausblenden
+        if (row.swapradHidden !== false) {
+          row.swapradHidden = false; // immer eingeblendet
           changed = true;
         }
 
@@ -1807,7 +1795,7 @@ function normalizeRentRowForMonth(key, list) {
       }
 
       // --- Ensure at least one editable (visible) row exists ---
-      // If Swaprad is hidden and there are no other rows, the UI would show only placeholders.
+      // Sicherstellen, dass mindestens eine normale Eingabezeile vorhanden ist.
       const hasVisibleNonFixedRow = list.some(e => e && e.isRent !== true && !(e.isSwaprad === true && e.swapradHidden === true));
       if (!hasVisibleNonFixedRow) {
         list.push({
@@ -1829,17 +1817,8 @@ if (changed) {
       return list;
     }
 
-function monthHasMeaningfulData(list) {
-      if (!Array.isArray(list)) return false;
-      return list.some(e => {
-        if (!e) return false;
-        const date = String(e.date ?? '').trim();
-        const amount = String(e.amount ?? '').trim();
-        const desc = String(e.desc ?? '').trim();
-        const receipt = String(e.receipt ?? '').trim();
-        // Wenn wirklich ALLES leer ist -> keine Daten
-        return !!(date || amount || desc || receipt);
-      });
+function monthHasMeaningfulData(list, key = currentKey) {
+      return isMonthActivated(key, list);
     }
 
     function getMonthExpensesOrDefault(key) {
@@ -1847,7 +1826,7 @@ function monthHasMeaningfulData(list) {
 
       // Immer beide Standardzeilen (Raummiete + Swaprad) normalisieren,
       // auch in "leeren" Monaten, damit Monat/Hidden-Status sofort korrekt sind.
-      if (!Array.isArray(list) || list.length === 0 || !monthHasMeaningfulData(list)) {
+      if (!Array.isArray(list) || list.length === 0 || !monthHasMeaningfulData(list, key)) {
         const def = getDefaultEmptyMonth();
         const normalized = normalizeSwapradRowForMonth(key, normalizeRentRowForMonth(key, def));
         // direkt in allExpenses schreiben, damit es beim nächsten Öffnen bleibt
@@ -2043,7 +2022,7 @@ document.getElementById('lockIcon').addEventListener('click', toggleLock);
       let total = 0;
       let receiptsTotal = 0;
 
-      const rows = (expenses || []).filter(exp => exp && !isHiddenRentRow(exp) && !isHiddenSwapradRow(exp));
+      const rows = getEffectiveMonthRows(currentKey, expenses);
 
       rows.forEach(exp => {
         const dateRaw = String(exp?.date ?? '').trim();
@@ -2163,6 +2142,7 @@ wsData.push([
 
         const amount = parseAmount(exp.amount);
         total += amount;
+        if (exp?.isRent !== true && exp?.isSwaprad !== true) receiptsTotal += amount;
 
         let excelDate = "";
         const isFixedMonthly = (exp?.isRent === true || exp?.isSwaprad === true);
