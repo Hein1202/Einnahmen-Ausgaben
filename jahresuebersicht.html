@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jahresübersicht – Einnahmen-Ausgaben 180.03.26</title>
+  <title>Jahresübersicht – Einnahmen-Ausgaben 183.03.26</title>
   <style>
     :root {
       --border-strong: #94a3b8;
@@ -158,6 +158,61 @@
       text-align: right;
       white-space: nowrap;
     }
+
+    thead th:first-child,
+    tbody td:first-child,
+    tfoot td:first-child {
+      width: 116px;
+      min-width: 116px;
+      max-width: 116px;
+      padding-right: 2px;
+      white-space: nowrap;
+    }
+    thead th:nth-child(2),
+    tbody td:nth-child(2),
+    tfoot td:nth-child(2) {
+      padding-left: 2px;
+    }
+
+    thead tr.groupRow th:nth-child(4),
+    thead tr.groupRow th:nth-child(5),
+    tbody td:nth-child(6),
+    tbody td:nth-child(7),
+    tfoot td:nth-child(6),
+    tfoot td:nth-child(7) {
+      width: 100px;
+      min-width: 100px;
+      max-width: 100px;
+    }
+
+    thead tr.groupRow th:nth-child(4),
+    tbody td:nth-child(6),
+    tfoot td:nth-child(6) {
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+
+    thead tr.groupRow th:nth-child(5),
+    tbody td:nth-child(7),
+    tfoot td:nth-child(7) {
+      width: 118px;
+      min-width: 118px;
+      max-width: 118px;
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+    tbody td:nth-child(2),
+    tbody td:nth-child(3),
+    tfoot td:nth-child(2),
+    tfoot td:nth-child(3) {
+      background:#f8fbff;
+    }
+    tbody td:nth-child(4),
+    tbody td:nth-child(5),
+    tfoot td:nth-child(4),
+    tfoot td:nth-child(5) {
+      background:#f7faff;
+    }
     tbody tr:last-child td {
       border-bottom: none;
     }
@@ -277,7 +332,7 @@
           <div class="headLeft">
             <div class="icon">📊</div>
             <div>
-              <div class="kicker">Offline • Version 180.03.26</div>
+              <div class="kicker">Offline • Version 183.03.26</div>
               <h1>Jahresübersicht</h1>
               <div class="sub">Einfache Tabellenansicht mit Einnahmen, Umsatzsteuer, Ausgaben, Vorsteuer sowie Kunden pro Monat und Kunden / Tag.</div>
             </div>
