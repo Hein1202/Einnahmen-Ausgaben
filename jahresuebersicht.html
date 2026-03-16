@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jahresübersicht – Einnahmen-Ausgaben 183.03.26</title>
+  <title>Jahresübersicht – Einnahmen-Ausgaben 184.03.26</title>
   <style>
     :root {
       --border-strong: #94a3b8;
@@ -332,7 +332,7 @@
           <div class="headLeft">
             <div class="icon">📊</div>
             <div>
-              <div class="kicker">Offline • Version 183.03.26</div>
+              <div class="kicker">Offline • Version 184.03.26</div>
               <h1>Jahresübersicht</h1>
               <div class="sub">Einfache Tabellenansicht mit Einnahmen, Umsatzsteuer, Ausgaben, Vorsteuer sowie Kunden pro Monat und Kunden / Tag.</div>
             </div>
@@ -571,6 +571,84 @@ function computeIncomeOverview(year) {
   return byMonth;
 }
 
+    function hasAnyExpenseRowContent(exp) {
+      if (!exp) return false;
+      const dateRaw = String(exp.date ?? '').trim();
+      const amountRaw = String(exp.amount ?? '').trim();
+      const descRaw = String(exp.desc ?? '').trim();
+      const receiptRaw = String(exp.receipt ?? '').trim();
+      const periodRaw = String(exp.period ?? '').trim();
+      return !!(dateRaw || amountRaw || descRaw || receiptRaw || periodRaw);
+    }
+
+    function getExpenseMonthDefaults(key) {
+      let year = '';
+      let month = '';
+      if (key && typeof key === 'string') {
+        const parts = key.split('-');
+        if (parts.length === 2) {
+          year = parts[0] || '';
+          month = parts[1] || '';
+        }
+      }
+      const monthName = month ? (monthNames[parseInt(month, 10) - 1] || '') : '';
+      return {
+        rentDate: (year && month) ? `${year}-${month}-01` : '',
+        rentPeriod: monthName,
+        rentAmount: 392.70,
+        rentDesc: 'Raummiete',
+        swapradDate: '',
+        swapradPeriod: monthName,
+        swapradAmount: 69.90,
+        swapradDesc: 'Swaprad Miete für E-Bike'
+      };
+    }
+
+    function isDefaultRentExpenseRow(exp, key) {
+      if (!exp || exp.isRent !== true) return false;
+      const defs = getExpenseMonthDefaults(key);
+      const desc = String(exp.desc ?? '').trim();
+      const period = String(exp.period ?? '').trim();
+      const date = String(exp.date ?? '').trim();
+      return parseFlexibleAmount(exp.amount) === defs.rentAmount
+        && (!desc || desc === defs.rentDesc)
+        && (!period || period === defs.rentPeriod)
+        && (!date || date === defs.rentDate);
+    }
+
+    function isDefaultSwapradExpenseRow(exp, key) {
+      if (!exp || exp.isSwaprad !== true) return false;
+      const defs = getExpenseMonthDefaults(key);
+      const desc = String(exp.desc ?? '').trim();
+      const period = String(exp.period ?? '').trim();
+      const date = String(exp.date ?? '').trim();
+      return parseFlexibleAmount(exp.amount) === defs.swapradAmount
+        && (!desc || desc === defs.swapradDesc)
+        && (!period || period === defs.swapradPeriod)
+        && (!date || date === defs.swapradDate);
+    }
+
+    function getLockedExpenseMonths() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem('locked_months') || '{}');
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
+
+    function isExpenseMonthActivated(key, list, lockedMonths) {
+      if (!Array.isArray(list)) return false;
+      if (lockedMonths && lockedMonths[key] === true) return true;
+
+      return list.some(exp => {
+        if (!exp) return false;
+        if (exp.isRent === true) return !isDefaultRentExpenseRow(exp, key);
+        if (exp.isSwaprad === true) return !isDefaultSwapradExpenseRow(exp, key);
+        return hasAnyExpenseRowContent(exp);
+      });
+    }
+
     function computeExpenseOverview(year) {
       const byMonth = Array.from({ length: 12 }, () => ({ expenses: 0, expensesWithoutFixed: 0 }));
 
@@ -581,6 +659,8 @@ function computeIncomeOverview(year) {
         allExpenses = {};
       }
 
+      const lockedMonths = getLockedExpenseMonths();
+
       Object.entries(allExpenses || {}).forEach(([key, list]) => {
         const match = String(key).match(/^(\d{4})-(\d{2})$/);
         if (!match) return;
@@ -589,24 +669,25 @@ function computeIncomeOverview(year) {
         const monthIndex = parseInt(match[2], 10) - 1;
         if (itemYear !== year || monthIndex < 0 || monthIndex > 11 || !Array.isArray(list)) return;
 
+        const monthActivated = isExpenseMonthActivated(key, list, lockedMonths);
+
         let total = 0;
         let totalWithoutFixed = 0;
         list.forEach(exp => {
           if (!exp) return;
 
-          const dateRaw = String(exp.date ?? '').trim();
-          const amountRaw = String(exp.amount ?? '').trim();
-          const descRaw = String(exp.desc ?? '').trim();
-          const receiptRaw = String(exp.receipt ?? '').trim();
-          if (!(dateRaw || amountRaw || descRaw || receiptRaw)) return;
-
-          const amount = parseFlexibleAmount(exp.amount);
           const isRentHidden = exp.isRent === true && exp.rentHidden === true;
           const isSwapradHidden = exp.isSwaprad === true && exp.swapradHidden === true;
+          if (isRentHidden || isSwapradHidden) return;
 
-          if (!isRentHidden && !isSwapradHidden) {
-            total += amount;
+          if (exp.isRent === true || exp.isSwaprad === true) {
+            if (!monthActivated) return;
+          } else if (!hasAnyExpenseRowContent(exp)) {
+            return;
           }
+
+          const amount = parseFlexibleAmount(exp.amount);
+          total += amount;
 
           if (exp.isRent !== true && exp.isSwaprad !== true) {
             totalWithoutFixed += amount;
