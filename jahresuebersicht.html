@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jahresübersicht – Einnahmen-Ausgaben 185.03.26</title>
+  <title>Jahresübersicht – Einnahmen-Ausgaben 186.03.26</title>
   <style>
     :root {
       --border-strong: #94a3b8;
@@ -245,27 +245,17 @@
       white-space: normal;
       text-align: right;
     }
-    .summaryLine {
-      margin-top: 14px;
-      padding: 12px 14px;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      background:#f8fafc;
-      display:flex;
-      align-items:center;
-      justify-content:flex-start;
-      gap: 8px;
-      font-size: 14px;
-      flex-wrap: wrap;
+    .footerCustomerWrap {
+      padding-top: 6px;
     }
-    .summaryLabel {
-      color:#475569;
-      font-weight: 800;
+    .footerCustomerGrid {
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      align-items:start;
     }
-    .summaryValue {
-      color:#0f172a;
-      font-size: 14px;
-      font-weight: 400;
+    .footerCustomerGrid .footerMetric {
+      min-width: 0;
     }
     .taxPanelTitle {
       display:flex;
@@ -351,7 +341,7 @@
           <div class="headLeft">
             <div class="icon">📊</div>
             <div>
-              <div class="kicker">Offline • Version 184.03.26</div>
+              <div class="kicker">Offline • Version 186.03.26</div>
               <h1>Jahresübersicht</h1>
               <div class="sub">Einfache Tabellenansicht mit Einnahmen, Umsatzsteuer, Ausgaben, Vorsteuer sowie Kunden pro Monat und Kunden / Tag.</div>
             </div>
@@ -387,26 +377,25 @@
                 <td class="num dividerCell" id="yearIncomeVatTotal">–</td>
                 <td class="num" id="yearExpenseTotal">–</td>
                 <td class="num dividerCell" id="yearExpenseVatTotal">–</td>
-                <td class="num">
-                  <div class="footerMetric">
-                    <span id="yearCustomerTotal" class="footerMetricValue">–</span>
-                    <span class="footerMetricNote">Kunden gesamt</span>
-                  </div>
-                </td>
-                <td class="num">
-                  <div class="footerMetric">
-                    <span id="yearCustomerPerDayTotal" class="footerMetricValue">–</span>
-                    <span class="footerMetricNote">Jahres-Ø / Tag</span>
+                <td class="num footerCustomerWrap" colspan="2">
+                  <div class="footerCustomerGrid" aria-label="Kunden-Zusammenfassung">
+                    <div class="footerMetric">
+                      <span id="yearCustomerTotal" class="footerMetricValue">–</span>
+                      <span class="footerMetricNote">Kunden gesamt</span>
+                    </div>
+                    <div class="footerMetric">
+                      <span id="yearCustomerPerDayTotal" class="footerMetricValue">–</span>
+                      <span class="footerMetricNote">Jahres-Ø / Tag</span>
+                    </div>
+                    <div class="footerMetric">
+                      <span id="yearCustomerAverage" class="footerMetricValue">–</span>
+                      <span class="footerMetricNote">Ø Kunden / Monat</span>
+                    </div>
                   </div>
                 </td>
               </tr>
             </tfoot>
           </table>
-        </div>
-
-        <div class="summaryLine" aria-label="Durchschnittliche Kundenanzahl pro Monat">
-          <span class="summaryLabel">Ø Kunden / Monat:</span>
-          <span id="yearCustomerAverage" class="summaryValue">–</span>
         </div>
       </div>
 
