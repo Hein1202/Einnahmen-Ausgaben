@@ -627,6 +627,128 @@ tbody[id^="day-"] input {
 }
 
 
+
+
+/* Integrierte Druckvorschau (EXE/Browser) */
+body.preview-open {
+  overflow: hidden;
+}
+
+#print-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.58);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  z-index: 5000;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
+}
+
+#print-preview-overlay.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.print-preview-shell {
+  width: min(980px, 100%);
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  background: #eef2f7;
+  border-radius: 18px;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.35);
+  overflow: hidden;
+}
+
+.print-preview-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  background: #dbe5f1;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+.print-preview-title {
+  font-size: 1.05em;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.print-preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.preview-secondary-btn {
+  border: 1px solid #94a3b8;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.95em;
+  font-weight: 600;
+  background: #ffffff;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.preview-secondary-btn:hover {
+  background: #f8fafc;
+}
+
+.print-preview-scroll {
+  overflow: auto;
+  padding: 24px;
+}
+
+.print-preview-page {
+  width: 210mm;
+  min-height: 297mm;
+  max-width: 100%;
+  margin: 0 auto;
+  background: #ffffff;
+  color: #000000;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.22);
+  padding: 16mm 14mm;
+  box-sizing: border-box;
+}
+
+.print-preview-page pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 12.5pt;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+.print-preview-page .print-heading {
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  #print-preview-overlay {
+    padding: 12px;
+  }
+
+  .print-preview-shell {
+    max-height: calc(100vh - 24px);
+  }
+
+  .print-preview-scroll {
+    padding: 12px;
+  }
+}
+
 /* Größere Darstellung der Tageszahlen (erste Spalte) */
 tbody[id^="day-"] tr:first-child td:first-child {
   font-size: 1.4em;
@@ -1812,18 +1934,11 @@ const net = total / 1.19;
   updateBackArrowLabel();
 }
 
-// JSON Export / Import (Monatsdatei)
-function getCurrentMonthFileLabel(){
-  return selYear + "-" + String(selMonth + 1).padStart(2, "0");
-}
-
-function buildCurrentMonthExportData(){
+// JSON Export / Import
+function exportJSON(){
   const data = {
-    app: "Einnahmen",
-    scope: "month",
     year: selYear,
     month: selMonth,
-    locked: (typeof isMonthLocked === "function") ? isMonthLocked(selYear, selMonth) : false,
     days: {},
     free: {}
   };
@@ -1838,17 +1953,21 @@ function buildCurrentMonthExportData(){
     if(freeVal) data.free[cf] = freeVal;
   }
 
-  return data;
-}
+  // Standard-Dateinamen vorschlagen
+  const defaultName = "einnahmen_" + selYear + "-" + String(selMonth+1).padStart(2,"0") + ".json";
 
-function exportJSON(){
-  const data = buildCurrentMonthExportData();
-  let filename = "einnahmen_" + getCurrentMonthFileLabel() + ".json";
+  // Hinweis, wo gespeichert wird, und Möglichkeit zur Umbenennung
+  const message = "Die Datei wird in Ihrem Standard-Download-Ordner gespeichert (z.B. 'Downloads').\n\n"
+    + "Vorgeschlagener Dateiname:\n" + defaultName + "\n\n"
+    + "Sie können den Dateinamen hier ändern oder einfach mit OK bestätigen.";
+
+  // In einigen Offline-Umgebungen ist die prompt-Funktion deaktiviert.
+  // Daher speichern wir ohne Rückfrage mit dem vorgeschlagenen Dateinamen.
+  let filename = defaultName;
   if (!filename.toLowerCase().endsWith(".json")) {
     filename += ".json";
   }
-
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -1857,83 +1976,64 @@ function exportJSON(){
   URL.revokeObjectURL(url);
 }
 
-function clearSelectedMonthStorage(year, month){
-  const days = daysInMonth(year, month);
-  for(let d = 1; d <= days; d++){
-    localStorage.removeItem(`day-${year}-${month}-${d}`);
-    localStorage.removeItem(`cf-${year}-${month}-${d}`);
-  }
-}
-
 function importJSON(ev){
   const file = ev.target.files[0];
   if(!file) return;
-
-  const targetYear = selYear;
-  const targetMonth = selMonth;
-  const targetDays = daysInMonth(targetYear, targetMonth);
-  const targetLabel = targetYear + "-" + String(targetMonth + 1).padStart(2, "0");
 
   const reader = new FileReader();
   reader.onload = e => {
     try{
       const data = JSON.parse(e.target.result);
-
-      clearSelectedMonthStorage(targetYear, targetMonth);
-
-      if(data && data.days && typeof data.days === "object"){
+      if(data.days){
         for(const key in data.days){
-          const match = String(key).match(/^day-\d{4}-\d{1,2}-(\d{1,2})$/);
-          if(!match) continue;
-          const day = parseInt(match[1], 10);
-          if(!(day >= 1 && day <= targetDays)) continue;
-          localStorage.setItem(`day-${targetYear}-${targetMonth}-${day}`, JSON.stringify(data.days[key]));
+          localStorage.setItem(key, JSON.stringify(data.days[key]));
         }
       }
-
-      if(data && data.free && typeof data.free === "object"){
+      if(data.free){
         for(const key in data.free){
-          const match = String(key).match(/^cf-\d{4}-\d{1,2}-(\d{1,2})$/);
-          if(!match) continue;
-          const day = parseInt(match[1], 10);
-          if(!(day >= 1 && day <= targetDays)) continue;
-
           const val = data.free[key];
+          // Ältere Exporte speicherten nur "1" → standardmäßig als "urlaub" interpretieren
           if(val === 1 || val === "1" || val === true){
-            localStorage.setItem(`cf-${targetYear}-${targetMonth}-${day}`, "urlaub");
+            localStorage.setItem(key, "urlaub");
           } else if(val === "urlaub" || val === "krank") {
-            localStorage.setItem(`cf-${targetYear}-${targetMonth}-${day}`, val);
-          } else if(val != null) {
-            localStorage.setItem(`cf-${targetYear}-${targetMonth}-${day}`, "urlaub");
+            localStorage.setItem(key, val);
+          } else {
+            // Unbekannte Werte ebenfalls als Urlaub behandeln, damit zyklisches Umschalten funktioniert
+            localStorage.setItem(key, "urlaub");
           }
         }
       }
+      /* Import ohne Reload: UI sofort aktualisieren */
+      // Optional: nach Import auf den importierten Monat springen
+      if (data && data.year != null && !Number.isNaN(Number(data.year))) selYear = Number(data.year);
+      if (data && data.month != null && !Number.isNaN(Number(data.month))) selMonth = Number(data.month);
 
+      // Sperrstatus: wenn im Import nicht vorhanden, Monat entsperren (stale locks vermeiden)
       const importedLocked = (data && Object.prototype.hasOwnProperty.call(data, "locked"))
         ? (data.locked === true || data.locked === 1 || data.locked === "1")
         : false;
       if (typeof setMonthLocked === "function") {
-        setMonthLocked(targetYear, targetMonth, importedLocked);
+        setMonthLocked(selYear, selMonth, importedLocked);
       } else if (importedLocked) {
-        localStorage.setItem(`locked-${targetYear}-${targetMonth}`, "1");
+        localStorage.setItem(`locked-${selYear}-${selMonth}`, "1");
       } else {
-        localStorage.removeItem(`locked-${targetYear}-${targetMonth}`);
+        localStorage.removeItem(`locked-${selYear}-${selMonth}`);
       }
 
       try { hideMissingDayHint(); } catch(e) {}
       try { updateMonth(); } catch(e) { console.error(e); }
       try { applyLockStatus(); } catch(e) {}
-      alert("Monatsdatei erfolgreich in " + targetLabel + " geladen.");
+      alert("Import erfolgreich.");
       try { ev.target.value = ""; } catch(e) {}
       try { if (typeof refocusAfterNativeDialogs === 'function') refocusAfterNativeDialogs(); } catch(e) {}
     }catch(err){
-      alert("Fehler beim Laden der Monatsdatei: " + err.message);
+      alert("Fehler beim Import: " + err.message);
     }
   };
   reader.readAsText(file);
 }
 
-// Alle gespeicherten Daten löschen
+// Daten des aktuell ausgewählten Monats löschen
 function clearAllData(){
   // Hinweis mit Backup-Info und Bezug auf den aktuellen Monat
   const monthLabel = (selMonth + 1).toString().padStart(2, "0") + "." + selYear;
@@ -1988,7 +2088,7 @@ function clearAllData(){
   }
   localStorage.removeItem("totalTip");
 
-  alert("Backup erstellt. Alle Daten für den Monat " + monthLabel + " wurden gelöscht.");
+  alert("Backup erstellt. Die Daten des Monats " + monthLabel + " wurden gelöscht.");
   try { hideMissingDayHint(); } catch(e) {}
   try { updateMonth(); } catch(e) {}
   try { applyLockStatus(); } catch(e) {}
@@ -2068,7 +2168,7 @@ function _getSelectedArchiveYear(){
 function _buildYearArchiveData(year){
   const data = {
     app: "Einnahmen",
-    version: "V204.03.26",
+    version: "V203.03.26",
     year: year,
     createdAt: new Date().toISOString(),
     days: {},
@@ -2493,8 +2593,8 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 
 <div style="margin-top:20px;">
 <div id="primary-controls" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-<button class="modern-btn" onclick="generateReducedPrint()">🖨️ Reduzierter Druck</button>
-<button class="modern-btn" onclick="exportJSON()" title="Speichert nur den aktuell ausgewählten Monat">Monat speichern</button>
+<button class="modern-btn" onclick="generateReducedPrint()">🖨️ Druckvorschau</button>
+<button class="modern-btn" onclick="exportJSON()">Datei speichern</button>
 </div>
 <!-- Schnell-Zurück: immer sichtbar -->
 <div style="margin-top:4px; text-align:right; padding-right:10px;">
@@ -2507,7 +2607,7 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 </div>
 <div id="advanced-controls" style="display:none; margin-top:10px;">
 <input accept="application/json" id="data-file-input" onchange="importJSON(event)" style="display:none;" type="file"/>
-<button onclick="document.getElementById('data-file-input').click()" title="Lädt die Datei in den aktuell ausgewählten Monat">Monat laden</button>
+<button onclick="document.getElementById('data-file-input').click()">Datei laden</button>
 <div style="display:inline-block; margin-left:10px;">
 <button id="clear-month-data-btn" onclick="clearAllData()">Daten dieses Monats löschen</button>
 </div>
@@ -2534,9 +2634,9 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 <option value="4">Q4 (Okt–Dez)</option>
 </select>
 <div style="display:inline-block; margin-left:10px;">
-<button class="modern-btn" onclick="generateQuarterReducedPrint()">🖨️ Quartal drucken</button>
+<button class="modern-btn" onclick="generateQuarterReducedPrint()">🖨️ Quartal-Vorschau</button>
 <br/>
-<button class="modern-btn" onclick="generateYearOverview()" style="margin-top:6px;">🧮 Jahresübersicht drucken</button>
+<button class="modern-btn" onclick="generateYearOverview()" style="margin-top:6px;">🧮 Jahresübersicht-Vorschau</button>
 </div>
 <div style="display:inline-block; margin-left:10px;">
 <button class="excel-btn" onclick="exportQuarterExcel()">📊 Quartal Excel</button>
@@ -2561,6 +2661,20 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 </div>
 </div>
 <div id="reduced-print" style="display:none;"></div>
+<div id="print-preview-overlay" aria-hidden="true">
+  <div class="print-preview-shell" role="dialog" aria-modal="true" aria-labelledby="print-preview-title">
+    <div class="print-preview-toolbar">
+      <div id="print-preview-title" class="print-preview-title">Druckvorschau</div>
+      <div class="print-preview-actions">
+        <button type="button" id="print-preview-print-btn" class="modern-btn">Jetzt drucken / als PDF speichern</button>
+        <button type="button" id="print-preview-close-btn" class="preview-secondary-btn">Schließen</button>
+      </div>
+    </div>
+    <div class="print-preview-scroll">
+      <div id="print-preview-page" class="print-preview-page"></div>
+    </div>
+  </div>
+</div>
 <script>
 /**
  * Erzeugt einen einfachen Ausdruck der Tages- und Monatsübersicht.
@@ -2611,6 +2725,99 @@ function setReducedPrintHtmlFromText(text) {
 
   rp.innerHTML = "<pre>" + esc + "</pre>";
 }
+
+let _reopenPrintPreviewAfterPrint = false;
+let _lastPreviewHtml = "";
+let _lastPreviewTitle = "Druckvorschau";
+
+function _buildPreviewHtmlFromText(text) {
+  let esc = _escapeHtmlForPrint(text);
+  esc = esc
+    .replace(/^Einnahmen .*$/gm, '<span class="print-heading">$&</span>')
+    .replace(/^Monatsübersicht.*$/gm, '<span class="print-heading">$&</span>')
+    .replace(/^Quartalsübersicht.*$/gm, '<span class="print-heading">$&</span>')
+    .replace(/^Jahresgesamt .*$/gm, '<span class="print-heading">$&</span>');
+  return "<pre>" + esc + "</pre>";
+}
+
+function closePrintPreview() {
+  const overlay = document.getElementById("print-preview-overlay");
+  if (!overlay) return;
+  overlay.classList.remove("open");
+  overlay.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("preview-open");
+}
+
+function showPrintPreviewFromText(text, title) {
+  const overlay = document.getElementById("print-preview-overlay");
+  const page = document.getElementById("print-preview-page");
+  const titleEl = document.getElementById("print-preview-title");
+  const rp = document.getElementById("reduced-print");
+  if (!overlay || !page || !rp) return;
+
+  const html = _buildPreviewHtmlFromText(text);
+  _lastPreviewHtml = html;
+  _lastPreviewTitle = title || "Druckvorschau";
+
+  if (titleEl) titleEl.textContent = _lastPreviewTitle;
+  page.innerHTML = html;
+  rp.innerHTML = html;
+
+  overlay.classList.add("open");
+  overlay.setAttribute("aria-hidden", "false");
+  document.body.classList.add("preview-open");
+}
+
+function printFromPreview() {
+  const rp = document.getElementById("reduced-print");
+  if (!rp) return;
+  if (_lastPreviewHtml) rp.innerHTML = _lastPreviewHtml;
+  _reopenPrintPreviewAfterPrint = true;
+  closePrintPreview();
+  setTimeout(() => {
+    window.print();
+  }, 80);
+}
+
+window.addEventListener("afterprint", () => {
+  if (_reopenPrintPreviewAfterPrint) {
+    _reopenPrintPreviewAfterPrint = false;
+    const overlay = document.getElementById("print-preview-overlay");
+    const page = document.getElementById("print-preview-page");
+    const titleEl = document.getElementById("print-preview-title");
+    if (overlay && page) {
+      page.innerHTML = _lastPreviewHtml || "";
+      if (titleEl) titleEl.textContent = _lastPreviewTitle || "Druckvorschau";
+      overlay.classList.add("open");
+      overlay.setAttribute("aria-hidden", "false");
+      document.body.classList.add("preview-open");
+    }
+  }
+});
+
+document.addEventListener("click", function(e){
+  const overlay = document.getElementById("print-preview-overlay");
+  if (!overlay) return;
+  if (e.target && e.target.id === "print-preview-close-btn") {
+    closePrintPreview();
+    return;
+  }
+  if (e.target && e.target.id === "print-preview-print-btn") {
+    printFromPreview();
+    return;
+  }
+  if (e.target === overlay) {
+    closePrintPreview();
+  }
+});
+
+document.addEventListener("keydown", function(e){
+  if (e.key !== "Escape") return;
+  const overlay = document.getElementById("print-preview-overlay");
+  if (overlay && overlay.classList.contains("open")) {
+    closePrintPreview();
+  }
+});
 
 function generateQuarterReducedPrint() {
   const q = getSelectedQuarter();
@@ -2780,15 +2987,7 @@ output += "\n";
   output += ("Gesamtanzahl Kunden:".padEnd(labelWidth) + String(totalCustomers).padStart(10) + "\n");
 
     output += ("Gesamtanzahl Arbeitstage:".padEnd(labelWidth) + String(totalWorkdays).padStart(10) + "\n");
-const rp = document.getElementById("reduced-print");
-  if (rp) {
-    setReducedPrintHtmlFromText(output);
-    rp.style.display = "block";
-    setTimeout(() => {
-      window.print();
-      rp.style.display = "none";
-    }, 100);
-  }
+showPrintPreviewFromText(output, `Quartalsvorschau Q${q} ${year}`);
 }
 
 
@@ -3482,15 +3681,7 @@ const labelWidth = 26;
   output += "Gesamtanzahl Kunden:".padEnd(labelWidth) + String(totalCustomers).padStart(10) + "\n\n";
   output += "Gesamtanzahl Arbeitstage:".padEnd(labelWidth) + String(totalWorkdays).padStart(10) + "\n\n";
 
-  // Text in das versteckte Druckdiv schreiben und anzeigen
-  const rp = document.getElementById("reduced-print");
-  setReducedPrintHtmlFromText(output);
-  rp.style.display = "block";
-  // kurze Verzögerung, damit das DOM aktualisiert wird
-  setTimeout(() => {
-    window.print();
-    rp.style.display = "none";
-  }, 100);
+  showPrintPreviewFromText(output, `Druckvorschau ${month}`);
 }
 </script>
 <script>
@@ -4006,6 +4197,7 @@ function applyLockStatus() {
         el.id === "unlock-code" ||
         (el.closest && el.closest("#month-nav")) ||
         (el.closest && el.closest("#primary-controls")) ||
+        (el.closest && el.closest("#advanced-controls")) ||
         (el.closest && el.closest("#admin-code-wrapper")) ||
         el.id === "data-file-input" ||
         el.id === "year-archive-input" ||
@@ -4341,19 +4533,7 @@ function generateYearOverview() {
     output += "Für das Jahr " + year + " liegen keine Einträge vor.\n";
   }
 
-  const rp = document.getElementById("reduced-print");
-  if (rp) {
-    if (typeof setReducedPrintHtmlFromText === "function") {
-      setReducedPrintHtmlFromText(output);
-    } else {
-      rp.innerText = output;
-    }
-    rp.style.display = "block";
-    setTimeout(() => {
-      window.print();
-      rp.style.display = "none";
-    }, 100);
-  }
+  showPrintPreviewFromText(output, `Jahresübersicht-Vorschau ${year}`);
 }
 
 
