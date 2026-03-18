@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jahresübersicht – Einnahmen-Ausgaben 184.03.26</title>
+  <title>Jahresübersicht – Einnahmen-Ausgaben 185.03.26</title>
   <style>
     :root {
       --border-strong: #94a3b8;
@@ -225,6 +225,25 @@
       border-bottom: 0;
       background:#f8fafc;
       font-weight: 900;
+      vertical-align: top;
+    }
+    .footerMetric {
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap: 2px;
+      line-height: 1.15;
+    }
+    .footerMetricValue {
+      color:#0f172a;
+      font-weight: 900;
+    }
+    .footerMetricNote {
+      color:#64748b;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: normal;
+      text-align: right;
     }
     .summaryLine {
       margin-top: 14px;
@@ -368,8 +387,18 @@
                 <td class="num dividerCell" id="yearIncomeVatTotal">–</td>
                 <td class="num" id="yearExpenseTotal">–</td>
                 <td class="num dividerCell" id="yearExpenseVatTotal">–</td>
-                <td class="num" id="yearCustomerTotal">–</td>
-                <td class="num" id="yearCustomerPerDayTotal">–</td>
+                <td class="num">
+                  <div class="footerMetric">
+                    <span id="yearCustomerTotal" class="footerMetricValue">–</span>
+                    <span class="footerMetricNote">Kunden gesamt</span>
+                  </div>
+                </td>
+                <td class="num">
+                  <div class="footerMetric">
+                    <span id="yearCustomerPerDayTotal" class="footerMetricValue">–</span>
+                    <span class="footerMetricNote">Jahres-Ø / Tag</span>
+                  </div>
+                </td>
               </tr>
             </tfoot>
           </table>
