@@ -64,6 +64,22 @@
     body.advanced-unlocked .advanced-only { display: inline-flex; }
     body.advanced-unlocked select.advanced-only { display: inline-block; }
 
+    /* Gut lesbarer Speicher-Button für den angezeigten Monat */
+    .month-save-btn {
+      background: #4b5563;
+      color: #ffffff;
+      border: 2px solid #111111;
+      border-radius: 0.375rem;
+      font-weight: 700;
+      min-width: 180px;
+      white-space: nowrap;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.18);
+    }
+    .month-save-btn:hover {
+      filter: brightness(0.97);
+    }
+
+
     /* -----------------------------------------------------------
        Tailwind-Fallback: Aktiviert nur wenn <html class="tw-fallback">
        Hintergrund: Wenn assets/tailwind.css nicht gefunden wird, bleibt
@@ -234,6 +250,118 @@
       }
     }
 
+
+    .print-preview-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 24, 39, 0.72);
+      display: none;
+      align-items: stretch;
+      justify-content: center;
+      padding: 18px;
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    .print-preview-overlay.is-open {
+      display: flex;
+      pointer-events: auto;
+    }
+
+    .print-preview-shell {
+      width: min(1120px, 100%);
+      height: 100%;
+      background: #e5e7eb;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 20px 55px rgba(0,0,0,0.28);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .print-preview-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px;
+      background: #ffffff;
+      border-bottom: 1px solid #d1d5db;
+      flex-wrap: wrap;
+    }
+
+    .print-preview-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .print-preview-subtitle {
+      font-size: 0.9rem;
+      color: #374151;
+      margin-top: 2px;
+    }
+
+    .print-preview-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .print-preview-btn {
+      border: 1px solid #9ca3af;
+      background: #ffffff;
+      color: #111827;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .print-preview-btn.primary {
+      background: #374151;
+      color: #ffffff;
+      border-color: #374151;
+    }
+
+    .print-preview-stage {
+      flex: 1;
+      overflow: auto;
+      padding: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .print-preview-page {
+      width: min(794px, 100%);
+      min-height: 1123px;
+      background: #ffffff;
+      box-shadow: 0 14px 35px rgba(0,0,0,0.16);
+      padding: 20px;
+      color: #000000;
+    }
+
+    body.preview-open {
+      overflow: hidden;
+    }
+
+    @media (max-width: 700px) {
+      .print-preview-overlay {
+        padding: 8px;
+      }
+
+      .print-preview-stage {
+        padding: 10px;
+      }
+
+      .print-preview-page {
+        min-height: auto;
+        width: 100%;
+      }
+    }
+
   </style>
 <script src="assets/xlsx.full.min.js"></script>
 </head>
@@ -279,10 +407,11 @@
 </div>
 
     <div class="flex flex-wrap items-center gap-2 mb-4">
-      <button id="printBtn" class="bg-gray-600 text-white px-4 py-2 rounded">Drucken</button>
+      <button id="printBtn" class="bg-gray-600 text-white px-4 py-2 rounded">Druckvorschau</button>
+      <button id="exportMonthBtn" class="month-save-btn px-4 py-2">Diesen Monat speichern</button>
       
       <button id="importBtn" class="bg-yellow-500 text-white px-4 py-2 rounded advanced-only">Daten laden</button>
-      <button id="exportBtn" class="bg-indigo-600 text-white px-4 py-2 rounded">Datei speichern</button>
+      <button id="exportBtn" class="bg-indigo-600 text-white px-4 py-2 rounded advanced-only">Alle Monate speichern</button>
 
       <div id="advancedUnlockBox" class="flex items-center gap-2 ml-2">
         <span class="text-xs text-gray-600">Code:</span>
@@ -299,12 +428,30 @@
         <option value="3">Q3 (Jul–Sep)</option>
         <option value="4">Q4 (Okt–Dez)</option>
       </select>
-<button id="quarterPrintBtn" class="bg-gray-800 text-white px-4 py-2 rounded advanced-only">🖨️ Quartal drucken</button>
+<button id="quarterPrintBtn" class="bg-gray-800 text-white px-4 py-2 rounded advanced-only">🖨️ Quartal-Vorschau</button>
       <button id="quarterExcelBtn" class="bg-purple-800 text-white px-4 py-2 rounded advanced-only">📄 Quartal Excel</button>
       
     </div>
 
     <div id="printArea"></div>
+    <div id="printPreviewOverlay" class="print-preview-overlay" aria-hidden="true">
+      <div class="print-preview-shell" role="dialog" aria-modal="true" aria-labelledby="printPreviewTitle">
+        <div class="print-preview-toolbar">
+          <div>
+            <div id="printPreviewTitle" class="print-preview-title">Druckvorschau</div>
+            <div id="printPreviewSubtitle" class="print-preview-subtitle">So sieht der Ausdruck bzw. das PDF im Programm ungefähr aus.</div>
+          </div>
+          <div class="print-preview-actions">
+            <button id="printPreviewPrintBtn" class="print-preview-btn primary" type="button">Jetzt drucken / als PDF speichern</button>
+            <button id="printPreviewCloseBtn" class="print-preview-btn" type="button">Schließen</button>
+          </div>
+        </div>
+        <div class="print-preview-stage">
+          <div id="printPreviewPage" class="print-preview-page"></div>
+        </div>
+      </div>
+    </div>
+
 
     <table class="w-full border text-sm" id="expenseTable">
       <thead class="bg-gray-100">
@@ -368,9 +515,16 @@
     const netDisplay = document.getElementById('net');
     const vatDisplay = document.getElementById('vat');
     const printArea = document.getElementById('printArea');
+    const printPreviewOverlay = document.getElementById('printPreviewOverlay');
+    const printPreviewPage = document.getElementById('printPreviewPage');
+    const printPreviewTitle = document.getElementById('printPreviewTitle');
+    const printPreviewSubtitle = document.getElementById('printPreviewSubtitle');
+    const printPreviewPrintBtn = document.getElementById('printPreviewPrintBtn');
+    const printPreviewCloseBtn = document.getElementById('printPreviewCloseBtn');
     const monthSelect = document.getElementById('monthSelect');
     const quarterSelect = document.getElementById('quarterSelect');
     const yearSelect = document.getElementById('yearSelect');
+    let currentPreviewMode = 'month';
 
     // --- Tailwind-Fallback aktivieren, falls assets/tailwind.css nicht geladen ist ---
     function enableTailwindFallbackIfNeeded() {
@@ -416,7 +570,7 @@
       if (advancedStatus) advancedStatus.style.display = isUnlocked ? 'inline' : 'none';
     }
 
-    // Default: locked (only "Drucken" + "Datei speichern" visible)
+    // Default: locked (nur "Druckvorschau" sichtbar)
     setAdvancedUnlocked(false);
 
     function tryUnlockAdvanced() {
@@ -1871,10 +2025,115 @@ function handleMonthYearChange() {
       nextMonthBtn.addEventListener('click', nextMonth);
     }
 
-    document.getElementById('printBtn').addEventListener('click', () => {
-      buildPrintArea();
-      window.print();
+
+    function syncPreviewWithPrintArea() {
+      if (!printPreviewPage || !printArea) return;
+      printPreviewPage.innerHTML = printArea.innerHTML || '<div style="font-style:italic;color:#6b7280;">Keine Vorschau verfügbar.</div>';
+    }
+
+    function openPrintPreview(mode = 'month') {
+      currentPreviewMode = mode === 'quarter' ? 'quarter' : 'month';
+
+      if (currentPreviewMode === 'quarter') {
+        buildQuarterPrintArea();
+        if (printPreviewTitle) printPreviewTitle.textContent = 'Druckvorschau – Quartal';
+        if (printPreviewSubtitle) printPreviewSubtitle.textContent = 'Vorschau für Quartalsdruck bzw. PDF-Ausgabe.';
+      } else {
+        buildPrintArea();
+        if (printPreviewTitle) printPreviewTitle.textContent = 'Druckvorschau – Monat';
+        if (printPreviewSubtitle) printPreviewSubtitle.textContent = 'Vorschau für Monatsdruck bzw. PDF-Ausgabe.';
+      }
+
+      syncPreviewWithPrintArea();
+      if (printPreviewOverlay) {
+        printPreviewOverlay.classList.add('is-open');
+        printPreviewOverlay.setAttribute('aria-hidden', 'false');
+      }
+      document.body.classList.add('preview-open');
+    }
+
+    function closePrintPreview(clearPrintContent = true) {
+      if (printPreviewOverlay) {
+        printPreviewOverlay.classList.remove('is-open');
+        printPreviewOverlay.setAttribute('aria-hidden', 'true');
+      }
+      document.body.classList.remove('preview-open');
+      if (clearPrintContent && printArea) {
+        printArea.innerHTML = '';
+      }
+    }
+
+    if (printPreviewPrintBtn) {
+      printPreviewPrintBtn.addEventListener('click', () => {
+        if (!printArea || !printArea.innerHTML.trim()) {
+          openPrintPreview(currentPreviewMode);
+        }
+        window.print();
+      });
+    }
+
+    if (printPreviewCloseBtn) {
+      printPreviewCloseBtn.addEventListener('click', () => closePrintPreview(true));
+    }
+
+    if (printPreviewOverlay) {
+      printPreviewOverlay.addEventListener('click', (e) => {
+        if (e.target === printPreviewOverlay) {
+          closePrintPreview(true);
+        }
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && printPreviewOverlay && printPreviewOverlay.classList.contains('is-open')) {
+        closePrintPreview(true);
+      }
     });
+
+    document.getElementById('printBtn').addEventListener('click', () => {
+      openPrintPreview('month');
+    });
+
+    document.getElementById('exportMonthBtn').addEventListener('click', async () => {
+  currentKey = getCurrentKey();
+  if (!currentKey) {
+    alert('Bitte zuerst Monat und Jahr auswählen.');
+    return;
+  }
+
+  saveCurrentMonth();
+  const monthExport = { [currentKey]: allExpenses[currentKey] || expenses || [] };
+  const jsonText = JSON.stringify(monthExport, null, 2);
+  const defaultFilename = `Ausgaben_${currentKey}.json`;
+
+  if (window.electronAPI && typeof window.electronAPI.saveBinaryFile === 'function') {
+    const res = await window.electronAPI.saveBinaryFile({
+      defaultFilename,
+      content: jsonText,
+      filters: [{ name: 'JSON', extensions: ['json'] }]
+    });
+    if (res && res.ok) return;
+    if (res && res.canceled) return;
+    if (res && res.error) alert('Speichern fehlgeschlagen: ' + res.error);
+    return;
+  }
+
+  const blob = new Blob([jsonText], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+
+  const userFilename = prompt("Dateiname für den Export eingeben:", defaultFilename);
+  if (!userFilename) {
+    URL.revokeObjectURL(url);
+    return;
+  }
+  const filename = userFilename.endsWith('.json') ? userFilename : `${userFilename}.json`;
+
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+});
 
     document.getElementById('exportBtn').addEventListener('click', async () => {
   const jsonText = JSON.stringify(allExpenses, null, 2);
@@ -1997,6 +2256,10 @@ function handleMonthYearChange() {
     }
 
     window.onafterprint = () => {
+      if (printPreviewOverlay && printPreviewOverlay.classList.contains('is-open')) {
+        syncPreviewWithPrintArea();
+        return;
+      }
       if (printArea) {
         printArea.innerHTML = "";
       }
@@ -2009,6 +2272,56 @@ document.getElementById('lockIcon').addEventListener('click', toggleLock);
     updateLockIcon();
     updateEditability();
   
+
+    async function saveWorkbookXlsx(workbook, filename) {
+      const mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      const data = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const uint8 = new Uint8Array(data);
+
+      if (window.electronAPI && typeof window.electronAPI.saveBinaryFile === 'function') {
+        try {
+          let res = await window.electronAPI.saveBinaryFile({
+            defaultFilename: filename,
+            content: uint8,
+            filters: [{ name: 'Excel', extensions: ['xlsx'] }]
+          });
+
+          if (!res || (!res.ok && !res.canceled && !res.error)) {
+            res = await window.electronAPI.saveBinaryFile({
+              defaultFilename: filename,
+              content: Array.from(uint8),
+              filters: [{ name: 'Excel', extensions: ['xlsx'] }]
+            });
+          }
+
+          if (res && res.ok) return true;
+          if (res && res.canceled) return false;
+          if (res && res.error) {
+            console.warn('Excel speichern über Electron fehlgeschlagen:', res.error);
+          }
+        } catch (err) {
+          console.warn('Excel speichern über Electron fehlgeschlagen:', err);
+        }
+      }
+
+      try {
+        const blob = new Blob([uint8], { type: mime });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        return true;
+      } catch (err) {
+        console.error('Excel-Fallback fehlgeschlagen:', err);
+        alert('Excel speichern fehlgeschlagen.');
+        return false;
+      }
+    }
+
     document.getElementById('excelExportBtn').addEventListener('click', async () => {
       const month = getSelectedMonthName();
       const year = getSelectedYear();
@@ -2100,21 +2413,8 @@ wsData.push([
 
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, worksheet, "Ausgaben");
-      // Electron: Speichern-Dialog (statt Browser-Download)
-      if (window.electronAPI && typeof window.electronAPI.saveBinaryFile === 'function') {
-        const data = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-        const res = await window.electronAPI.saveBinaryFile({
-          defaultFilename: `Ausgaben_${month}_${year}.xlsx`,
-          content: data,
-          filters: [{ name: 'Excel', extensions: ['xlsx'] }]
-        });
-        if (res && res.ok) return;
-        if (res && res.canceled) return;
-        if (res && res.error) alert('Speichern fehlgeschlagen: ' + res.error);
-        return;
-      }
-
-      XLSX.writeFile(wb, `Ausgaben_${month}_${year}.xlsx`);});
+      await saveWorkbookXlsx(wb, `Ausgaben_${month}_${year}.xlsx`);
+    });
 
     document.getElementById('quarterExcelBtn').addEventListener('click', async () => {
       const info = getQuarterRows();
@@ -2200,25 +2500,11 @@ wsData.push([
 
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, worksheet, `Ausgaben_Q${info.q}`);
-      // Electron: Speichern-Dialog (statt Browser-Download)
-      if (window.electronAPI && typeof window.electronAPI.saveBinaryFile === 'function') {
-        const data = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-        const res = await window.electronAPI.saveBinaryFile({
-          defaultFilename: `Ausgaben_Q${info.q}_${info.year}.xlsx`,
-          content: data,
-          filters: [{ name: 'Excel', extensions: ['xlsx'] }]
-        });
-        if (res && res.ok) return;
-        if (res && res.canceled) return;
-        if (res && res.error) alert('Speichern fehlgeschlagen: ' + res.error);
-        return;
-      }
-
-      XLSX.writeFile(wb, `Ausgaben_Q${info.q}_${info.year}.xlsx`);});
+      await saveWorkbookXlsx(wb, `Ausgaben_Q${info.q}_${info.year}.xlsx`);
+    });
 
     document.getElementById('quarterPrintBtn').addEventListener('click', () => {
-      buildQuarterPrintArea();
-      window.print();
+      openPrintPreview('quarter');
     });
 
 
