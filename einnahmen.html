@@ -663,6 +663,132 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
   box-shadow: 0 0 10px rgba(37, 99, 235, 0.65);
   border-radius: 6px;
 }
+
+
+.print-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.72);
+  display: none;
+  align-items: stretch;
+  justify-content: center;
+  padding: 18px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.print-preview-overlay.is-open {
+  display: flex;
+  pointer-events: auto;
+}
+
+.print-preview-shell {
+  width: min(1120px, 100%);
+  height: 100%;
+  background: #e5e7eb;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 20px 55px rgba(0,0,0,0.28);
+  display: flex;
+  flex-direction: column;
+}
+
+.print-preview-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  background: #ffffff;
+  border-bottom: 1px solid #d1d5db;
+  flex-wrap: wrap;
+}
+
+.print-preview-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.print-preview-subtitle {
+  font-size: 0.9rem;
+  color: #374151;
+  margin-top: 2px;
+}
+
+.print-preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.print-preview-btn {
+  border: 1px solid #9ca3af;
+  background: #ffffff;
+  color: #111827;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.print-preview-btn.primary {
+  background: #374151;
+  color: #ffffff;
+  border-color: #374151;
+}
+
+.print-preview-stage {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.print-preview-page {
+  width: min(794px, 100%);
+  min-height: 1123px;
+  background: #ffffff;
+  box-shadow: 0 14px 35px rgba(0,0,0,0.16);
+  padding: 20px;
+  color: #000000;
+}
+
+.print-preview-page pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+.print-preview-page .print-heading {
+  font-weight: 800;
+}
+
+body.preview-open {
+  overflow: hidden;
+}
+
+@media (max-width: 700px) {
+  .print-preview-overlay {
+    padding: 8px;
+  }
+
+  .print-preview-stage {
+    padding: 10px;
+  }
+
+  .print-preview-page {
+    min-height: auto;
+    width: 100%;
+  }
+}
+
 </style>
 <script>
 // --- Globale Variablen ---
@@ -2068,7 +2194,7 @@ function _getSelectedArchiveYear(){
 function _buildYearArchiveData(year){
   const data = {
     app: "Einnahmen",
-    version: "V204.03.26",
+    version: "V230.03.26",
     year: year,
     createdAt: new Date().toISOString(),
     days: {},
@@ -2493,7 +2619,7 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 
 <div style="margin-top:20px;">
 <div id="primary-controls" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-<button class="modern-btn" onclick="generateReducedPrint()">🖨️ Reduzierter Druck</button>
+<button class="modern-btn" onclick="generateReducedPrint()" title="Öffnet die Druckvorschau für den aktuell ausgewählten Monat">🖨️ Druckvorschau</button>
 <button class="modern-btn" onclick="exportJSON()" title="Speichert nur den aktuell ausgewählten Monat">Monat speichern</button>
 </div>
 <!-- Schnell-Zurück: immer sichtbar -->
@@ -2561,6 +2687,23 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 </div>
 </div>
 <div id="reduced-print" style="display:none;"></div>
+<div id="printPreviewOverlay" class="print-preview-overlay" aria-hidden="true">
+  <div class="print-preview-shell" role="dialog" aria-modal="true" aria-labelledby="printPreviewTitle">
+    <div class="print-preview-toolbar">
+      <div>
+        <div id="printPreviewTitle" class="print-preview-title">Druckvorschau</div>
+        <div id="printPreviewSubtitle" class="print-preview-subtitle">So sieht der Ausdruck bzw. das PDF im Programm ungefähr aus.</div>
+      </div>
+      <div class="print-preview-actions">
+        <button id="printPreviewPrintBtn" class="print-preview-btn primary" type="button">Jetzt drucken / als PDF speichern</button>
+        <button id="printPreviewCloseBtn" class="print-preview-btn" type="button">Schließen</button>
+      </div>
+    </div>
+    <div class="print-preview-stage">
+      <div id="printPreviewPage" class="print-preview-page"></div>
+    </div>
+  </div>
+</div>
 <script>
 /**
  * Erzeugt einen einfachen Ausdruck der Tages- und Monatsübersicht.
@@ -2610,6 +2753,96 @@ function setReducedPrintHtmlFromText(text) {
     .replace(/^Jahresgesamt .*$/gm, '<span class="print-heading">$&</span>');
 
   rp.innerHTML = "<pre>" + esc + "</pre>";
+}
+
+
+function openReducedPrintPreview(title, subtitle) {
+  const rp = document.getElementById("reduced-print");
+  const overlay = document.getElementById("printPreviewOverlay");
+  const page = document.getElementById("printPreviewPage");
+  const titleEl = document.getElementById("printPreviewTitle");
+  const subtitleEl = document.getElementById("printPreviewSubtitle");
+
+  if (!rp || !overlay || !page) {
+    rp && (rp.style.display = "block");
+    setTimeout(() => {
+      window.print();
+      if (rp) rp.style.display = "none";
+    }, 100);
+    return;
+  }
+
+  if (titleEl) titleEl.textContent = title || "Druckvorschau";
+  if (subtitleEl) subtitleEl.textContent = subtitle || "So sieht der Ausdruck bzw. das PDF im Programm ungefähr aus.";
+
+  page.innerHTML = rp.innerHTML || '<div style="font-style:italic;color:#6b7280;">Keine Vorschau verfügbar.</div>';
+  overlay.classList.add("is-open");
+  overlay.setAttribute("aria-hidden", "false");
+  document.body.classList.add("preview-open");
+}
+
+function closeReducedPrintPreview(clearPage = false) {
+  const overlay = document.getElementById("printPreviewOverlay");
+  const page = document.getElementById("printPreviewPage");
+  if (overlay) {
+    overlay.classList.remove("is-open");
+    overlay.setAttribute("aria-hidden", "true");
+  }
+  document.body.classList.remove("preview-open");
+  if (clearPage && page) {
+    page.innerHTML = "";
+  }
+}
+
+function printFromReducedPreview() {
+  const rp = document.getElementById("reduced-print");
+  if (!rp) {
+    window.print();
+    return;
+  }
+
+  rp.style.display = "block";
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => {
+      rp.style.display = "none";
+    }, 60);
+  }, 60);
+}
+
+function initReducedPrintPreview() {
+  const overlay = document.getElementById("printPreviewOverlay");
+  const closeBtn = document.getElementById("printPreviewCloseBtn");
+  const printBtn = document.getElementById("printPreviewPrintBtn");
+
+  if (printBtn && !printBtn.dataset.bound) {
+    printBtn.dataset.bound = "1";
+    printBtn.addEventListener("click", () => {
+      printFromReducedPreview();
+    });
+  }
+
+  if (closeBtn && !closeBtn.dataset.bound) {
+    closeBtn.dataset.bound = "1";
+    closeBtn.addEventListener("click", () => closeReducedPrintPreview(true));
+  }
+
+  if (overlay && !overlay.dataset.bound) {
+    overlay.dataset.bound = "1";
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) closeReducedPrintPreview(true);
+    });
+  }
+
+  if (!document.body.dataset.reducedPreviewEscBound) {
+    document.body.dataset.reducedPreviewEscBound = "1";
+    document.addEventListener("keydown", (e) => {
+      const ov = document.getElementById("printPreviewOverlay");
+      if (e.key === "Escape" && ov && ov.classList.contains("is-open")) {
+        closeReducedPrintPreview(true);
+      }
+    });
+  }
 }
 
 function generateQuarterReducedPrint() {
@@ -2783,11 +3016,11 @@ output += "\n";
 const rp = document.getElementById("reduced-print");
   if (rp) {
     setReducedPrintHtmlFromText(output);
-    rp.style.display = "block";
-    setTimeout(() => {
-      window.print();
-      rp.style.display = "none";
-    }, 100);
+    initReducedPrintPreview();
+    openReducedPrintPreview(
+      "Druckvorschau – Quartal",
+      "So sieht der Quartalsausdruck bzw. das PDF im Programm ungefähr aus."
+    );
   }
 }
 
@@ -3482,15 +3715,13 @@ const labelWidth = 26;
   output += "Gesamtanzahl Kunden:".padEnd(labelWidth) + String(totalCustomers).padStart(10) + "\n\n";
   output += "Gesamtanzahl Arbeitstage:".padEnd(labelWidth) + String(totalWorkdays).padStart(10) + "\n\n";
 
-  // Text in das versteckte Druckdiv schreiben und anzeigen
-  const rp = document.getElementById("reduced-print");
+  // Inhalt für Vorschau und späteren Ausdruck vorbereiten
   setReducedPrintHtmlFromText(output);
-  rp.style.display = "block";
-  // kurze Verzögerung, damit das DOM aktualisiert wird
-  setTimeout(() => {
-    window.print();
-    rp.style.display = "none";
-  }, 100);
+  initReducedPrintPreview();
+  openReducedPrintPreview(
+    "Druckvorschau – Monat",
+    "So sieht der Monatsausdruck bzw. das PDF im Programm ungefähr aus."
+  );
 }
 </script>
 <script>
@@ -4348,11 +4579,11 @@ function generateYearOverview() {
     } else {
       rp.innerText = output;
     }
-    rp.style.display = "block";
-    setTimeout(() => {
-      window.print();
-      rp.style.display = "none";
-    }, 100);
+    initReducedPrintPreview();
+    openReducedPrintPreview(
+      "Druckvorschau – Jahresübersicht",
+      "So sieht die Jahresübersicht bzw. das PDF im Programm ungefähr aus."
+    );
   }
 }
 
