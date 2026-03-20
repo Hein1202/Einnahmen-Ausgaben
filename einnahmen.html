@@ -2194,7 +2194,7 @@ function _getSelectedArchiveYear(){
 function _buildYearArchiveData(year){
   const data = {
     app: "Einnahmen",
-    version: "V230.03.26",
+    version: "V231.03.26",
     year: year,
     createdAt: new Date().toISOString(),
     days: {},
@@ -2660,9 +2660,9 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 <option value="4">Q4 (Okt–Dez)</option>
 </select>
 <div style="display:inline-block; margin-left:10px;">
-<button class="modern-btn" onclick="generateQuarterReducedPrint()">🖨️ Quartal drucken</button>
+<button class="modern-btn" onclick="generateQuarterReducedPrint()">🖨️ Quartalsvorschau</button>
 <br/>
-<button class="modern-btn" onclick="generateYearOverview()" style="margin-top:6px;">🧮 Jahresübersicht drucken</button>
+<button class="modern-btn" onclick="generateYearOverview()" style="margin-top:6px;">🧮 Jahresvorschau</button>
 </div>
 <div style="display:inline-block; margin-left:10px;">
 <button class="excel-btn" onclick="exportQuarterExcel()">📊 Quartal Excel</button>
