@@ -2255,6 +2255,17 @@ function handleMonthYearChange() {
       updateEditability();
     }
 
+    function refreshAusgabenPage() {
+      try {
+        loadLocks();
+        load();
+        updateLockIcon();
+        updateEditability();
+      } catch (err) {
+        console.error('Fehler beim Aktualisieren der Ausgaben-Seite:', err);
+      }
+    }
+
     window.onafterprint = () => {
       if (printPreviewOverlay && printPreviewOverlay.classList.contains('is-open')) {
         syncPreviewWithPrintArea();
@@ -2271,6 +2282,7 @@ document.getElementById('lockIcon').addEventListener('click', toggleLock);
     load();
     updateLockIcon();
     updateEditability();
+    window.refreshAusgabenPage = refreshAusgabenPage;
   
 
     async function saveWorkbookXlsx(workbook, filename) {

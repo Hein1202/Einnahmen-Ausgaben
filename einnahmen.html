@@ -2272,6 +2272,117 @@ const blob = new Blob([jsonText], {type:"application/json"});
   return true;
 }
 
+
+function _getAllProgramDataPrefixes(){
+  return ["day-", "cf-", "locked-", "income-month-", "all_expenses", "locked_months"];
+}
+
+function _isAllProgramDataKey(key){
+  if(!key) return false;
+  return _getAllProgramDataPrefixes().some(prefix => key === prefix || key.startsWith(prefix));
+}
+
+function buildAllProgramDataExport(){
+  const payload = {
+    app: "Einnahmen-Ausgaben",
+    scope: "all-data",
+    version: "233.03.26",
+    createdAt: new Date().toISOString(),
+    storage: {}
+  };
+
+  for(let i = 0; i < localStorage.length; i++){
+    const key = localStorage.key(i);
+    if(!_isAllProgramDataKey(key)) continue;
+    payload.storage[key] = localStorage.getItem(key);
+  }
+
+  return payload;
+}
+
+async function exportAllProgramData(){
+  try {
+    const data = buildAllProgramDataExport();
+    const defaultName = `einnahmen-ausgaben_komplettsicherung_${new Date().toISOString().slice(0,10)}.json`;
+    const msg =
+      "Komplettsicherung speichern\n\n" +
+      "Diese Datei enthält alle im Programm gespeicherten Daten,\n" +
+      "damit du sie später wieder komplett laden kannst.";
+
+    const ok = await _downloadJsonData(data, defaultName, msg);
+    if(!ok){
+      alert("Komplettsicherung wurde abgebrochen oder konnte nicht gespeichert werden.");
+    }
+  } catch(err) {
+    alert("Fehler beim Speichern der Komplettsicherung: " + (err && err.message ? err.message : err));
+  } finally {
+    try { if (typeof refocusAfterNativeDialogs === 'function') refocusAfterNativeDialogs(); } catch(_) {}
+  }
+}
+
+function _refreshAllPagesAfterProgramDataImport(){
+  try { updateMonth(); } catch(e) { console.error(e); }
+  try { applyLockStatus(); } catch(e) { console.error(e); }
+  try {
+    if(window.parent && window.parent !== window){
+      if(typeof window.parent.refreshAusgabenPage === 'function') window.parent.refreshAusgabenPage();
+      if(typeof window.parent.refreshYearOverviewPage === 'function') window.parent.refreshYearOverviewPage();
+      if(typeof window.parent.refreshEinnahmenPage === 'function') window.parent.refreshEinnahmenPage();
+      if(typeof window.parent.refreshAllAppPages === 'function'){
+        setTimeout(() => {
+          try { window.parent.refreshAllAppPages(); } catch(_) {}
+        }, 80);
+      }
+    }
+  } catch(_) {}
+}
+
+function importAllProgramData(ev){
+  const file = ev && ev.target ? ev.target.files[0] : null;
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      const storage = (data && data.storage && typeof data.storage === 'object') ? data.storage : null;
+      if(!storage){
+        throw new Error("Die Datei enthält keine gültige Komplettsicherung.");
+      }
+
+      if(!confirm("Alle aktuell gespeicherten Programmdaten werden durch die Daten aus der Sicherung ersetzt.\n\nFortfahren?")){
+        try { ev.target.value = ''; } catch(_) {}
+        return;
+      }
+
+      const keysToRemove = [];
+      for(let i = 0; i < localStorage.length; i++){
+        const key = localStorage.key(i);
+        if(_isAllProgramDataKey(key)) keysToRemove.push(key);
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+
+      Object.keys(storage).forEach(key => {
+        if(!_isAllProgramDataKey(key)) return;
+        const value = storage[key];
+        if(value == null){
+          localStorage.removeItem(key);
+        } else {
+          localStorage.setItem(key, String(value));
+        }
+      });
+
+      _refreshAllPagesAfterProgramDataImport();
+      alert("Komplettsicherung erfolgreich geladen.");
+      try { ev.target.value = ''; } catch(_) {}
+      try { if (typeof refocusAfterNativeDialogs === 'function') refocusAfterNativeDialogs(); } catch(_) {}
+    } catch(err) {
+      alert("Fehler beim Laden der Komplettsicherung: " + (err && err.message ? err.message : err));
+    }
+  };
+  reader.readAsText(file);
+}
+
 // Manuelles Jahres-Backup (nur speichern)
 async function exportYearArchive(){
   const year = _getSelectedArchiveYear();
@@ -2633,7 +2744,13 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 </div>
 <div id="advanced-controls" style="display:none; margin-top:10px;">
 <input accept="application/json" id="data-file-input" onchange="importJSON(event)" style="display:none;" type="file"/>
+<input accept="application/json" id="all-program-data-input" onchange="importAllProgramData(event)" style="display:none;" type="file"/>
 <button onclick="document.getElementById('data-file-input').click()" title="Lädt die Datei in den aktuell ausgewählten Monat">Monat laden</button>
+<div style="display:inline-block; margin-left:10px;">
+<button class="modern-btn" onclick="exportAllProgramData()" title="Speichert alle Programmdaten als Komplettsicherung">💾 Alle Daten speichern</button>
+<br/>
+<button class="modern-btn" onclick="document.getElementById('all-program-data-input').click()" style="margin-top:6px;" title="Lädt eine Komplettsicherung und stellt alle Programmdaten wieder her">Alle Daten laden</button>
+</div>
 <div style="display:inline-block; margin-left:10px;">
 <button id="clear-month-data-btn" onclick="clearAllData()">Daten dieses Monats löschen</button>
 </div>
@@ -3754,6 +3871,9 @@ function updateCustomerTotal() {
 }
 
 document.addEventListener("DOMContentLoaded", updateCustomerTotal);
+window.refreshEinnahmenPage = function(){
+  try { updateMonth(); } catch(err) { console.error('Fehler beim Aktualisieren der Einnahmen-Seite:', err); }
+};
 document.addEventListener("input", function(e) {
   if (e.target.classList.contains("amount1") ||
       e.target.classList.contains("amount2") ||
