@@ -3,464 +3,848 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jahresübersicht – Einnahmen-Ausgaben 232.03.26</title>
+  <title>Ausgaben (Offline)</title>
+      <link id="tailwindStylesheet" rel="stylesheet" href="assets/tailwind.css" />
   <style>
-    :root {
-      --border-strong: #94a3b8;
-      --inner-highlight: rgba(255,255,255,0.70);
+    body { font-family: sans-serif; background-color: #f7fafc; color: #000000; }
+    input[type="number"]::-webkit-inner-spin-button { opacity: 1; }
+
+    @media print {
+      body {
+        background-color: #ffffff;
+      }
+      body * {
+        visibility: hidden !important;
+      }
+      #printArea, #printArea * {
+        visibility: visible !important;
+      }
+      #printArea {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        padding: 16px;
+        background: #ffffff;
+      }
     }
-    html, body {
+  
+    input {
+      color: #111111;
+    }
+
+    .text-gray-600,
+    .text-gray-700,
+    .text-gray-800,
+    .text-gray-900 {
+      color: #000000 !important;
+    }
+
+    td input, td, .text-gray-600, .text-gray-700, .text-gray-800, .text-gray-900 {
+        font-weight:500 !important;
+        color:#000000 !important;
+    }
+
+    td input, td {
+        font-weight:700 !important;
+        color:#000000 !important;
+    }
+
+    td input, td, td span {
+        font-weight:700 !important;
+        color:#000000 !important;
+    }
+
+    .monthYear {
+      font-weight: 700 !important;
+      color: #000000 !important;
+    }
+
+    /* Advanced controls are hidden until code 1202 is entered */
+    .advanced-only { display: none; }
+    body.advanced-unlocked .advanced-only { display: inline-flex; }
+    body.advanced-unlocked select.advanced-only { display: inline-block; }
+
+    /* Gut lesbarer Speicher-Button für den angezeigten Monat */
+    .month-save-btn {
+      background: #4b5563;
+      color: #ffffff;
+      border: 2px solid #111111;
+      border-radius: 0.375rem;
+      font-weight: 700;
+      min-width: 180px;
+      white-space: nowrap;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.18);
+    }
+    .month-save-btn:hover {
+      filter: brightness(0.97);
+    }
+
+
+    /* -----------------------------------------------------------
+       Tailwind-Fallback: Aktiviert nur wenn <html class="tw-fallback">
+       Hintergrund: Wenn assets/tailwind.css nicht gefunden wird, bleibt
+       das Layout trotzdem wie gewohnt.
+       ----------------------------------------------------------- */
+    html.tw-fallback body { background-color: #f7fafc; }
+
+    html.tw-fallback .flex { display: flex; }
+    html.tw-fallback .flex-wrap { flex-wrap: wrap; }
+    html.tw-fallback .items-center { align-items: center; }
+    html.tw-fallback .justify-between { justify-content: space-between; }
+    html.tw-fallback .justify-center { justify-content: center; }
+
+    html.tw-fallback .gap-1 { gap: 0.25rem; }
+    html.tw-fallback .gap-2 { gap: 0.5rem; }
+
+    html.tw-fallback .mx-auto { margin-left: auto; margin-right: auto; }
+    html.tw-fallback .ml-2 { margin-left: 0.5rem; }
+    html.tw-fallback .ml-4 { margin-left: 1rem; }
+    html.tw-fallback .mt-4 { margin-top: 1rem; }
+    html.tw-fallback .mb-4 { margin-bottom: 1rem; }
+
+    html.tw-fallback .p-1 { padding: 0.25rem; }
+    html.tw-fallback .p-2 { padding: 0.5rem; }
+    html.tw-fallback .p-6 { padding: 1.5rem; }
+    html.tw-fallback .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+    html.tw-fallback .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+    html.tw-fallback .px-4 { padding-left: 1rem; padding-right: 1rem; }
+    html.tw-fallback .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+    html.tw-fallback .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+
+    html.tw-fallback .max-w-4xl { max-width: 56rem; }
+    html.tw-fallback .w-full { width: 100%; }
+    html.tw-fallback .w-16 { width: 4rem; }
+    html.tw-fallback .w-20 { width: 5rem; }
+    html.tw-fallback .w-24 { width: 6rem; }
+    html.tw-fallback .w-\[400px\] { width: 400px; }
+
+    html.tw-fallback .text-xs { font-size: 0.75rem; line-height: 1rem; }
+    html.tw-fallback .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+    html.tw-fallback .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+    html.tw-fallback .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+
+    html.tw-fallback .text-center { text-align: center; }
+    html.tw-fallback .text-right { text-align: right; }
+
+    html.tw-fallback .font-bold { font-weight: 700; }
+    html.tw-fallback .italic { font-style: italic; }
+    html.tw-fallback .underline { text-decoration: underline; }
+
+    html.tw-fallback .rounded { border-radius: 0.25rem; }
+    html.tw-fallback .rounded-xl { border-radius: 0.75rem; }
+
+    html.tw-fallback .shadow {
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.10), 0 2px 4px -2px rgba(0,0,0,0.10);
+    }
+
+    html.tw-fallback .border { border: 1px solid #e5e7eb; }
+    html.tw-fallback .border-t { border-top: 1px solid #e5e7eb; }
+
+    html.tw-fallback .align-top { vertical-align: top; }
+
+    /* Farben (ungefähr Tailwind defaults) */
+    html.tw-fallback .bg-white { background-color: #ffffff; }
+    html.tw-fallback .bg-gray-50 { background-color: #f9fafb; }
+    html.tw-fallback .bg-gray-100 { background-color: #f3f4f6; }
+    html.tw-fallback .bg-gray-200 { background-color: #e5e7eb; }
+    html.tw-fallback .bg-gray-600 { background-color: #4b5563; }
+    html.tw-fallback .bg-gray-800 { background-color: #1f2937; }
+    html.tw-fallback .bg-indigo-600 { background-color: #4f46e5; }
+    html.tw-fallback .bg-purple-600 { background-color: #9333ea; }
+    html.tw-fallback .bg-purple-800 { background-color: #6b21a8; }
+    html.tw-fallback .bg-red-600 { background-color: #dc2626; }
+    html.tw-fallback .bg-yellow-500 { background-color: #eab308; }
+
+    html.tw-fallback .text-white { color: #ffffff; }
+    html.tw-fallback .text-gray-400 { color: #9ca3af; }
+    html.tw-fallback .text-gray-500 { color: #6b7280; }
+    html.tw-fallback .text-gray-600 { color: #4b5563; }
+    html.tw-fallback .text-gray-700 { color: #374151; }
+    html.tw-fallback .text-gray-800 { color: #1f2937; }
+    html.tw-fallback .text-red-600 { color: #dc2626; }
+    html.tw-fallback .text-green-700 { color: #15803d; }
+
+    /* space-y-1 */
+    html.tw-fallback .space-y-1 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.25rem; }
+
+    /* Damit Inputs/Selects/Buttons im Fallback schön aussehen */
+    html.tw-fallback button,
+    html.tw-fallback input,
+    html.tw-fallback select {
+      font-family: inherit;
+    }
+
+
+    /* Monatsschaltung wie im Einnahmen-Modul */
+    .expense-headline {
+      flex-wrap: wrap;
+      row-gap: 0.5rem;
+    }
+
+    .expense-month-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-left: 0.25rem;
+      flex-wrap: nowrap;
+    }
+
+    .expense-month-mid {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .expense-month-picker {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .expense-nav-right {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.2rem;
+      margin-left: 0.1rem;
+    }
+
+    .expense-nav-btn {
+      font-size: 1.4em;
+      padding: 6px 12px;
       margin: 0;
-      padding: 0;
-      min-height: 100%;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background:#e5e7eb;
-      color:#0f172a;
+      cursor: pointer;
+      font-weight: bold;
+      border: 2px solid #444;
+      background: #eee;
+      border-radius: 6px;
+      line-height: 1;
     }
-    #page {
-      max-width: 1760px;
-      margin: 0 auto;
-      padding: 24px 22px 30px;
-      box-sizing: border-box;
+
+    .expense-lock-btn {
+      border: none;
+      background: transparent;
+      padding: 0 2px;
+      cursor: pointer;
+      line-height: 1;
+      opacity: 1 !important;
+      filter: none !important;
     }
-    .layout {
-      display: grid;
-      grid-template-columns: minmax(0, 2.55fr) minmax(290px, 0.92fr);
-      gap: 18px;
-      align-items: start;
+
+    .expense-lock-btn.lock-code-required {
+      opacity: 1 !important;
+      filter: none !important;
+      cursor: pointer;
     }
-    .panel {
-      background:#ffffff;
-      border: 2px solid var(--border-strong);
-      border-radius: 18px;
+
+    @media (max-width: 700px) {
+      .expense-month-nav {
+        width: 100%;
+        justify-content: flex-start;
+        margin-left: 0;
+      }
+
+      .expense-headline {
+        align-items: flex-start;
+      }
+    }
+
+
+    .print-preview-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 24, 39, 0.72);
+      display: none;
+      align-items: stretch;
+      justify-content: center;
       padding: 18px;
-      box-shadow:
-        inset 0 0 0 1px var(--inner-highlight),
-        0 12px 28px rgba(0,0,0,0.07);
+      z-index: 9999;
+      pointer-events: none;
     }
-    .head {
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap: 14px;
+
+    .print-preview-overlay.is-open {
+      display: flex;
+      pointer-events: auto;
+    }
+
+    .print-preview-shell {
+      width: min(1120px, 100%);
+      height: 100%;
+      background: #e5e7eb;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 20px 55px rgba(0,0,0,0.28);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .print-preview-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px;
+      background: #ffffff;
+      border-bottom: 1px solid #d1d5db;
       flex-wrap: wrap;
     }
-    .headLeft {
-      display:flex;
-      align-items:flex-start;
-      gap: 12px;
-    }
-    .icon {
-      width: 42px;
-      height: 42px;
-      border-radius: 14px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background:#111827;
-      color:#ffffff;
-      font-size: 20px;
-      font-weight: 900;
-      flex: 0 0 auto;
-    }
-    .kicker {
-      color:#64748b;
-      font-weight: 800;
-      font-size: 12px;
-    }
-    h1 {
-      margin: 2px 0 4px;
-      font-size: 24px;
-      letter-spacing: -0.02em;
-    }
-    .sub {
-      color:#475569;
-      font-weight: 600;
-    }
-    .controls {
-      display:flex;
-      align-items:center;
-      gap: 8px;
-      color:#475569;
+
+    .print-preview-title {
+      font-size: 1.1rem;
       font-weight: 700;
-      font-size: 13px;
-      padding-top: 4px;
-    }
-    select {
-      appearance: none;
-      border: 2px solid var(--border-strong);
-      background: #f8fafc;
-      border-radius: 10px;
-      padding: 6px 10px;
-      cursor: pointer;
-      font-weight: 800;
-      color: #0f172a;
-      min-width: 92px;
-    }
-    .tableWrap {
-      margin-top: 14px;
-      overflow-x: visible;
-    }
-    table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      min-width: 0;
-    }
-    th, td {
-      padding: 10px 10px;
-      border-bottom: 1px solid #e2e8f0;
-      font-size: 13px;
-      white-space: normal;
-    }
-    th {
-      text-align: left;
-      color:#475569;
-      font-weight: 800;
-      background:#f8fafc;
-      position: sticky;
-      top: 0;
-    }
-    thead tr.groupRow th {
-      font-size: 14px;
-      font-weight: 900;
-      letter-spacing: 0.01em;
-      color:#0f172a;
-      background:#e8eef8;
-      border-bottom: 0;
-      padding-top: 10px;
-      padding-bottom: 5px;
-      text-transform: none;
-      text-align: center;
-      box-shadow: inset 0 -1px 0 #d7e0ec;
-    }
-    thead tr.groupRow th:first-child {
-      text-align: left;
-    }
-    thead tr.labelRow th {
-      padding-top: 6px;
-      font-weight: 800;
-    }
-    .groupIncome, .subIncome {
-      background:#f3f7fd;
-    }
-    .groupExpense, .subExpense {
-      background:#f2f6fb;
-    }
-    .groupStatus, .subStatus {
-      background:#f7f4ff;
-    }
-    .groupDivider, .dividerCell {
-      border-right: 2px solid #cbd5e1 !important;
-    }
-    td {
-      color:#0f172a;
-      font-weight: 700;
-    }
-    .num {
-      text-align: right;
-      white-space: nowrap;
+      color: #111827;
     }
 
-    thead th:first-child,
-    tbody td:first-child,
-    tfoot td:first-child {
-      width: 116px;
-      min-width: 116px;
-      max-width: 116px;
-      padding-right: 2px;
-      white-space: nowrap;
-    }
-    thead th:nth-child(2),
-    tbody td:nth-child(2),
-    tfoot td:nth-child(2) {
-      padding-left: 2px;
+    .print-preview-subtitle {
+      font-size: 0.9rem;
+      color: #374151;
+      margin-top: 2px;
     }
 
-    thead tr.groupRow th:nth-child(4),
-    thead tr.groupRow th:nth-child(5),
-    tbody td:nth-child(6),
-    tbody td:nth-child(7),
-    tfoot td:nth-child(6),
-    tfoot td:nth-child(7) {
-      width: 100px;
-      min-width: 100px;
-      max-width: 100px;
-    }
-
-    thead tr.groupRow th:nth-child(4),
-    tbody td:nth-child(6),
-    tfoot td:nth-child(6) {
-      padding-left: 8px;
-      padding-right: 8px;
-    }
-
-    thead tr.groupRow th:nth-child(5),
-    tbody td:nth-child(7),
-    tfoot td:nth-child(7) {
-      width: 118px;
-      min-width: 118px;
-      max-width: 118px;
-      padding-left: 8px;
-      padding-right: 8px;
-    }
-    tbody td:nth-child(8),
-    tbody td:nth-child(9),
-    tfoot td:nth-child(8),
-    tfoot td:nth-child(9) {
-      width: 92px;
-      min-width: 92px;
-      max-width: 92px;
-      padding-left: 8px;
-      padding-right: 8px;
-    }
-    tbody td:nth-child(2),
-    tbody td:nth-child(3),
-    tfoot td:nth-child(2),
-    tfoot td:nth-child(3) {
-      background:#f8fbff;
-    }
-    tbody td:nth-child(4),
-    tbody td:nth-child(5),
-    tfoot td:nth-child(4),
-    tfoot td:nth-child(5) {
-      background:#f7faff;
-    }
-    tbody td:nth-child(8),
-    tbody td:nth-child(9),
-    tfoot td:nth-child(8),
-    tfoot td:nth-child(9) {
-      background:#faf7ff;
-    }
-    tbody tr:last-child td {
-      border-bottom: none;
-    }
-    .muted {
-      color:#94a3b8;
-      font-weight: 700;
-    }
-    tfoot td {
-      border-top: 2px solid #cbd5e1;
-      border-bottom: 0;
-      background:#f8fafc;
-      font-weight: 900;
-      vertical-align: top;
-    }
-    .footerMetric {
-      display:flex;
-      flex-direction:column;
-      align-items:flex-end;
-      gap: 2px;
-      line-height: 1.15;
-    }
-    .footerMetricValue {
-      color:#0f172a;
-      font-weight: 900;
-    }
-    .footerMetricNote {
-      color:#64748b;
-      font-size: 11px;
-      font-weight: 800;
-      white-space: normal;
-      text-align: right;
-    }
-    .footerCustomerWrap {
-      padding-top: 6px;
-    }
-    .footerCustomerGrid {
-      display:grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-      align-items:start;
-    }
-    .footerCustomerGrid .footerMetric {
-      min-width: 0;
-    }
-    .taxPanelTitle {
-      display:flex;
-      align-items:center;
+    .print-preview-actions {
+      display: flex;
+      align-items: center;
       gap: 10px;
-      margin-bottom: 14px;
-    }
-    .taxPanelTitle .icon {
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
-      font-size: 18px;
-    }
-    .taxGroups {
-      display:flex;
-      flex-direction:column;
-      gap: 14px;
-    }
-    .taxQuarter {
-      border: 1px solid #e2e8f0;
-      border-radius: 14px;
-      background:#f8fafc;
-      padding: 12px 14px;
-    }
-    .taxQuarterTitle {
-      font-weight: 900;
-      color:#0f172a;
-      margin-bottom: 8px;
-    }
-    .taxRow,
-    .taxQuarterSum,
-    .taxYearSum {
-      display:grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items:center;
-      gap: 12px;
-      padding: 6px 0;
-      font-size: 14px;
-    }
-    .taxRow + .taxRow {
-      border-top: 1px solid #e2e8f0;
-    }
-    .taxQuarterSum {
-      margin-top: 8px;
-      padding-top: 10px;
-      border-top: 2px solid #cbd5e1;
-      font-weight: 900;
-      color:#0f172a;
-    }
-    .taxYearSum {
-      margin-top: 16px;
-      padding-top: 12px;
-      border-top: 2px solid #cbd5e1;
-      font-weight: 900;
-      color:#0f172a;
-    }
-    .taxMuted {
-      color:#94a3b8;
-      font-weight: 700;
+      flex-wrap: wrap;
     }
 
-    @media (max-width: 1360px) {
-      #page {
-        max-width: 1380px;
+    .print-preview-btn {
+      border: 1px solid #9ca3af;
+      background: #ffffff;
+      color: #111827;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .print-preview-btn.primary {
+      background: #374151;
+      color: #ffffff;
+      border-color: #374151;
+    }
+
+    .print-preview-stage {
+      flex: 1;
+      overflow: auto;
+      padding: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .print-preview-page {
+      width: min(794px, 100%);
+      min-height: 1123px;
+      background: #ffffff;
+      box-shadow: 0 14px 35px rgba(0,0,0,0.16);
+      padding: 20px;
+      color: #000000;
+    }
+
+    body.preview-open {
+      overflow: hidden;
+    }
+
+    @media (max-width: 700px) {
+      .print-preview-overlay {
+        padding: 8px;
       }
-      .layout {
-        grid-template-columns: 1fr;
+
+      .print-preview-stage {
+        padding: 10px;
       }
-      .tableWrap {
-        overflow-x: auto;
-      }
-      table {
-        min-width: 1120px;
+
+      .print-preview-page {
+        min-height: auto;
+        width: 100%;
       }
     }
+
   </style>
+<script src="assets/xlsx.full.min.js"></script>
 </head>
-<body>
-  <div id="page">
-    <div class="layout">
-      <div class="panel">
-        <div class="head">
-          <div class="headLeft">
-            <div class="icon">📊</div>
-            <div>
-              <div class="kicker">Offline • Version 232.03.26</div>
-              <h1>Jahresübersicht</h1>
-              <div class="sub">Einfache Tabellenansicht mit Einnahmen, Umsatzsteuer, Ausgaben, Vorsteuer, Kunden sowie Urlaubs- und Krankheitstagen pro Monat.</div>
-            </div>
-          </div>
-          <div class="controls">
-            <label for="overviewYearSelect">Jahr</label>
-            <select id="overviewYearSelect" aria-label="Jahr für Jahresübersicht"></select>
+<body class="p-6 bg-gray-100 text-gray-800">
+  <div class="max-w-4xl mx-auto bg-white rounded-xl shadow p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-2xl font-bold flex items-center gap-2 expense-headline">
+      <span class="text-2xl">📊</span>
+      <span>Ausgaben</span>
+
+      <div class="expense-month-nav" aria-label="Monatnavigation">
+        <button id="prevMonthBtn" class="expense-nav-btn" type="button" aria-label="Vormonat">◄</button>
+
+        <div class="expense-month-mid">
+          <div class="expense-month-picker">
+            <select id="monthSelect" class="border rounded px-2 py-1 text-sm">
+              <option value="">(Monat wählen)</option>
+              <option value="01">Januar</option>
+              <option value="02">Februar</option>
+              <option value="03">März</option>
+              <option value="04">April</option>
+              <option value="05">Mai</option>
+              <option value="06">Juni</option>
+              <option value="07">Juli</option>
+              <option value="08">August</option>
+              <option value="09">September</option>
+              <option value="10">Oktober</option>
+              <option value="11">November</option>
+              <option value="12">Dezember</option>
+            </select>
+
+            <select id="yearSelect" class="border rounded px-2 py-1 text-sm">
+            </select>
           </div>
         </div>
 
-        <div class="tableWrap">
-          <table aria-label="Jahresübersicht">
-            <thead>
-              <tr class="groupRow">
-                <th rowspan="2">Monat</th>
-                <th colspan="2" class="groupIncome groupDivider">Einnahmen</th>
-                <th colspan="2" class="groupExpense groupDivider">Ausgaben</th>
-                <th rowspan="2" class="num">Kunden</th>
-                <th rowspan="2" class="num">Kunden / Tag</th>
-                <th colspan="2" class="groupStatus">Ausfalltage</th>
-              </tr>
-              <tr class="labelRow">
-                <th class="num subIncome">Betrag</th>
-                <th class="num subIncome groupDivider">USt</th>
-                <th class="num subExpense">Betrag</th>
-                <th class="num subExpense groupDivider">Vorsteuer</th>
-                <th class="num subStatus">Urlaub</th>
-                <th class="num subStatus">Krank</th>
-              </tr>
-            </thead>
-            <tbody id="yearOverviewBody"></tbody>
-            <tfoot>
-              <tr>
-                <td>Gesamt</td>
-                <td class="num" id="yearIncomeTotal">–</td>
-                <td class="num dividerCell" id="yearIncomeVatTotal">–</td>
-                <td class="num" id="yearExpenseTotal">–</td>
-                <td class="num dividerCell" id="yearExpenseVatTotal">–</td>
-                <td class="num footerCustomerWrap" colspan="2">
-                  <div class="footerCustomerGrid" aria-label="Kunden-Zusammenfassung">
-                    <div class="footerMetric">
-                      <span id="yearCustomerTotal" class="footerMetricValue">–</span>
-                      <span class="footerMetricNote">Kunden gesamt</span>
-                    </div>
-                    <div class="footerMetric">
-                      <span id="yearCustomerPerDayTotal" class="footerMetricValue">–</span>
-                      <span class="footerMetricNote">Jahres-Ø / Tag</span>
-                    </div>
-                    <div class="footerMetric">
-                      <span id="yearCustomerAverage" class="footerMetricValue">–</span>
-                      <span class="footerMetricNote">Ø Kunden / Monat</span>
-                    </div>
-                  </div>
-                </td>
-                <td class="num" id="yearVacationTotal">–</td>
-                <td class="num" id="yearSickTotal">–</td>
-              </tr>
-            </tfoot>
-          </table>
+        <div class="expense-nav-right" aria-label="Monatnavigation rechts">
+          <button id="lockIcon" class="text-xl expense-lock-btn" type="button" title="Monat ist entsperrt – Klick zum Sperren">🔓</button>
+          <button id="nextMonthBtn" class="expense-nav-btn" type="button" aria-label="Nächster Monat">►</button>
         </div>
       </div>
+    </h1>
+</div>
 
-      <div class="panel" aria-label="Umsatzsteuer an Finanzamt">
-        <div class="taxPanelTitle">
-          <div class="icon">🧾</div>
+    <div class="flex flex-wrap items-center gap-2 mb-4">
+      <button id="printBtn" class="bg-gray-600 text-white px-4 py-2 rounded">Druckvorschau</button>
+      <button id="exportMonthBtn" class="month-save-btn px-4 py-2">Diesen Monat speichern</button>
+      
+      <button id="importBtn" class="bg-yellow-500 text-white px-4 py-2 rounded advanced-only">Daten laden</button>
+      <button id="exportBtn" class="bg-indigo-600 text-white px-4 py-2 rounded advanced-only">Alle Monate speichern</button>
+
+      <div id="advancedUnlockBox" class="flex items-center gap-2 ml-2">
+        <span class="text-xs text-gray-600">Code:</span>
+        <input id="advancedCodeInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8"
+               class="border rounded px-2 py-2 text-sm w-24" placeholder="Code" />
+        <span id="advancedStatus" class="text-xs text-green-700" style="display:none;">✔</span>
+        <button id="advancedLockBtn" class="advanced-only bg-gray-200 text-gray-800 px-3 py-2 rounded">Sperren</button>
+      </div>
+<button id="excelExportBtn" class="bg-purple-600 text-white px-4 py-2 rounded advanced-only">📄 Excel speichern</button>
+            <select id="quarterSelect" class="border rounded px-2 py-2 text-sm bg-white ml-4 advanced-only">
+        <option value="">(Quartal)</option>
+        <option value="1">Q1 (Jan–Mär)</option>
+        <option value="2">Q2 (Apr–Jun)</option>
+        <option value="3">Q3 (Jul–Sep)</option>
+        <option value="4">Q4 (Okt–Dez)</option>
+      </select>
+<button id="quarterPrintBtn" class="bg-gray-800 text-white px-4 py-2 rounded advanced-only">🖨️ Quartal-Vorschau</button>
+      <button id="quarterExcelBtn" class="bg-purple-800 text-white px-4 py-2 rounded advanced-only">📄 Quartal Excel</button>
+      
+    </div>
+
+    <div id="printArea"></div>
+    <div id="printPreviewOverlay" class="print-preview-overlay" aria-hidden="true">
+      <div class="print-preview-shell" role="dialog" aria-modal="true" aria-labelledby="printPreviewTitle">
+        <div class="print-preview-toolbar">
           <div>
-            <div class="kicker">Quartalsweise Übersicht</div>
-            <h1>Umsatzsteuer an Finanzamt</h1>
-            <div class="sub">Monatswerte mit Quartalssumme – identisch zur Umsatzsteuer-Logik der Quartalsausdrucke abzüglich Vorsteuer</div>
+            <div id="printPreviewTitle" class="print-preview-title">Druckvorschau</div>
+            <div id="printPreviewSubtitle" class="print-preview-subtitle">So sieht der Ausdruck bzw. das PDF im Programm ungefähr aus.</div>
+          </div>
+          <div class="print-preview-actions">
+            <button id="printPreviewPrintBtn" class="print-preview-btn primary" type="button">Jetzt drucken / als PDF speichern</button>
+            <button id="printPreviewCloseBtn" class="print-preview-btn" type="button">Schließen</button>
           </div>
         </div>
-
-        <div id="taxQuarterGroups" class="taxGroups"></div>
-        <div class="taxYearSum">
-          <span>Gesamt Jahr</span>
-          <span id="taxYearTotal">–</span>
+        <div class="print-preview-stage">
+          <div id="printPreviewPage" class="print-preview-page"></div>
         </div>
       </div>
     </div>
+
+
+    <table class="w-full border text-sm" id="expenseTable">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="p-2 border">Beleg</th>
+          <th class="p-2 border">Datum</th>
+          <th class="p-2 border">Betrag (€)</th>
+          <th class="p-2 border">Beschreibung</th>
+          <th class="p-2 border">Aktion</th>
+        </tr>
+      </thead>
+      <tbody id="expenseBody"></tbody>
+      <tfoot>
+        
+<tr id="enterHintRow" style="display:none;">
+  <td></td>
+  <td colspan="3" class="text-center text-gray-700 text-sm">Enter für neue Zeile – für mehrere Positionen im selben Beleg kein Datum angeben</td>
+</tr>
+<tr>
+          <td class="border-t p-1"></td>
+          <td class="border-t p-1 align-top">
+            <div class="text-sm space-y-1">
+              <div class="flex justify-between">
+                <strong>Gesamtsumme (Brutto):</strong>
+                <span id="total" class="ml-4"> 0.00</span>
+              </div>
+              <div class="flex justify-between" style="padding-left:18px;">
+                <strong>Davon Quittungen:</strong>
+                <span id="receiptsTotal" class="ml-4"> 0.00</span>
+              </div>
+              <div style="height:6px;"></div>
+              <div class="flex justify-between">
+                <strong>Nettobetrag:</strong>
+                <span id="net" class="ml-4"> 0.00</span>
+              </div>
+              <div class="flex justify-between">
+                <strong>Mehrwertsteuer (19%):</strong>
+                <span id="vat" class="ml-4"> 0.00</span>
+              </div>
+            </div>
+          </td>
+          <td class="border-t p-1"></td>
+          <td class="border-t p-1"></td>
+        </tr>
+      </tfoot>
+    </table>
+<div class="mt-4 text-right">
+      <button id="clearAllBtn" class="bg-red-600 text-white px-4 py-2 rounded advanced-only">🗑️ Diesen Monat löschen</button>
+    </div>
+
+    <input type="file" id="importInput" accept=".json" style="display:none" />
   </div>
 
   <script>
-    const overviewYearSelect = document.getElementById('overviewYearSelect');
-    const yearOverviewBody = document.getElementById('yearOverviewBody');
-    const yearIncomeTotal = document.getElementById('yearIncomeTotal');
-    const yearIncomeVatTotal = document.getElementById('yearIncomeVatTotal');
-    const yearExpenseTotal = document.getElementById('yearExpenseTotal');
-    const yearExpenseVatTotal = document.getElementById('yearExpenseVatTotal');
-    const yearCustomerTotal = document.getElementById('yearCustomerTotal');
-    const yearCustomerPerDayTotal = document.getElementById('yearCustomerPerDayTotal');
-    const yearCustomerAverage = document.getElementById('yearCustomerAverage');
-    const yearVacationTotal = document.getElementById('yearVacationTotal');
-    const yearSickTotal = document.getElementById('yearSickTotal');
-    const taxQuarterGroups = document.getElementById('taxQuarterGroups');
-    const taxYearTotal = document.getElementById('taxYearTotal');
+    let expenses = [];
+    let sortDirection = 'desc';
 
-    const monthNames = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+    const expenseBody = document.getElementById('expenseBody');
+    const totalDisplay = document.getElementById('total');
+    const receiptsDisplay = document.getElementById('receiptsTotal');
+    const netDisplay = document.getElementById('net');
+    const vatDisplay = document.getElementById('vat');
+    const printArea = document.getElementById('printArea');
+    const printPreviewOverlay = document.getElementById('printPreviewOverlay');
+    const printPreviewPage = document.getElementById('printPreviewPage');
+    const printPreviewTitle = document.getElementById('printPreviewTitle');
+    const printPreviewSubtitle = document.getElementById('printPreviewSubtitle');
+    const printPreviewPrintBtn = document.getElementById('printPreviewPrintBtn');
+    const printPreviewCloseBtn = document.getElementById('printPreviewCloseBtn');
+    const monthSelect = document.getElementById('monthSelect');
+    const quarterSelect = document.getElementById('quarterSelect');
+    const yearSelect = document.getElementById('yearSelect');
+    let currentPreviewMode = 'month';
 
-    function parseFlexibleAmount(value) {
-      if (typeof value !== 'string') value = String(value ?? '');
+    // --- Tailwind-Fallback aktivieren, falls assets/tailwind.css nicht geladen ist ---
+    function enableTailwindFallbackIfNeeded() {
+      try {
+        const probe = document.createElement('div');
+        probe.className = 'bg-indigo-600';
+        probe.style.position = 'absolute';
+        probe.style.left = '-9999px';
+        probe.style.width = '1px';
+        probe.style.height = '1px';
+        document.body.appendChild(probe);
+
+        const bg = getComputedStyle(probe).backgroundColor;
+        probe.remove();
+
+        const styled = bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent';
+        if (!styled) {
+          document.documentElement.classList.add('tw-fallback');
+        }
+      } catch (e) {
+        // Wenn irgendwas schiefgeht, lieber Fallback aktivieren
+        document.documentElement.classList.add('tw-fallback');
+      }
+    }
+
+    window.addEventListener('load', () => {
+      // Nach dem Laden sollten Stylesheets fertig sein
+      setTimeout(enableTailwindFallbackIfNeeded, 0);
+    });
+
+
+    // --- Advanced controls (unlock with code 1202) ---
+    const advancedCodeInput = document.getElementById('advancedCodeInput');
+    const advancedStatus = document.getElementById('advancedStatus');
+    const advancedLockBtn = document.getElementById('advancedLockBtn');
+
+    function isAdvancedUnlocked() {
+      return document.body.classList.contains('advanced-unlocked');
+    }
+
+    function setAdvancedUnlocked(isUnlocked) {
+      document.body.classList.toggle('advanced-unlocked', !!isUnlocked);
+      if (advancedStatus) advancedStatus.style.display = isUnlocked ? 'inline' : 'none';
+    }
+
+    // Default: locked (nur "Druckvorschau" sichtbar)
+    setAdvancedUnlocked(false);
+
+    function tryUnlockAdvanced() {
+      const val = String(advancedCodeInput?.value || '').trim();
+      if (val === '1202') {
+        setAdvancedUnlocked(true);
+        if (advancedCodeInput) advancedCodeInput.value = '';
+      }
+    }
+
+    if (advancedCodeInput) {
+      advancedCodeInput.addEventListener('input', tryUnlockAdvanced);
+      advancedCodeInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          tryUnlockAdvanced();
+        }
+      });
+    }
+
+    if (advancedLockBtn) {
+      advancedLockBtn.addEventListener('click', () => setAdvancedUnlocked(false));
+    }
+
+
+
+    
+let allExpenses = {};
+let currentKey = '';
+
+function getCurrentKey() {
+  const month = monthSelect?.value || '';
+  const year = yearSelect?.value || '';
+  return (month && year) ? `${year}-${month}` : '';
+}
+
+function saveAll() {
+  localStorage.setItem('all_expenses', JSON.stringify(allExpenses));
+}
+
+function saveCurrentMonth() {
+  if (!currentKey) return;
+  allExpenses[currentKey] = expenses;
+  saveAll();
+}
+
+function loadAll() {
+  const data = localStorage.getItem('all_expenses');
+  if (data) {
+    try {
+      allExpenses = JSON.parse(data);
+    } catch {
+      allExpenses = {};
+    }
+  } else {
+    allExpenses = {};
+  }
+}
+
+
+
+let lockedMonths = {};
+
+function loadLocks() {
+  const raw = localStorage.getItem('locked_months');
+  if (raw) {
+    try {
+      lockedMonths = JSON.parse(raw);
+    } catch {
+      lockedMonths = {};
+    }
+  }
+}
+
+function saveLocks() {
+  localStorage.setItem('locked_months', JSON.stringify(lockedMonths));
+}
+
+function isLocked(key) {
+  return lockedMonths[key] === true;
+}
+
+function toggleLock() {
+  if (!currentKey) return;
+  if (!isAdvancedUnlocked()) return;
+  lockedMonths[currentKey] = !isLocked(currentKey);
+  saveLocks();
+  updateLockIcon();
+  updateEditability();
+}
+
+function updateLockIcon() {
+  const icon = document.getElementById('lockIcon');
+  if (!icon) return;
+
+  const advancedUnlocked = isAdvancedUnlocked();
+  const monthLocked = isLocked(currentKey);
+
+  icon.textContent = monthLocked ? '🔒' : '🔓';
+  icon.classList.toggle('lock-code-required', !advancedUnlocked);
+  icon.setAttribute('aria-disabled', advancedUnlocked ? 'false' : 'true');
+
+  if (!advancedUnlocked) {
+    icon.title = 'Schloss sichtbar – Code 1202 eingeben, um Sperren/Entsperren zu aktivieren';
+    return;
+  }
+
+  icon.title = monthLocked
+    ? 'Monat ist gesperrt – Klick zum Entsperren'
+    : 'Monat ist entsperrt – Klick zum Sperren';
+}
+
+function updateEditability() {
+  const locked = isLocked(currentKey);
+
+  document.querySelectorAll('#expenseTable input').forEach(input => {
+    input.readOnly = locked;
+    input.disabled = locked;
+  });
+
+  // Row delete buttons
+  document.querySelectorAll('.deleteBtn').forEach(btn => {
+    btn.style.display = locked ? 'none' : '';
+  });
+
+  // Row insert buttons
+  document.querySelectorAll('.insertBtn').forEach(btn => {
+    btn.style.display = locked ? 'none' : '';
+  });
+
+  // Import is blocked when locked
+  const importBtn = document.getElementById('importBtn');
+  if (importBtn) importBtn.disabled = locked;
+
+  // Hide the "Diesen Monat löschen" button completely when locked
+  const clearBtn = document.getElementById('clearAllBtn');
+  if (clearBtn) {
+    clearBtn.disabled = locked;
+    clearBtn.style.display = locked ? 'none' : '';
+  }
+}
+
+
+const MONTH_NAMES = {
+      "01": "Januar",
+      "02": "Februar",
+      "03": "März",
+      "04": "April",
+      "05": "Mai",
+      "06": "Juni",
+      "07": "Juli",
+      "08": "August",
+      "09": "September",
+      "10": "Oktober",
+      "11": "November",
+      "12": "Dezember"
+    };
+
+    function getDefaultExpenseMonthYear() {
+      const base = new Date();
+      base.setDate(1);
+      base.setMonth(base.getMonth() - 1);
+      return {
+        month: String(base.getMonth() + 1).padStart(2, '0'),
+        year: String(base.getFullYear())
+      };
+    }
+
+    function determineMonthFromExpenses() {
+      if (!Array.isArray(expenses) || expenses.length === 0) return;
+      for (const exp of expenses) {
+        if (!exp || !exp.date || typeof exp.date !== 'string') continue;
+        const parts = exp.date.split('-');
+        if (parts.length === 3) {
+          const y = parts[0];
+          const m = parts[1];
+          if (yearSelect) {
+            yearSelect.value = y;
+          }
+          if (monthSelect && monthSelect.querySelector(`option[value="${m}"]`)) {
+            monthSelect.value = m;
+          }
+          return;
+        }
+      }
+    }
+
+    function initMonthSelector() {
+      const defaultPeriod = getDefaultExpenseMonthYear();
+      const currentMonth = defaultPeriod.month;
+      const currentYear = parseInt(defaultPeriod.year, 10);
+
+      if (yearSelect) {
+        yearSelect.innerHTML = '';
+        for (let y = currentYear - 5; y <= currentYear + 5; y++) {
+          const opt = document.createElement('option');
+          opt.value = String(y);
+          opt.textContent = String(y);
+          yearSelect.appendChild(opt);
+        }
+        yearSelect.value = String(currentYear);
+      }
+
+      if (monthSelect) {
+        if (monthSelect.querySelector(`option[value="${currentMonth}"]`)) {
+          monthSelect.value = currentMonth;
+        }
+      }
+
+      // Quartal (nur als Komfort, wird nur gesetzt wenn noch leer)
+      if (quarterSelect && !quarterSelect.value && monthSelect && monthSelect.value) {
+        const m = parseInt(monthSelect.value, 10);
+        if (m && !isNaN(m)) quarterSelect.value = String(Math.ceil(m / 3));
+      }
+
+      // Versuche, Monat/Jahr aus vorhandenen Einträgen zu übernehmen
+      determineMonthFromExpenses();
+    }
+
+    function ensureYearOption(year) {
+      if (!yearSelect) return;
+      const value = String(year);
+      const exists = Array.from(yearSelect.options).some(opt => opt.value === value);
+      if (!exists) {
+        const opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = value;
+        yearSelect.appendChild(opt);
+      }
+    }
+
+    function shiftSelectedMonth(delta) {
+      if (!monthSelect || !yearSelect) return;
+
+      const defaultPeriod = getDefaultExpenseMonthYear();
+      let month = parseInt(monthSelect.value || '', 10);
+      let year = parseInt(yearSelect.value || '', 10);
+
+      if (!month || isNaN(month)) month = parseInt(defaultPeriod.month, 10);
+      if (!year || isNaN(year)) year = parseInt(defaultPeriod.year, 10);
+
+      month += delta;
+
+      if (month < 1) {
+        month = 12;
+        year -= 1;
+      } else if (month > 12) {
+        month = 1;
+        year += 1;
+      }
+
+      ensureYearOption(year);
+      yearSelect.value = String(year);
+      monthSelect.value = String(month).padStart(2, '0');
+
+      handleMonthYearChange();
+    }
+
+    function prevMonth() {
+      shiftSelectedMonth(-1);
+    }
+
+    function nextMonth() {
+      shiftSelectedMonth(1);
+    }
+
+    function save() {
+      saveCurrentMonth();
+    }
+
+    function parseAmount(value) {
+      if (typeof value !== 'string') {
+        value = String(value ?? '');
+      }
       value = value.trim();
       if (!value) return 0;
 
@@ -472,150 +856,128 @@
       } else if (hasComma && !hasDot) {
         value = value.replace(',', '.');
       }
-
       const n = parseFloat(value);
-      return Number.isFinite(n) ? n : 0;
+      return isNaN(n) ? 0 : n;
     }
 
-    function formatEuro(value) {
-      return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value || 0);
-    }
-
-    function formatDecimal(value) {
-      return new Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(value || 0);
-    }
-
-    function calculateVatFromGross(gross) {
-      const amount = Number(gross) || 0;
-      if (amount === 0) return 0;
-      return amount - (amount / 1.19);
-    }
-
-    function getOverviewYears() {
-      const years = new Set();
-      years.add(new Date().getFullYear());
-
-      try {
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i) || '';
-
-          let match = key.match(/^day-(\d{4})-\d{1,2}-\d{1,2}$/);
-          if (match) {
-            years.add(parseInt(match[1], 10));
-            continue;
-          }
-
-          if (key === 'all_expenses') {
-            try {
-              const allExpenses = JSON.parse(localStorage.getItem('all_expenses') || '{}');
-              Object.keys(allExpenses || {}).forEach(expKey => {
-                const expMatch = String(expKey).match(/^(\d{4})-(\d{2})$/);
-                if (expMatch) years.add(parseInt(expMatch[1], 10));
-              });
-            } catch (_) {}
-          }
-        }
-      } catch (_) {}
-
-      return Array.from(years)
-        .filter(y => Number.isFinite(y))
-        .sort((a, b) => b - a);
-    }
-
-    function populateOverviewYearSelect() {
-      const years = getOverviewYears();
-      const currentValue = overviewYearSelect.value;
-      overviewYearSelect.innerHTML = '';
-
-      years.forEach(year => {
-        const opt = document.createElement('option');
-        opt.value = String(year);
-        opt.textContent = String(year);
-        overviewYearSelect.appendChild(opt);
-      });
-
-      const currentYear = String(new Date().getFullYear());
-      if (currentValue && years.includes(parseInt(currentValue, 10))) {
-        overviewYearSelect.value = currentValue;
-      } else if (years.includes(parseInt(currentYear, 10))) {
-        overviewYearSelect.value = currentYear;
-      } else if (years.length) {
-        overviewYearSelect.value = String(years[0]);
-      }
-    }
-
-    function incomeMonthSummaryKey(year, monthIndex) {
-      return `income-month-${year}-${String(monthIndex + 1).padStart(2, '0')}`;
-    }
-
-    function getStoredIncomeMonthSummary(year, monthIndex) {
-  try {
-    const raw = localStorage.getItem(incomeMonthSummaryKey(year, monthIndex));
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object') return null;
-    return {
-      income: parseFlexibleAmount(parsed.total),
-      customers: parseInt(parsed.customers || 0, 10) || 0,
-      workdays: parseInt(parsed.workdays || 0, 10) || 0
-    };
-  } catch (_) {
-    return null;
-  }
-}
-
-function computeIncomeOverview(year) {
-  const byMonth = Array.from({ length: 12 }, (_, monthIndex) => {
-    const stored = getStoredIncomeMonthSummary(year, monthIndex);
-    return stored || { income: 0, customers: 0, workdays: 0 };
-  });
-
-  try {
-    for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
-      if (getStoredIncomeMonthSummary(year, monthIndex)) continue;
-
-      let monthIncome = 0;
-      let monthCustomers = 0;
-      let monthWorkdays = 0;
-
-      for (let day = 1; day <= 31; day++) {
-        const key = `day-${year}-${monthIndex}-${day}`;
-        let rows = [];
-        try {
-          rows = JSON.parse(localStorage.getItem(key) || '[]');
-        } catch (_) {
-          rows = [];
-        }
-        if (!Array.isArray(rows) || rows.length === 0) continue;
-
-        let hasWorkday = false;
-        rows.forEach(row => {
-          const n1 = parseFlexibleAmount(row?.amount1 ?? row?.a1 ?? '');
-          const n2 = parseFlexibleAmount(row?.amount2 ?? row?.a2 ?? '');
-          const tip = parseFlexibleAmount(row?.amountTip ?? '');
-          monthIncome += n1 + n2 + tip;
-          const customers = parseInt(row?.customers ?? row?.count ?? row?.cnt ?? 0, 10) || 0;
-          monthCustomers += customers;
-          if (n1 > 0 || n2 > 0 || tip > 0 || customers > 0) {
-            hasWorkday = true;
+    function getNextReceiptNumber() {
+      let max = 0;
+      if (Array.isArray(expenses)) {
+        expenses.forEach(exp => {
+          if (!exp || exp.receipt === undefined || exp.receipt === null) return;
+          const n = parseInt(exp.receipt, 10);
+          if (!isNaN(n) && n > max) {
+            max = n;
           }
         });
-
-        if (hasWorkday) monthWorkdays += 1;
       }
-
-      byMonth[monthIndex] = {
-        income: monthIncome,
-        customers: monthCustomers,
-        workdays: monthWorkdays
-      };
+      return String(max + 1);
     }
-  } catch (_) {}
 
-  return byMonth;
-}
+    function autoAssignReceiptsIfMissing() {
+      if (!Array.isArray(expenses)) return;
+      // Nur für Zeilen ohne Belegnummer UND mit Datum (Tag) in aktueller Reihenfolge
+      let counter = 1;
+      expenses.forEach(exp => {
+        if (exp && (exp.isRent === true || exp.isSwaprad === true)) return; // Raummiete & Swaprad erhalten keine Belegnummer
+        if (!exp) return;
+        const current = (exp.receipt || '').toString().trim();
 
-    function hasAnyExpenseRowContent(exp) {
+        // Datum prüfen: nur wenn ein Tag vorhanden ist (iso-Format YYYY-MM-DD erwartet)
+        const d = (exp.date || '').toString().trim();
+        let hasDay = false;
+        if (d) {
+          const parts = d.split('-');
+          if (parts.length === 3 && parts[2]) {
+            hasDay = true;
+          }
+        }
+
+        if (!hasDay) {
+          // Für Zeilen ohne Datum niemals eine Belegnummer vergeben
+          return;
+        }
+
+        if (!current) {
+          exp.receipt = String(counter++);
+        } else {
+          // Wenn bereits Nummern existieren, Zähler hinter die größte Nummer setzen
+          const n = parseInt(current, 10);
+          if (!isNaN(n) && n >= counter) {
+            counter = n + 1;
+          }
+        }
+      });
+    }
+
+    // --- Belegnummern neu durchnummerieren (nur Zeilen mit Datum erhalten eine Nummer) ---
+    // Regel: Raummiete & Swaprad bekommen NIE eine Belegnummer. Zeilen ohne Datum bekommen NIE eine Belegnummer.
+    // Die Nummern folgen immer der aktuellen Zeilenreihenfolge (1..N).
+    function renumberReceiptsByRowOrder() {
+      if (!Array.isArray(expenses)) return;
+      let counter = 1;
+
+      expenses.forEach(exp => {
+        if (!exp) return;
+
+        // Fixe Kosten ohne Belegnummer
+        if (exp.isRent === true || exp.isSwaprad === true) {
+          exp.receipt = "";
+          return;
+        }
+
+        // Nur wenn ein Tag vorhanden ist (iso-Format YYYY-MM-DD erwartet)
+        const parts = getDateParts(exp.date);
+        const hasDay = !!(parts && parts.day && String(parts.day).trim());
+
+        if (!hasDay) {
+          exp.receipt = "";
+          return;
+        }
+
+        exp.receipt = String(counter++);
+      });
+    }
+
+    // --- Zeile direkt unterhalb einer bestehenden Zeile einfügen ---
+    function insertEmptyRowBelow(index) {
+      if (!Array.isArray(expenses)) return;
+      if (isLocked(currentKey)) return;
+
+      const safeIndex = parseInt(index, 10);
+      if (isNaN(safeIndex) || safeIndex < 0 || safeIndex >= expenses.length) return;
+
+      const newEntry = {
+        date: "",
+        amount: "",
+        desc: "",
+        receipt: "",
+        hideDate: false
+      };
+
+      expenses.splice(safeIndex + 1, 0, newEntry);
+      save();
+      render();
+
+      // Fokus zuverlässig setzen (DOM-Reihenfolge kann durch Platzhalterzeilen abweichen)
+      focusFieldByIndex(safeIndex + 1, "date");
+    }
+
+    function focusFieldByIndex(rowIndex, fieldName) {
+      setTimeout(() => {
+        const sel = `input[data-index="${rowIndex}"][data-field="${fieldName}"]`;
+        const el = expenseBody ? expenseBody.querySelector(sel) : null;
+        if (el) {
+          el.focus();
+          try { el.select && el.select(); } catch (_) {}
+        }
+      }, 0);
+    }
+
+
+
+
+    function hasAnyRowContent(exp) {
       if (!exp) return false;
       const dateRaw = String(exp.date ?? '').trim();
       const amountRaw = String(exp.amount ?? '').trim();
@@ -625,7 +987,7 @@ function computeIncomeOverview(year) {
       return !!(dateRaw || amountRaw || descRaw || receiptRaw || periodRaw);
     }
 
-    function getExpenseMonthDefaults(key) {
+    function getMonthDefaults(key) {
       let year = '';
       let month = '';
       if (key && typeof key === 'string') {
@@ -635,7 +997,7 @@ function computeIncomeOverview(year) {
           month = parts[1] || '';
         }
       }
-      const monthName = month ? (monthNames[parseInt(month, 10) - 1] || '') : '';
+      const monthName = month ? (MONTH_NAMES[month] || '') : '';
       return {
         rentDate: (year && month) ? `${year}-${month}-01` : '',
         rentPeriod: monthName,
@@ -648,254 +1010,1528 @@ function computeIncomeOverview(year) {
       };
     }
 
-    function isDefaultRentExpenseRow(exp, key) {
+    function isDefaultRentRow(exp, key) {
       if (!exp || exp.isRent !== true) return false;
-      const defs = getExpenseMonthDefaults(key);
+      const defs = getMonthDefaults(key);
       const desc = String(exp.desc ?? '').trim();
       const period = String(exp.period ?? '').trim();
       const date = String(exp.date ?? '').trim();
-      return parseFlexibleAmount(exp.amount) === defs.rentAmount
+      return parseAmount(exp.amount) === defs.rentAmount
         && (!desc || desc === defs.rentDesc)
         && (!period || period === defs.rentPeriod)
         && (!date || date === defs.rentDate);
     }
 
-    function isDefaultSwapradExpenseRow(exp, key) {
+    function isDefaultSwapradRow(exp, key) {
       if (!exp || exp.isSwaprad !== true) return false;
-      const defs = getExpenseMonthDefaults(key);
+      const defs = getMonthDefaults(key);
       const desc = String(exp.desc ?? '').trim();
       const period = String(exp.period ?? '').trim();
       const date = String(exp.date ?? '').trim();
-      return parseFlexibleAmount(exp.amount) === defs.swapradAmount
+      return parseAmount(exp.amount) === defs.swapradAmount
         && (!desc || desc === defs.swapradDesc)
         && (!period || period === defs.swapradPeriod)
         && (!date || date === defs.swapradDate);
     }
 
-    function getLockedExpenseMonths() {
-      try {
-        const parsed = JSON.parse(localStorage.getItem('locked_months') || '{}');
-        return parsed && typeof parsed === 'object' ? parsed : {};
-      } catch (_) {
-        return {};
-      }
-    }
-
-    function isExpenseMonthActivated(key, list, lockedMonths) {
+    function isMonthActivated(key, list) {
       if (!Array.isArray(list)) return false;
-      if (lockedMonths && lockedMonths[key] === true) return true;
+      if (key && isLocked(key)) return true;
 
       return list.some(exp => {
         if (!exp) return false;
-        if (exp.isRent === true) return !isDefaultRentExpenseRow(exp, key);
-        if (exp.isSwaprad === true) return !isDefaultSwapradExpenseRow(exp, key);
-        return hasAnyExpenseRowContent(exp);
+        if (exp.isRent === true) return !isDefaultRentRow(exp, key);
+        if (exp.isSwaprad === true) return !isDefaultSwapradRow(exp, key);
+        return hasAnyRowContent(exp);
       });
     }
 
-    function computeExpenseOverview(year) {
-      const byMonth = Array.from({ length: 12 }, () => ({ expenses: 0, expensesWithoutFixed: 0 }));
+    function getEffectiveMonthRows(key, list) {
+      if (!Array.isArray(list)) return [];
+      const monthActive = isMonthActivated(key, list);
 
-      let allExpenses = {};
-      try {
-        allExpenses = JSON.parse(localStorage.getItem('all_expenses') || '{}');
-      } catch (_) {
-        allExpenses = {};
+      return list.filter(exp => {
+        if (!exp) return false;
+        if (isHiddenRentRow(exp)) return false;
+        if (isHiddenSwapradRow(exp)) return false;
+
+        if (exp.isRent === true || exp.isSwaprad === true) {
+          return monthActive;
+        }
+
+        return hasAnyRowContent(exp);
+      });
+    }
+
+    function recalcTotals() {
+      let total = 0;
+      let receiptsTotal = 0;
+
+      const rows = getEffectiveMonthRows(currentKey, expenses);
+
+      rows.forEach(exp => {
+        const amount = parseAmount(exp.amount);
+        total += amount;
+
+        if (exp.isRent !== true && exp.isSwaprad !== true) {
+          receiptsTotal += amount;
+        }
+      });
+
+      const net = total / 1.19;
+      const vat = total - net;
+
+      totalDisplay.textContent = formatEuro(total);
+      if (receiptsDisplay) receiptsDisplay.textContent = formatEuro(receiptsTotal);
+      netDisplay.textContent = formatEuro(net);
+      vatDisplay.textContent = formatEuro(vat);
+    }
+
+
+
+
+    function getDateParts(iso) {
+      let day = '';
+      if (iso && typeof iso === 'string') {
+        const parts = iso.split('-');
+        if (parts.length === 3) {
+          day = parts[2];
+        }
+      }
+      const defaultPeriod = getDefaultExpenseMonthYear();
+      const year = (yearSelect && yearSelect.value)
+        ? yearSelect.value
+        : defaultPeriod.year;
+      const month = (monthSelect && monthSelect.value)
+        ? monthSelect.value
+        : defaultPeriod.month;
+      return { year, month, day };
+    }
+
+    function buildDateFromDay(dayInput, existingIso) {
+      let day = String(dayInput || '').replace(/\D/g, '');
+      if (!day) return existingIso || '';
+      if (day.length === 1) {
+        day = '0' + day;
+      }
+      const parts = getDateParts(existingIso);
+      const year = parts.year;
+      const month = parts.month;
+      return `${year}-${month}-${day}`;
+    }
+
+    
+    // --- Safety helpers (prevent broken HTML on import / special characters) ---
+    function escHtml(s) {
+      return String(s ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+    function escAttr(s) {
+      // same as escHtml (used for value="...")
+      return escHtml(s);
+    }
+
+function render() {
+      expenseBody.innerHTML = '';
+
+      // Normalisieren/Migrieren der Raummiete-Zeile
+      expenses = normalizeRentRowForMonth(currentKey, expenses);
+      // Standard-Zeile: Swaprad Miete für E-Bike
+      expenses = normalizeSwapradRowForMonth(currentKey, expenses);
+
+      const locked = isLocked(currentKey);
+      const rentRow = (expenses || []).find(e => e && e.isRent === true) || null;
+
+      const swapradRow = (expenses || []).find(e => e && e.isSwaprad === true) || null;
+
+      (expenses || []).forEach((exp, index) => {
+        if (!exp) return;
+        if (isHiddenRentRow(exp)) return;
+        if (isHiddenSwapradRow(exp)) return;
+
+        const row = document.createElement('tr');
+        const parts = getDateParts(exp.date);
+        const day = parts.day ? String(parseInt(parts.day, 10)) : '';
+        const monthYearLabel = (exp.hideDate && !day) ? '' : (parts.month && parts.year ? ` .${parts.month}.${parts.year}` : '');
+        const dateStyle = (exp.hideDate && !day) ? 'visibility:hidden' : '';
+        const isRent = exp.isRent === true;
+        const isSwaprad = exp.isSwaprad === true;
+
+        row.innerHTML = `
+          <td class="border p-1 w-20">
+            ${(isRent || isSwaprad) ? `<span class="text-gray-400"></span>` : `
+            <input
+              type="text"
+              inputmode="numeric"
+              value="${escAttr(exp.receipt || '')}"
+              data-index="${index}"
+              data-field="receipt"
+              class="w-full p-1 text-right bg-gray-50"
+              readonly
+              tabindex="-1"
+            />`}
+          </td>
+          <td class="border p-1">
+            ${
+              (isRent || isSwaprad)
+                ? `<input
+                    type="text"
+                    value="${escAttr(exp.period || '')}"
+                    data-index="${index}"
+                    data-field="period"
+                    placeholder="Monat (z.B. Januar)"
+                    class="w-full p-1"
+                  />`
+                : `<div class="flex items-center gap-1">
+                    <input
+                      type="text"
+                      inputmode="numeric"
+                      value="${escAttr(day)}"
+                      data-index="${index}"
+                      data-field="date"
+                      style="${dateStyle}"
+                      class="w-16 p-1 text-right"
+                    />
+                    <span class="text-gray-500">${monthYearLabel}</span>
+                  </div>`
+            }
+          </td>
+          <td class="border p-1">
+            <input
+              type="text"
+              inputmode="decimal"
+              value="${escAttr(exp.amount || '')}"
+              data-index="${index}"
+              data-field="amount"
+              class="w-full p-1 text-right"
+            />
+          </td>
+          <td class="border p-1">
+            <input
+              type="text"
+              value="${escAttr(exp.desc || '')}"
+              data-index="${index}"
+              data-field="desc"
+              class="w-[400px] p-1"
+            />
+          </td>
+          <td class="border p-1 text-center">
+            <div class="flex justify-center gap-2">
+              ${
+                (isRent || isSwaprad)
+                  ? `<span class="text-gray-400">–</span>`
+                  : `
+                      <button
+                        data-index="${index}"
+                        class="insertBtn text-green-700"
+                        title="Zeile darunter einfügen"
+                        ${locked ? 'disabled' : ''}
+                      >
+                        ➕
+                      </button>
+                      <button
+                        data-index="${index}"
+                        class="deleteBtn text-red-600"
+                        title="Zeile löschen"
+                        ${locked ? 'disabled' : ''}
+                      >
+                        🗑️
+                      </button>`
+              }
+            </div>
+          </td>
+        `;
+        expenseBody.appendChild(row);
+      });
+
+      recalcTotals();
+    }
+
+function formatDateGerman(iso) {
+      if (!iso) return '';
+      const parts = iso.split('-');
+      if (parts.length !== 3) return iso;
+      const [y, m, d] = parts;
+      return `${d}.${m}.${y}`;
+    }
+
+    // Für Raummiete/Swaprad kann statt eines Tagesdatums ein Monats-Text (z.B. "Januar") erfasst werden.
+    function getPrintDate(exp) {
+      if (!exp) return '';
+      if (exp.isRent === true || exp.isSwaprad === true) {
+        const p = String(exp.period ?? '').trim();
+        if (p) return p;
+      }
+      return formatDateGerman(exp.date);
+    }
+
+
+    function getSelectedMonthName() {
+      if (!monthSelect) return '';
+      const val = monthSelect.value;
+      if (!val) return '';
+      return MONTH_NAMES[val] || '';
+    }
+
+    function getSelectedYear() {
+      if (!yearSelect) return '';
+      const val = yearSelect.value;
+      if (!val) return '';
+      return val;
+    }
+
+    
+    // --- Quarter helpers (Q1..Q4) ---
+    function getSelectedQuarter() {
+      const qRaw = quarterSelect?.value || '';
+      const q = parseInt(qRaw, 10);
+      if (q && !isNaN(q)) return q;
+
+      const m = parseInt(monthSelect?.value || '', 10);
+      if (!m || isNaN(m)) return null;
+      return Math.ceil(m / 3);
+    }
+
+    function getQuarterMonths(q) {
+      const start = (q - 1) * 3 + 1;
+      return [0, 1, 2].map(i => String(start + i).padStart(2, '0'));
+    }
+
+    function getQuarterTitle() {
+      const q = getSelectedQuarter();
+      const year = getSelectedYear();
+      if (q && year) return `Ausgaben – Q${q} ${year}`;
+      if (year) return `Ausgaben – ${year}`;
+      return 'Ausgaben – Quartal';
+    }
+
+    function getQuarterRows() {
+      const q = getSelectedQuarter();
+      const year = getSelectedYear();
+      if (!q || !year) return { q: null, year: null, months: [], rows: [] };
+
+      const months = getQuarterMonths(q);
+      const rows = [];
+
+      months.forEach(mm => {
+        const key = `${year}-${mm}`;
+        const list = allExpenses[key];
+        const monthRows = getEffectiveMonthRows(key, list);
+        if (!monthRows.length) return;
+
+        rows.push({ __monthHeader: true, month: mm, year });
+        monthRows.forEach(exp => rows.push(exp));
+      });
+
+      return { q, year, months, rows };
+    }
+
+    // Print headline (only used in Ausdruck)
+    const PRINT_MAIN_TITLE = "Betriebliche Ausgaben – privat verauslagt (EÜR)";
+    const EXCEL_MAIN_TITLE = PRINT_MAIN_TITLE;
+
+function getPrintTitle() {
+      const monthName = getSelectedMonthName();
+      const year = getSelectedYear();
+      if (monthName && year) return `Ausgaben – ${monthName} ${year}`;
+      if (monthName) return `Ausgaben – ${monthName}`;
+      if (year) return `Ausgaben – ${year}`;
+      return 'Ausgaben';
+    }
+
+    function buildPrintArea() {
+      if (!printArea) return;
+
+      const title = getPrintTitle();
+
+      const rows = getEffectiveMonthRows(currentKey, expenses);
+
+      let rowsHtml = '';
+      let receiptsTotal = 0;
+      rows.forEach(exp => {
+        const dateRaw = String(exp.date ?? '').trim();
+        const amountRaw = String(exp.amount ?? '').trim();
+        const descRaw = String(exp.desc ?? '').trim();
+        const receiptRaw = String(exp.receipt ?? '').trim();
+        if (!(dateRaw || amountRaw || descRaw || receiptRaw)) return;
+        const date = escHtml(getPrintDate(exp));
+        const amountNumber = parseAmount(exp.amount);
+        if (exp.isRent !== true && exp.isSwaprad !== true) {
+          receiptsTotal += amountNumber;
+        }
+        const amountFormatted = amountNumber ? (Math.round(amountNumber*100)/100).toFixed(2).replace('.', ',') : '';
+        const desc = escHtml(exp.desc || '');
+        const receipt = escHtml(exp.receipt || '');
+        rowsHtml += `
+          <tr>
+            <td style="padding:2px 4px;width:60px;text-align:right;">${receipt}</td>
+            <td style="padding:2px 4px;width:80px;">${date}</td>
+            <td style="padding:2px 8px;text-align:right;width:100px;">${amountFormatted}</td>
+            <td style="padding:2px 4px 2px 20px;">${desc}</td>
+          </tr>
+        `;
+      });
+
+      // Summen über alle Einträge berechnen (wie auf der Hauptseite)
+      recalcTotals();
+      const totalText = totalDisplay.textContent;
+      const netText = netDisplay.textContent;
+      const vatText = vatDisplay.textContent;
+
+      const totalPlain = totalText.replace('€','').trim();
+const netPlain = netText.replace('€','').trim();
+const vatPlain = vatText.replace('€','').trim();
+const receiptsPlain = (Math.round(receiptsTotal * 100) / 100).toFixed(2).replace('.', ',');
+const summaryRows = rows.length ? `
+        <tr>
+          <td colspan="2" style="padding:40px 4px 4px 4px;font-weight:bold;">Gesamtsumme (Brutto gesamt):</td>
+          <td style="padding:40px 4px 4px 4px;text-align:right;">${totalPlain}</td>
+          <td style="padding:40px 4px 4px 4px;"></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:4px 4px 10px 22px;font-weight:bold;">Davon Quittungen:</td>
+          <td style="padding:4px 4px 10px 4px;text-align:right;">${receiptsPlain}</td>
+          <td style="padding:4px 4px 10px 4px;"></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:4px;font-weight:bold;">Nettobetrag (gesamt):</td>
+          <td style="padding:4px;text-align:right;">${netPlain}</td>
+          <td style="padding:4px;"></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:4px;font-weight:bold;">Mehrwertsteuer (19 % gesamt):</td>
+          <td style="padding:4px;text-align:right;">${vatPlain}</td>
+          <td style="padding:4px;"></td>
+        </tr>
+      ` : '';
+
+      printArea.innerHTML = `
+        <h1 style="font-size:22px;font-weight:bold;margin-bottom:6px;">${PRINT_MAIN_TITLE}</h1>
+        <div style="font-size:18px;font-weight:bold;margin-bottom:14px;">${title}</div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:14px;">
+          <thead>
+            <tr>
+              <th style="padding:4px;text-align:left;width:60px;">Beleg</th>
+              <th style="padding:4px;text-align:left;width:80px;">Datum</th>
+              <th style="padding:4px;text-align:right;width:100px;">Betrag</th>
+              <th style="padding:4px 4px 4px 20px;text-align:left;">Beschreibung</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml || `<tr><td colspan="4" style="padding:4px;font-style:italic;">Keine Einträge.</td></tr>`}
+            ${summaryRows}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function buildQuarterPrintArea() {
+      if (!printArea) return;
+
+      const info = getQuarterRows();
+      const title = getQuarterTitle();
+
+      let rowsHtml = '';
+      let total = 0;
+      let receiptsTotal = 0;
+
+      (info.rows || []).forEach(exp => {
+        if (exp && exp.__monthHeader) {
+          const monthName = MONTH_NAMES[exp.month] || exp.month;
+          rowsHtml += `
+            <tr>
+              <td colspan="4" style="padding:14px 4px 6px 4px;font-weight:bold;">${escHtml(monthName)} ${escHtml(exp.year)}</td>
+            </tr>
+          `;
+          return;
+        }
+
+        const date = escHtml(getPrintDate(exp));
+        const amountNumber = parseAmount(exp.amount);
+        total += amountNumber;
+        if (exp.isRent !== true && exp.isSwaprad !== true) receiptsTotal += amountNumber;
+        const amountFormatted = amountNumber ? (Math.round(amountNumber * 100) / 100).toFixed(2).replace('.', ',') : '';
+        const desc = escHtml(exp.desc || '');
+        const receipt = escHtml(exp.receipt || '');
+
+        rowsHtml += `
+          <tr>
+            <td style="padding:2px 4px;width:60px;text-align:right;">${receipt}</td>
+            <td style="padding:2px 4px;width:90px;">${date}</td>
+            <td style="padding:2px 8px;text-align:right;width:110px;">${amountFormatted}</td>
+            <td style="padding:2px 4px 2px 20px;">${desc}</td>
+          </tr>
+        `;
+      });
+
+      const net = total / 1.19;
+      const vat = total - net;
+
+      const totalPlain = (Math.round(total * 100) / 100).toFixed(2).replace('.', ',');
+      const netPlain = (Math.round(net * 100) / 100).toFixed(2).replace('.', ',');
+      const vatPlain = (Math.round(vat * 100) / 100).toFixed(2).replace('.', ',');
+      const receiptsPlain = (Math.round(receiptsTotal * 100) / 100).toFixed(2).replace('.', ',');
+
+      const summaryRows = (info.rows || []).length ? `
+        <tr>
+          <td colspan="2" style="padding:40px 4px 4px 4px;font-weight:bold;">Gesamtsumme (Brutto gesamt):</td>
+          <td style="padding:40px 4px 4px 4px;text-align:right;">${totalPlain}</td>
+          <td style="padding:40px 4px 4px 4px;"></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:4px 4px 10px 22px;font-weight:bold;">Davon Quittungen:</td>
+          <td style="padding:4px 4px 10px 4px;text-align:right;">${receiptsPlain}</td>
+          <td style="padding:4px 4px 10px 4px;"></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:4px;font-weight:bold;">Nettobetrag (gesamt):</td>
+          <td style="padding:4px;text-align:right;">${netPlain}</td>
+          <td style="padding:4px;"></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:4px;font-weight:bold;">Mehrwertsteuer (19 % gesamt):</td>
+          <td style="padding:4px;text-align:right;">${vatPlain}</td>
+          <td style="padding:4px;"></td>
+        </tr>
+      ` : '';
+
+      printArea.innerHTML = `
+        <h1 style="font-size:22px;font-weight:bold;margin-bottom:6px;">${PRINT_MAIN_TITLE}</h1>
+        <div style="font-size:18px;font-weight:bold;margin-bottom:14px;">${title}</div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:14px;">
+          <thead>
+            <tr>
+              <th style="padding:4px;text-align:left;width:60px;">Beleg</th>
+              <th style="padding:4px;text-align:left;width:90px;">Datum</th>
+              <th style="padding:4px;text-align:right;width:110px;">Betrag</th>
+              <th style="padding:4px 4px 4px 20px;text-align:left;">Beschreibung</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml || `<tr><td colspan="4" style="padding:4px;font-style:italic;">Keine Einträge.</td></tr>`}
+            ${summaryRows}
+          </tbody>
+        </table>
+      `;
+    }
+
+
+
+    expenseBody.addEventListener('change', (e) => {
+      const index = e.target.dataset.index;
+      const field = e.target.dataset.field;
+      if (field === 'receipt') {
+        return;
+      }
+      if (index !== undefined && field) {
+        if (field === 'date') {
+          expenses[index].date = buildDateFromDay(e.target.value, expenses[index].date);
+          // Belegnummern: Raummiete & Swaprad erhalten keine Belegnummer.
+          // Bei normalen Zeilen werden die Nummern nach Zeilenreihenfolge neu vergeben,
+          // aber nur für Zeilen mit eingetragenem Datum.
+          renumberReceiptsByRowOrder();
+          // Datum wurde aktiv bearbeitet -> wieder einblenden
+          expenses[index].hideDate = false;
+          save();
+          render();
+        } else if (field === 'period') {
+          // Monats-Text für Raummiete/Swaprad
+          expenses[index].period = e.target.value;
+          if (expenses[index].isRent === true || expenses[index].isSwaprad === true) {
+            expenses[index].receipt = "";
+          }
+          save();
+          recalcTotals();
+        } else {
+          expenses[index][field] = e.target.value;
+          save();
+          recalcTotals();
+        }
+      }
+    });
+
+    expenseBody.addEventListener('keydown', (e) => {
+      const input = e.target;
+      if (!input || input.tagName !== 'INPUT') return;
+      if (e.key !== 'Enter') return;
+
+      e.preventDefault();
+
+      const indexStr = input.dataset.index;
+      const field = input.dataset.field;
+      if (indexStr === undefined || !field) return;
+      const index = parseInt(indexStr, 10);
+      if (isNaN(index) || index < 0 || index >= expenses.length) return;
+
+      // Aktuellen Wert wie im change-Handler übernehmen
+      if (field === 'date') {
+        expenses[index].date = buildDateFromDay(input.value, expenses[index].date);
+        // Belegnummern nach Zeilenreihenfolge neu vergeben (nur Zeilen mit Datum)
+        renumberReceiptsByRowOrder();
+        // Datum wurde aktiv bearbeitet -> wieder einblenden
+        expenses[index].hideDate = false;
+      } else if (field === 'period') {
+        // Monats-Text für Raummiete/Swaprad
+        expenses[index].period = input.value;
+        if (expenses[index].isRent === true || expenses[index].isSwaprad === true) {
+          expenses[index].receipt = "";
+        }
+      } else {
+        expenses[index][field] = input.value;
       }
 
-      const lockedMonths = getLockedExpenseMonths();
+      // Wenn kein Tag/keine Belegnummer vorhanden ist, Datum in dieser Zeile ausblenden,
+      // sobald eine neue Zeile darunter erzeugt wird (Unterposition zum Beleg darüber).
+      const isFixedRow = (expenses[index].isRent === true || expenses[index].isSwaprad === true);
+      if (!isFixedRow) {
+        const curParts = getDateParts(expenses[index].date);
+        const hasDay = !!curParts.day;
+        const hasReceipt = !!(expenses[index].receipt && String(expenses[index].receipt).trim());
+        if (!hasDay && !hasReceipt) {
+          expenses[index].hideDate = true;
+        }
+      }
 
-      Object.entries(allExpenses || {}).forEach(([key, list]) => {
-        const match = String(key).match(/^(\d{4})-(\d{2})$/);
-        if (!match) return;
+      // Neue Zeile direkt darunter einfügen
+      insertEmptyRowBelow(index);
+    });
 
-        const itemYear = parseInt(match[1], 10);
-        const monthIndex = parseInt(match[2], 10) - 1;
-        if (itemYear !== year || monthIndex < 0 || monthIndex > 11 || !Array.isArray(list)) return;
+    const enterHint = document.getElementById('enterHint');
 
-        const monthActivated = isExpenseMonthActivated(key, list, lockedMonths);
+    function updateEnterHint(target) {
+      if (!enterHint) return;
+      if (target && target.tagName === 'INPUT' && target.dataset.field === 'desc') {
+        enterHint.style.display = 'block';
+      } else {
+        enterHint.style.display = 'none';
+      }
+    }
 
-        let total = 0;
-        let totalWithoutFixed = 0;
-        list.forEach(exp => {
-          if (!exp) return;
+    
+const enterHintRow=document.getElementById('enterHintRow');
 
-          const isRentHidden = exp.isRent === true && exp.rentHidden === true;
-          const isSwapradHidden = exp.isSwaprad === true && exp.swapradHidden === true;
-          if (isRentHidden || isSwapradHidden) return;
+function updateEnterHintRow(target){
+  if(!enterHintRow) return;
+  if(target && target.tagName==='INPUT' && target.dataset.field==='desc'){
+    enterHintRow.style.display='';
+  } else {
+    enterHintRow.style.display='none';
+  }
+}
 
-          if (exp.isRent === true || exp.isSwaprad === true) {
-            if (!monthActivated) return;
-          } else if (!hasAnyExpenseRowContent(exp)) {
+expenseBody.addEventListener('focusin',(e)=>{updateEnterHintRow(e.target);});
+expenseBody.addEventListener('focusout',(e)=>{updateEnterHintRow(null);});
+
+expenseBody.addEventListener('focusin', (e) => {
+      updateEnterHint(e.target);
+    });
+
+    expenseBody.addEventListener('focusout', (e) => {
+      // Beim Verlassen des Eingabefeldes den Hinweis ausblenden
+      updateEnterHint(null);
+    });
+
+    expenseBody.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+
+      const index = parseInt(btn.dataset.index, 10);
+
+      if (btn.classList.contains('insertBtn')) {
+        insertEmptyRowBelow(index);
+        return;
+      }
+
+      if (btn.classList.contains('deleteBtn')) {
+        if (isLocked(currentKey)) return;
+        expenses.splice(index, 1);
+        // Nach dem Löschen Belegnummern neu durchnummerieren
+        renumberReceiptsByRowOrder();
+        save();
+        render();
+        return;
+      }
+    });
+
+    
+    // Default month template: first row prefilled with "Raummiete"
+    function getDefaultEmptyMonth() {
+      // Tag 1 vorbelegen (Monat/Jahr kommen aus der Auswahl)
+      const month = monthSelect?.value || '';
+      const year = yearSelect?.value || '';
+      const rentDate = (month && year) ? `${year}-${month}-01` : '';
+
+      return [
+        {
+          isRent: true,
+          rentHidden: false, // standardmäßig eingeblendet
+          date: rentDate,
+          amount: "392,70",
+          desc: "Raummiete",
+          receipt: "",      // Belegnummer entfällt in dieser Zeile
+          hideDate: false
+        },
+        {
+          isSwaprad: true,
+          // Datum für diese Zeile soll manuell eingetragen werden
+          swapradHidden: false, // standardmäßig eingeblendet
+          date: "",
+          amount: "69,90",
+          desc: "Swaprad Miete für E-Bike",
+          receipt: "",
+          hideDate: false
+        },
+        {
+          date: "",
+          amount: "",
+          desc: "",
+          receipt: "",
+          hideDate: false
+        }
+      ];
+    }
+
+function isHiddenRentRow(exp) {
+      return false;
+    }
+
+    
+
+    function isHiddenSwapradRow(exp) {
+      return false;
+    }
+function normalizeRentRowForMonth(key, list) {
+      if (!Array.isArray(list)) return list;
+
+      let changed = false;
+
+      // Datum für Raummiete (Tag 1 aus key = YYYY-MM)
+      let rentDate = "";
+      if (key && typeof key === "string") {
+        const parts = key.split("-");
+        if (parts.length === 2 && parts[0] && parts[1]) {
+          rentDate = `${parts[0]}-${parts[1]}-01`;
+        }
+      }
+
+      
+      // Standard-Periode (Monat) für Raummiete (frei editierbar im Datumsfeld)
+      let rentPeriod = "";
+      if (key && typeof key === "string") {
+        const parts = key.split("-");
+        if (parts.length === 2 && parts[1]) {
+          rentPeriod = MONTH_NAMES[parts[1]] || "";
+        }
+      }
+
+// 1) Falls es KEINE Raummiete-Zeile gibt: an den Anfang einfügen
+      let rentIndex = list.findIndex(e => e && e.isRent === true);
+
+      // Sanfte Migration: falls erste Zeile früher einfach "Raummiete" hieß (ohne isRent)
+      if (rentIndex === -1) {
+        const first = list[0];
+        if (first && String(first.desc || "").trim().toLowerCase() === "raummiete") {
+          first.isRent = true;
+          first.receipt = ""; // Belegnummer entfernen
+          if (first.rentHidden !== false) {
+            first.rentHidden = false; // immer eingeblendet
+            changed = true;
+          }
+          if (!String(first.date || "").trim() && rentDate) {
+            first.date = rentDate;
+            changed = true;
+          }
+          if (!String(first.period || "").trim() && rentPeriod) {
+            first.period = rentPeriod;
+            changed = true;
+          }
+          // Standardwert für Raummiete-Betrag (nur wenn leer)
+          if (!String(first.amount ?? "").trim()) {
+            first.amount = "392,70";
+            changed = true;
+          }
+          // kein auto-show mehr anhand Betrag
+          if (changed) {
+            allExpenses[key] = list;
+            saveAll();
+          }
+          return list;
+        }
+
+        // Neue Raummiete-Zeile einfügen
+        list.unshift({
+          isRent: true,
+          rentHidden: false, // standardmäßig eingeblendet
+          date: rentDate,
+          period: rentPeriod,
+          amount: "392,70",
+          desc: "Raummiete",
+          receipt: "",      // Belegnummer entfällt
+          hideDate: false
+        });
+        changed = true;
+        allExpenses[key] = list;
+        saveAll();
+        return list;
+      }
+
+      // 2) Wenn Raummiete existiert, immer nach oben schieben (erste Zeile)
+      if (rentIndex > 0) {
+        const rentRow = list.splice(rentIndex, 1)[0];
+        list.unshift(rentRow);
+        changed = true;
+      }
+
+      const rentRow = list[0];
+      if (rentRow) {
+        if (rentRow.isRent !== true) {
+          rentRow.isRent = true;
+          changed = true;
+        }
+        if (rentRow.receipt !== "") {
+          rentRow.receipt = "";
+          changed = true;
+        }
+        if (rentRow.rentHidden !== false) {
+          rentRow.rentHidden = false; // immer eingeblendet
+          changed = true;
+        }
+        if (!String(rentRow.desc || "").trim()) {
+          rentRow.desc = "Raummiete";
+          changed = true;
+        }
+        if (!String(rentRow.date || "").trim() && rentDate) {
+          rentRow.date = rentDate;
+          changed = true;
+        }
+        if (!String(rentRow.period || "").trim() && rentPeriod) {
+          rentRow.period = rentPeriod;
+          changed = true;
+        }
+        // Standardwert für Raummiete-Betrag (nur wenn leer)
+        if (!String(rentRow.amount ?? "").trim()) {
+          rentRow.amount = "392,70";
+          changed = true;
+        }
+      }
+
+      // --- Ensure at least one editable (non-rent) row exists ---
+      // Sicherstellen, dass mindestens eine normale Eingabezeile vorhanden ist.
+      const hasNonRentRow = list.some(e => e && e.isRent !== true);
+      if (!hasNonRentRow) {
+        list.push({
+          date: "",
+          amount: "",
+          desc: "",
+          receipt: "",
+          hideDate: false
+        });
+        changed = true;
+      }
+      // __ensureEditableRowAfterHiddenRent
+
+      if (changed) {
+        allExpenses[key] = list;
+        saveAll();
+      }
+      return list;
+    }
+
+
+
+    // --- Second default row: Swaprad Miete für E-Bike (Datum manuell) ---
+    function normalizeSwapradRowForMonth(key, list) {
+      if (!Array.isArray(list)) return list;
+
+      let changed = false;
+
+      // Standard-Periode (Monat) für Swaprad (frei editierbar im Datumsfeld)
+      let swapradPeriod = "";
+      if (key && typeof key === "string") {
+        const parts = key.split("-");
+        if (parts.length === 2 && parts[1]) {
+          swapradPeriod = MONTH_NAMES[parts[1]] || "";
+        }
+      }
+
+
+
+      // 1) Swaprad-Zeile finden (bevorzugt per Flag)
+      let idx = list.findIndex(e => e && e.isSwaprad === true);
+
+      // Sanfte Migration: falls der Nutzer die Zeile schon hatte (Beschreibung enthält "swaprad")
+      if (idx === -1) {
+        idx = list.findIndex(e => {
+          if (!e) return false;
+          const d = String(e.desc || '').trim().toLowerCase();
+          return d.includes('swaprad') && (d.includes('e-bike') || d.includes('ebike') || d.includes('e bike') || d.includes('miete'));
+        });
+        if (idx !== -1) {
+          list[idx].isSwaprad = true;
+          changed = true;
+        }
+      }
+
+      // Zielposition: direkt nach der Raummiete (sofern vorhanden)
+      const desiredPos = (list[0] && list[0].isRent === true) ? 1 : 0;
+
+      // 2) Wenn nicht vorhanden: einfügen
+      if (idx === -1) {
+        list.splice(desiredPos, 0, {
+          isSwaprad: true,
+          swapradHidden: false, // standardmäßig eingeblendet
+          date: "",          // Datum manuell eintragen
+          period: swapradPeriod,
+          amount: "69,90",
+          desc: "Swaprad Miete für E-Bike",
+          receipt: "",
+          hideDate: false
+        });
+        changed = true;
+      } else {
+        // Defaults nur ergänzen, wenn leer
+        const row = list[idx];
+        // Falls die Beschreibung noch der alten Standard-Bezeichnung ähnelt, auf neuen Standard setzen
+        // (z.B. "Swaprad E-Bike Miete" oder "Swaprad- Leid Ebike")
+        const d0 = String(row.desc || '').trim().toLowerCase();
+        if (d0 && d0.includes('swaprad') && (d0.includes('leid') || d0.includes('miete') || d0.includes('e-bike') || d0.includes('ebike') || d0.includes('e bike'))) {
+          row.desc = "Swaprad Miete für E-Bike";
+          changed = true;
+        }
+
+        if (!String(row.desc || '').trim()) {
+          row.desc = "Swaprad Miete für E-Bike";
+          changed = true;
+        }
+        if (!String(row.amount ?? '').trim()) {
+          row.amount = "69,90";
+          changed = true;
+        }
+
+        if (row.swapradHidden !== false) {
+          row.swapradHidden = false; // immer eingeblendet
+          changed = true;
+        }
+
+        // Swaprad-Zeile erhält niemals eine Belegnummer
+        if (String(row.receipt ?? '').trim()) {
+          row.receipt = "";
+          changed = true;
+        }
+
+        // Standard-Periode ergänzen, falls fehlt
+        if (!String(row.period || "").trim() && swapradPeriod) {
+          row.period = swapradPeriod;
+          changed = true;
+        }
+
+
+        // 3) An die Standardposition verschieben (direkt nach Raummiete)
+        if (idx !== desiredPos) {
+          const moved = list.splice(idx, 1)[0];
+          list.splice(desiredPos, 0, moved);
+          changed = true;
+        }
+      }
+
+      // 4) Doppelte Swaprad-Zeilen entfernen (falls vorhanden)
+      //    (behalte die Zeile an der gewünschten Position)
+      for (let i = list.length - 1; i >= 0; i--) {
+        const e = list[i];
+        if (e && e.isSwaprad === true && i !== desiredPos) {
+          list.splice(i, 1);
+          changed = true;
+        }
+      }
+
+      // --- Ensure at least one editable (visible) row exists ---
+      // Sicherstellen, dass mindestens eine normale Eingabezeile vorhanden ist.
+      const hasVisibleNonFixedRow = list.some(e => e && e.isRent !== true && !(e.isSwaprad === true && e.swapradHidden === true));
+      if (!hasVisibleNonFixedRow) {
+        list.push({
+          date: "",
+          amount: "",
+          desc: "",
+          receipt: "",
+          hideDate: false
+        });
+        changed = true;
+      }
+      // __ensureEditableRowAfterHiddenSwaprad
+
+
+if (changed) {
+        allExpenses[key] = list;
+        saveAll();
+      }
+      return list;
+    }
+
+function monthHasMeaningfulData(list, key = currentKey) {
+      return isMonthActivated(key, list);
+    }
+
+    function getMonthExpensesOrDefault(key) {
+      const list = allExpenses[key];
+
+      // Immer beide Standardzeilen (Raummiete + Swaprad) normalisieren,
+      // auch in "leeren" Monaten, damit Monat/Hidden-Status sofort korrekt sind.
+      if (!Array.isArray(list) || list.length === 0 || !monthHasMeaningfulData(list, key)) {
+        const def = getDefaultEmptyMonth();
+        const normalized = normalizeSwapradRowForMonth(key, normalizeRentRowForMonth(key, def));
+        // direkt in allExpenses schreiben, damit es beim nächsten Öffnen bleibt
+        allExpenses[key] = normalized;
+        saveAll();
+        return normalized;
+      }
+
+      const normalized = normalizeSwapradRowForMonth(key, normalizeRentRowForMonth(key, list));
+      allExpenses[key] = normalized;
+      saveAll();
+      return normalized;
+    }
+
+function handleMonthYearChange() {
+      // Quartal automatisch nach Monat setzen, solange der Nutzer kein Quartal gewählt hat
+      if (quarterSelect && !quarterSelect.value && monthSelect && monthSelect.value) {
+        const m = parseInt(monthSelect.value, 10);
+        if (m && !isNaN(m)) quarterSelect.value = String(Math.ceil(m / 3));
+      }
+      currentKey = getCurrentKey();
+      expenses = getMonthExpensesOrDefault(currentKey);
+      render();
+      updateLockIcon();
+      updateEditability();
+    }
+
+    if (monthSelect) {
+      monthSelect.addEventListener('change', handleMonthYearChange);
+    }
+    if (yearSelect) {
+      yearSelect.addEventListener('change', handleMonthYearChange);
+    }
+
+    const prevMonthBtn = document.getElementById('prevMonthBtn');
+    const nextMonthBtn = document.getElementById('nextMonthBtn');
+
+    if (prevMonthBtn) {
+      prevMonthBtn.addEventListener('click', prevMonth);
+    }
+    if (nextMonthBtn) {
+      nextMonthBtn.addEventListener('click', nextMonth);
+    }
+
+
+    function syncPreviewWithPrintArea() {
+      if (!printPreviewPage || !printArea) return;
+      printPreviewPage.innerHTML = printArea.innerHTML || '<div style="font-style:italic;color:#6b7280;">Keine Vorschau verfügbar.</div>';
+    }
+
+    function openPrintPreview(mode = 'month') {
+      currentPreviewMode = mode === 'quarter' ? 'quarter' : 'month';
+
+      if (currentPreviewMode === 'quarter') {
+        buildQuarterPrintArea();
+        if (printPreviewTitle) printPreviewTitle.textContent = 'Druckvorschau – Quartal';
+        if (printPreviewSubtitle) printPreviewSubtitle.textContent = 'Vorschau für Quartalsdruck bzw. PDF-Ausgabe.';
+      } else {
+        buildPrintArea();
+        if (printPreviewTitle) printPreviewTitle.textContent = 'Druckvorschau – Monat';
+        if (printPreviewSubtitle) printPreviewSubtitle.textContent = 'Vorschau für Monatsdruck bzw. PDF-Ausgabe.';
+      }
+
+      syncPreviewWithPrintArea();
+      if (printPreviewOverlay) {
+        printPreviewOverlay.classList.add('is-open');
+        printPreviewOverlay.setAttribute('aria-hidden', 'false');
+      }
+      document.body.classList.add('preview-open');
+    }
+
+    function closePrintPreview(clearPrintContent = true) {
+      if (printPreviewOverlay) {
+        printPreviewOverlay.classList.remove('is-open');
+        printPreviewOverlay.setAttribute('aria-hidden', 'true');
+      }
+      document.body.classList.remove('preview-open');
+      if (clearPrintContent && printArea) {
+        printArea.innerHTML = '';
+      }
+    }
+
+    if (printPreviewPrintBtn) {
+      printPreviewPrintBtn.addEventListener('click', () => {
+        if (!printArea || !printArea.innerHTML.trim()) {
+          openPrintPreview(currentPreviewMode);
+        }
+        window.print();
+      });
+    }
+
+    if (printPreviewCloseBtn) {
+      printPreviewCloseBtn.addEventListener('click', () => closePrintPreview(true));
+    }
+
+    if (printPreviewOverlay) {
+      printPreviewOverlay.addEventListener('click', (e) => {
+        if (e.target === printPreviewOverlay) {
+          closePrintPreview(true);
+        }
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && printPreviewOverlay && printPreviewOverlay.classList.contains('is-open')) {
+        closePrintPreview(true);
+      }
+    });
+
+    document.getElementById('printBtn').addEventListener('click', () => {
+      openPrintPreview('month');
+    });
+
+    document.getElementById('exportMonthBtn').addEventListener('click', async () => {
+  currentKey = getCurrentKey();
+  if (!currentKey) {
+    alert('Bitte zuerst Monat und Jahr auswählen.');
+    return;
+  }
+
+  saveCurrentMonth();
+  const monthExport = { [currentKey]: allExpenses[currentKey] || expenses || [] };
+  const jsonText = JSON.stringify(monthExport, null, 2);
+  const defaultFilename = `Ausgaben_${currentKey}.json`;
+
+  if (window.electronAPI && typeof window.electronAPI.saveBinaryFile === 'function') {
+    const res = await window.electronAPI.saveBinaryFile({
+      defaultFilename,
+      content: jsonText,
+      filters: [{ name: 'JSON', extensions: ['json'] }]
+    });
+    if (res && res.ok) return;
+    if (res && res.canceled) return;
+    if (res && res.error) alert('Speichern fehlgeschlagen: ' + res.error);
+    return;
+  }
+
+  const blob = new Blob([jsonText], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+
+  const userFilename = prompt("Dateiname für den Export eingeben:", defaultFilename);
+  if (!userFilename) {
+    URL.revokeObjectURL(url);
+    return;
+  }
+  const filename = userFilename.endsWith('.json') ? userFilename : `${userFilename}.json`;
+
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+    document.getElementById('exportBtn').addEventListener('click', async () => {
+  const jsonText = JSON.stringify(allExpenses, null, 2);
+  const defaultFilename = 'Ausgaben_Alle_Monate.json';
+
+  // Electron (Desktop): immer mit "Speichern unter..."-Dialog
+  if (window.electronAPI && typeof window.electronAPI.saveBinaryFile === 'function') {
+    const res = await window.electronAPI.saveBinaryFile({
+      defaultFilename,
+      content: jsonText,
+      filters: [{ name: 'JSON', extensions: ['json'] }]
+    });
+    if (res && res.ok) return;
+    if (res && res.canceled) return;
+    if (res && res.error) alert('Speichern fehlgeschlagen: ' + res.error);
+    return;
+  }
+
+  // Browser-Fallback
+  const blob = new Blob([jsonText], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+
+  const userFilename = prompt("Dateiname für den Export eingeben:", defaultFilename);
+  if (!userFilename) {
+    URL.revokeObjectURL(url);
+    return;
+  }
+  const filename = userFilename.endsWith('.json') ? userFilename : `${userFilename}.json`;
+
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+    document.getElementById('importBtn').addEventListener('click', () => {
+      document.getElementById('importInput').click();
+    });
+
+    document.getElementById('importInput').addEventListener('change', (e) => {
+      // Defensive: block import if current month is locked (even if file input was opened somehow)
+      if (currentKey && isLocked(currentKey)) {
+        alert('Monat ist gesperrt. Import nicht möglich.');
+        e.target.value = '';
+        return;
+      }
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const imported = JSON.parse(reader.result);
+          if (imported && typeof imported === 'object' && !Array.isArray(imported)) {
+            // Neue Struktur: mehrere Monate
+            Object.entries(imported).forEach(([key, list]) => {
+              if (Array.isArray(list)) {
+                allExpenses[key] = list;
+              }
+            });
+            saveAll();
+            currentKey = getCurrentKey();
+            expenses = getMonthExpensesOrDefault(currentKey);
+            render();
+            updateLockIcon();
+            updateEditability();
             return;
           }
 
-          const amount = parseFlexibleAmount(exp.amount);
-          total += amount;
+          if (Array.isArray(imported)) {
+            expenses = imported.map(item => ({
+              date: item.date || '',
+              amount: item.amount || '',
+              desc: item.desc || item.description || '',
+              receipt: item.receipt || item.beleg || ''
+            }));
+            autoAssignReceiptsIfMissing();
+            // Monat/Jahr anhand der geladenen Daten einstellen
+            determineMonthFromExpenses();
 
-          if (exp.isRent !== true && exp.isSwaprad !== true) {
-            totalWithoutFixed += amount;
+            // Wichtig: currentKey neu berechnen (nachdem Monat/Jahr gesetzt wurden),
+            // sonst wird in den falschen Monat gespeichert.
+            const importedKey = getCurrentKey();
+            if (importedKey) {
+              currentKey = importedKey;
+              allExpenses[currentKey] = expenses;
+              saveAll();
+            } else {
+              // Fallback: altes Verhalten
+              save();
+            }
+
+            render();
+            updateLockIcon();
+            updateEditability();
+          } else {
+            alert("Ungültiges Format.");
           }
-        });
+        } catch {
+          alert("Fehler beim Import.");
+        }
+      };
+      reader.readAsText(file);
+      // Input zurücksetzen, damit derselbe Dateiname erneut importiert werden kann
+      e.target.value = '';
+    });
 
-        byMonth[monthIndex].expenses += total;
-        byMonth[monthIndex].expensesWithoutFixed += totalWithoutFixed;
-      });
-
-      return byMonth;
+    function formatEuro(value) {
+      return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value);
     }
 
-    function computeFreeDayOverview(year) {
-      const byMonth = Array.from({ length: 12 }, () => ({ vacation: 0, sick: 0 }));
+    function load() {
+      loadAll();
+      initMonthSelector();
+      currentKey = getCurrentKey();
+      expenses = getMonthExpensesOrDefault(currentKey);
+      render();
+      updateLockIcon();
+      updateEditability();
+    }
+
+    function refreshAusgabenPage() {
+      try {
+        loadLocks();
+        load();
+        updateLockIcon();
+        updateEditability();
+      } catch (err) {
+        console.error('Fehler beim Aktualisieren der Ausgaben-Seite:', err);
+      }
+    }
+
+    window.onafterprint = () => {
+      if (printPreviewOverlay && printPreviewOverlay.classList.contains('is-open')) {
+        syncPreviewWithPrintArea();
+        return;
+      }
+      if (printArea) {
+        printArea.innerHTML = "";
+      }
+    };
+
+    // Start
+document.getElementById('lockIcon').addEventListener('click', toggleLock);
+    loadLocks();
+    load();
+    updateLockIcon();
+    updateEditability();
+    window.refreshAusgabenPage = refreshAusgabenPage;
+  
+
+    async function saveWorkbookXlsx(workbook, filename) {
+      const mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      const data = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const uint8 = new Uint8Array(data);
+
+      if (window.electronAPI && typeof window.electronAPI.saveBinaryFile === 'function') {
+        try {
+          let res = await window.electronAPI.saveBinaryFile({
+            defaultFilename: filename,
+            content: uint8,
+            filters: [{ name: 'Excel', extensions: ['xlsx'] }]
+          });
+
+          if (!res || (!res.ok && !res.canceled && !res.error)) {
+            res = await window.electronAPI.saveBinaryFile({
+              defaultFilename: filename,
+              content: Array.from(uint8),
+              filters: [{ name: 'Excel', extensions: ['xlsx'] }]
+            });
+          }
+
+          if (res && res.ok) return true;
+          if (res && res.canceled) return false;
+          if (res && res.error) {
+            console.warn('Excel speichern über Electron fehlgeschlagen:', res.error);
+          }
+        } catch (err) {
+          console.warn('Excel speichern über Electron fehlgeschlagen:', err);
+        }
+      }
 
       try {
-        for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
-          for (let day = 1; day <= 31; day++) {
-            const value = localStorage.getItem(`cf-${year}-${monthIndex}-${day}`);
-            if (value === 'urlaub') {
-              byMonth[monthIndex].vacation += 1;
-            } else if (value === 'krank') {
-              byMonth[monthIndex].sick += 1;
+        const blob = new Blob([uint8], { type: mime });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        return true;
+      } catch (err) {
+        console.error('Excel-Fallback fehlgeschlagen:', err);
+        alert('Excel speichern fehlgeschlagen.');
+        return false;
+      }
+    }
+
+    document.getElementById('excelExportBtn').addEventListener('click', async () => {
+      const month = getSelectedMonthName();
+      const year = getSelectedYear();
+      const wsData = [
+        [EXCEL_MAIN_TITLE],
+        [`${month} ${year}`],
+        [],
+        ["Beleg", "Datum", "Betrag (€)", "Beschreibung"]
+      ];
+
+      let total = 0;
+      let receiptsTotal = 0;
+
+      const rows = getEffectiveMonthRows(currentKey, expenses);
+
+      rows.forEach(exp => {
+        const dateRaw = String(exp?.date ?? '').trim();
+        const amountRaw = String(exp?.amount ?? '').trim();
+        const descRaw = String(exp?.desc ?? '').trim();
+        const receiptRaw = String(exp?.receipt ?? '').trim();
+        if (!(dateRaw || amountRaw || descRaw || receiptRaw)) return;
+
+        const amount = parseAmount(exp?.amount);
+        total += amount;
+        if (exp?.isRent !== true && exp?.isSwaprad !== true) receiptsTotal += amount;
+
+        // Excel: echte Datumszelle (nicht Text)
+        // Für Raummiete/Swaprad kann statt eines Tagesdatums ein Monats-Text (z.B. "Januar") stehen.
+        let excelDate = "";
+        const isFixedMonthly = (exp?.isRent === true || exp?.isSwaprad === true);
+
+        function _toExcelDate(iso) {
+          if (!iso || typeof iso !== "string") return "";
+          const parts = iso.split("-");
+          if (parts.length !== 3) return "";
+          const y = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10);
+          const d = parseInt(parts[2], 10);
+          if (isNaN(y) || isNaN(m) || isNaN(d)) return "";
+          return new Date(y, m - 1, d);
+        }
+
+        if (isFixedMonthly) {
+          const p = String(exp?.period ?? "").trim();
+          excelDate = p ? p : _toExcelDate(exp?.date);
+        } else {
+          excelDate = _toExcelDate(exp?.date);
+        }
+
+
+wsData.push([
+          exp?.receipt || "",
+          excelDate,
+          amount,
+          exp?.desc || ""
+        ]);
+      });
+
+      const net = total / 1.19;
+      const vat = total - net;
+
+      wsData.push([]);
+      wsData.push(["Gesamtsumme (Brutto):", "", total, ""]);
+      wsData.push(["Davon Quittungen:", "", receiptsTotal, ""]);
+      wsData.push(["Nettobetrag:", "", net, ""]);
+      wsData.push(["Mehrwertsteuer (19%):", "", vat, ""]);
+
+      // Wichtig: Date-Objekte als echte Datumszellen behalten
+      const worksheet = XLSX.utils.aoa_to_sheet(wsData, { cellDates: true });
+
+      // Formate setzen: Datum DD.MM.YYYY, Zahlen als Euro (de-DE)
+      Object.keys(worksheet).forEach(addr => {
+        if (addr[0] === "!") return;
+        const cell = worksheet[addr];
+        if (!cell) return;
+
+        // Datum
+        if (cell.t === "d" || cell.v instanceof Date) {
+          cell.t = "d";
+          cell.z = "DD.MM.YYYY";
+          return;
+        }
+
+        // Zahlen (Beträge + Summen)
+        if (typeof cell.v === "number") {
+          cell.z = '#,##0.00 [$€-de-DE]';
+        }
+      });
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, worksheet, "Ausgaben");
+      await saveWorkbookXlsx(wb, `Ausgaben_${month}_${year}.xlsx`);
+    });
+
+    document.getElementById('quarterExcelBtn').addEventListener('click', async () => {
+      const info = getQuarterRows();
+      if (!info.q || !info.year) {
+        alert('Bitte Quartal und Jahr auswählen (oder Monat+Jahr).');
+        return;
+      }
+
+      const wsData = [
+        [EXCEL_MAIN_TITLE],
+        [`Q${info.q} ${info.year}`],
+        [],
+        ["Beleg", "Datum", "Betrag (€)", "Beschreibung"]
+      ];
+
+      let total = 0;
+      let receiptsTotal = 0;
+
+      (info.rows || []).forEach(exp => {
+        if (exp && exp.__monthHeader) {
+          const monthName = MONTH_NAMES[exp.month] || exp.month;
+          wsData.push([`${monthName} ${exp.year}`, "", "", ""]);
+          return;
+        }
+
+        const amount = parseAmount(exp.amount);
+        total += amount;
+        if (exp?.isRent !== true && exp?.isSwaprad !== true) receiptsTotal += amount;
+
+        let excelDate = "";
+        const isFixedMonthly = (exp?.isRent === true || exp?.isSwaprad === true);
+        if (isFixedMonthly) {
+          const p = String(exp?.period ?? "").trim();
+          if (p) {
+            excelDate = p;
+          }
+        }
+        if (!excelDate && exp.date && typeof exp.date === "string") {
+          const parts = exp.date.split("-");
+          if (parts.length === 3) {
+            const y = parseInt(parts[0], 10);
+            const mo = parseInt(parts[1], 10);
+            const d = parseInt(parts[2], 10);
+            if (!isNaN(y) && !isNaN(mo) && !isNaN(d)) {
+              excelDate = new Date(y, mo - 1, d);
             }
           }
         }
-      } catch (_) {}
 
-      return byMonth;
-    }
-
-    function renderTaxQuarterOverview(incomeByMonth, expenseByMonth) {
-      const quarterRanges = [
-        { title: '1. Quartal', months: [0, 1, 2] },
-        { title: '2. Quartal', months: [3, 4, 5] },
-        { title: '3. Quartal', months: [6, 7, 8] },
-        { title: '4. Quartal', months: [9, 10, 11] }
-      ];
-
-      let yearlyTax = 0;
-      taxQuarterGroups.innerHTML = '';
-
-      quarterRanges.forEach(group => {
-        const quarter = document.createElement('div');
-        quarter.className = 'taxQuarter';
-
-        const title = document.createElement('div');
-        title.className = 'taxQuarterTitle';
-        title.textContent = group.title;
-        quarter.appendChild(title);
-
-        let quarterSum = 0;
-        group.months.forEach(monthIndex => {
-          const income = incomeByMonth[monthIndex]?.income || 0;
-          const vatIncome = calculateVatFromGross(income);
-          const expenses = expenseByMonth[monthIndex]?.expenses || 0;
-          const vatExpense = calculateVatFromGross(expenses);
-          const tax = vatIncome - vatExpense;
-          quarterSum += tax;
-          yearlyTax += tax;
-
-          const row = document.createElement('div');
-          row.className = 'taxRow';
-          row.innerHTML = `
-            <span>${monthNames[monthIndex]}</span>
-            <span class="${tax !== 0 ? '' : 'taxMuted'}">${tax !== 0 ? formatEuro(tax) : '–'}</span>
-          `;
-          quarter.appendChild(row);
-        });
-
-        const sumRow = document.createElement('div');
-        sumRow.className = 'taxQuarterSum';
-        sumRow.innerHTML = `
-          <span>Summe</span>
-          <span>${quarterSum !== 0 ? formatEuro(quarterSum) : '–'}</span>
-        `;
-        quarter.appendChild(sumRow);
-
-        taxQuarterGroups.appendChild(quarter);
+        wsData.push([
+          exp.receipt || "",
+          excelDate,
+          amount,
+          exp.desc || ""
+        ]);
       });
 
-      taxYearTotal.textContent = yearlyTax !== 0 ? formatEuro(yearlyTax) : '–';
-    }
+      const net = total / 1.19;
+      const vat = total - net;
 
-    function renderYearOverview() {
-      populateOverviewYearSelect();
-      const year = parseInt(overviewYearSelect.value || String(new Date().getFullYear()), 10);
-      const incomeByMonth = computeIncomeOverview(year);
-      const expenseByMonth = computeExpenseOverview(year);
-      const freeDayByMonth = computeFreeDayOverview(year);
+      wsData.push([]);
+      wsData.push(["Gesamtsumme (Brutto):", "", total, ""]);
+      wsData.push(["Davon Quittungen:", "", receiptsTotal, ""]);
+      wsData.push(["Nettobetrag:", "", net, ""]);
+      wsData.push(["Mehrwertsteuer (19%):", "", vat, ""]);
 
-      yearOverviewBody.innerHTML = '';
-      renderTaxQuarterOverview(incomeByMonth, expenseByMonth);
+      const worksheet = XLSX.utils.aoa_to_sheet(wsData, { cellDates: true });
 
-      let totalIncome = 0;
-      let totalIncomeVat = 0;
-      let totalExpenses = 0;
-      let totalExpenseVat = 0;
-      let totalCustomers = 0;
-      let totalWorkdays = 0;
-      let totalVacationDays = 0;
-      let totalSickDays = 0;
-      let activeCustomerMonths = 0;
+      Object.keys(worksheet).forEach(addr => {
+        if (addr[0] === "!") return;
+        const cell = worksheet[addr];
+        if (!cell) return;
 
-      for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
-        const income = incomeByMonth[monthIndex]?.income || 0;
-        const incomeVat = calculateVatFromGross(income);
-        const expenses = expenseByMonth[monthIndex]?.expenses || 0;
-        const expenseVat = calculateVatFromGross(expenses);
-        const customers = incomeByMonth[monthIndex]?.customers || 0;
-        const workdays = incomeByMonth[monthIndex]?.workdays || 0;
-        const vacationDays = freeDayByMonth[monthIndex]?.vacation || 0;
-        const sickDays = freeDayByMonth[monthIndex]?.sick || 0;
-        const customersPerDay = workdays > 0 ? (customers / workdays) : 0;
+        if (cell.t === "d" || cell.v instanceof Date) {
+          cell.t = "d";
+          cell.z = "DD.MM.YYYY";
+          return;
+        }
+        if (typeof cell.v === "number") {
+          cell.z = '#,##0.00 [$€-de-DE]';
+        }
+      });
 
-        totalIncome += income;
-        totalIncomeVat += incomeVat;
-        totalExpenses += expenses;
-        totalExpenseVat += expenseVat;
-        totalCustomers += customers;
-        totalWorkdays += workdays;
-        totalVacationDays += vacationDays;
-        totalSickDays += sickDays;
-        if (customers > 0) activeCustomerMonths += 1;
-
-        const tr = document.createElement('tr');
-        const hasAnyData = income !== 0 || expenses !== 0 || customers !== 0 || vacationDays > 0 || sickDays > 0;
-
-        tr.innerHTML = `
-          <td>${monthNames[monthIndex]}</td>
-          <td class="num ${income !== 0 ? '' : 'muted'}">${income !== 0 ? formatEuro(income) : '–'}</td>
-          <td class="num dividerCell ${incomeVat !== 0 ? '' : 'muted'}">${incomeVat !== 0 ? formatEuro(incomeVat) : '–'}</td>
-          <td class="num ${expenses !== 0 ? '' : 'muted'}">${expenses !== 0 ? formatEuro(expenses) : '–'}</td>
-          <td class="num dividerCell ${expenseVat !== 0 ? '' : 'muted'}">${expenseVat !== 0 ? formatEuro(expenseVat) : '–'}</td>
-          <td class="num ${hasAnyData ? '' : 'muted'}">${customers > 0 ? customers : '–'}</td>
-          <td class="num ${workdays > 0 ? '' : 'muted'}">${workdays > 0 ? formatDecimal(customersPerDay) : '–'}</td>
-          <td class="num ${vacationDays > 0 ? '' : 'muted'}">${vacationDays > 0 ? vacationDays : '–'}</td>
-          <td class="num ${sickDays > 0 ? '' : 'muted'}">${sickDays > 0 ? sickDays : '–'}</td>
-        `;
-        yearOverviewBody.appendChild(tr);
-      }
-
-      yearIncomeTotal.textContent = totalIncome !== 0 ? formatEuro(totalIncome) : '–';
-      yearIncomeVatTotal.textContent = totalIncomeVat !== 0 ? formatEuro(totalIncomeVat) : '–';
-      yearExpenseTotal.textContent = totalExpenses !== 0 ? formatEuro(totalExpenses) : '–';
-      yearExpenseVatTotal.textContent = totalExpenseVat !== 0 ? formatEuro(totalExpenseVat) : '–';
-      yearCustomerTotal.textContent = totalCustomers > 0 ? String(totalCustomers) : '–';
-      yearCustomerPerDayTotal.textContent = totalWorkdays > 0 ? formatDecimal(totalCustomers / totalWorkdays) : '–';
-      yearCustomerAverage.textContent = activeCustomerMonths > 0 ? formatDecimal(totalCustomers / activeCustomerMonths) : '–';
-      yearVacationTotal.textContent = totalVacationDays > 0 ? String(totalVacationDays) : '–';
-      yearSickTotal.textContent = totalSickDays > 0 ? String(totalSickDays) : '–';
-    }
-
-    overviewYearSelect.addEventListener('change', renderYearOverview);
-    window.addEventListener('storage', renderYearOverview);
-    window.addEventListener('focus', renderYearOverview);
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) renderYearOverview();
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, worksheet, `Ausgaben_Q${info.q}`);
+      await saveWorkbookXlsx(wb, `Ausgaben_Q${info.q}_${info.year}.xlsx`);
     });
 
-    window.refreshJahresuebersicht = renderYearOverview;
+    document.getElementById('quarterPrintBtn').addEventListener('click', () => {
+      openPrintPreview('quarter');
+    });
 
-    renderYearOverview();
-  </script>
+
+
+    document.getElementById('clearAllBtn').addEventListener('click', () => {
+      if (confirm("Möchtest du wirklich diesen Monat löschen?")) {
+        expenses = [{
+          date: "",
+          amount: "",
+          desc: "",
+          receipt: ""
+        }];
+        save();
+        render();
+      }
+    });</script>
 </body>
 </html>
