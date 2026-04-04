@@ -3,7 +3,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8"/>
-<title>Einnahmen (Offline)</title>
+<title>Einnahmen (Offline) – Version 238.04.26</title>
 <style>
 body { margin:0; padding:0; }
 .container { max-width:600px; margin:0 auto; background:white; padding:20px; }
@@ -1103,6 +1103,47 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
+function preserveViewportAroundDay(day, rebuildFn){
+  try {
+    const cell = document.querySelector('td.day-cell[data-day="' + day + '"]');
+    const relativeTop = cell ? cell.getBoundingClientRect().top : null;
+
+    rebuildFn();
+
+    const restore = function(){
+      try {
+        const newCell = document.querySelector('td.day-cell[data-day="' + day + '"]');
+        if (!newCell || relativeTop === null) return;
+        const absoluteTop = newCell.getBoundingClientRect().top + (window.pageYOffset || window.scrollY || document.documentElement.scrollTop || 0);
+        const target = Math.max(0, absoluteTop - relativeTop);
+        window.scrollTo({ top: target, behavior: 'auto' });
+      } catch (_) {}
+    };
+
+    requestAnimationFrame(function(){
+      restore();
+      requestAnimationFrame(restore);
+    });
+  } catch (_) {
+    rebuildFn();
+  }
+}
+
+function preserveViewportAroundCurrentPosition(rebuildFn){
+  try {
+    const currentTop = window.pageYOffset || window.scrollY || document.documentElement.scrollTop || 0;
+    rebuildFn();
+    requestAnimationFrame(function(){
+      window.scrollTo({ top: currentTop, behavior: 'auto' });
+      requestAnimationFrame(function(){
+        window.scrollTo({ top: currentTop, behavior: 'auto' });
+      });
+    });
+  } catch (_) {
+    rebuildFn();
+  }
+}
+
 // Eigene freie Tage speichern / lesen. Bei einem Klick kann der Benutzer wählen,
 // ob der Tag als Urlaubstag oder Krankheitstag markiert werden soll. Bei erneutem
 // Klick wird die Markierung entfernt. Die Auswahl wird unter dem Schlüssel
@@ -1153,7 +1194,9 @@ function toggleFreeDay(day){
     localStorage.setItem(key, next);
   }
 
-  updateMonth();  // neu aufbauen
+  preserveViewportAroundDay(day, function(){
+    updateMonth();
+  });  // neu aufbauen ohne Sprung nach oben
   // Nach dem Neuaufbau: Falls eine Warnung angezeigt werden soll, erzeugen.
   try {
     if (shouldWarn && typeof showFreeDayWarning === 'function') {
@@ -1416,7 +1459,9 @@ function markMissingDayAs(type) {
     localStorage.setItem(key, type);
   }
   hideMissingDayHint();
-  updateMonth();
+  preserveViewportAroundDay(lastMissingDay, function(){
+    updateMonth();
+  });
 }
 
 // Scrollt zum zuletzt gemeldeten fehlenden Tag.
