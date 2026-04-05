@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jahresübersicht – Einnahmen-Ausgaben 236.04.26</title>
+  <title>Jahresübersicht – Einnahmen-Ausgaben 241.04.26</title>
   <style>
     :root {
       --border-strong: #94a3b8;
@@ -341,6 +341,71 @@
       font-weight: 700;
     }
 
+    .year-summary-panel {
+      margin-top: 18px;
+    }
+    .yearResultTable {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 1420px;
+    }
+    .yearResultTable th,
+    .yearResultTable td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 14px;
+      background: transparent;
+      white-space: nowrap;
+    }
+    .yearResultTable th {
+      text-align: left;
+      color:#475569;
+      font-weight: 800;
+      background:#f8fafc;
+      position: static;
+    }
+    .yearResultTable th.num,
+    .yearResultTable td.num {
+      text-align: right;
+    }
+    .yearResultTable tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .yearResultTable .yearResultValue {
+      font-weight: 900;
+    }
+    .yearResultTable .yearResultPositive {
+      color:#166534;
+    }
+    .yearResultTable .yearResultNegative {
+      color:#b91c1c;
+    }
+    .yearResultTable .yearResultNeutral {
+      color:#475569;
+    }
+    .yearResultTable .isSelectedYear td {
+      background:#eef2ff;
+    }
+    .yearResultTable .yearLabelCell {
+      font-weight: 900;
+      color:#0f172a;
+      background:#f8fafc;
+      position: sticky;
+      left: 0;
+      z-index: 1;
+    }
+    .yearResultTable .muted {
+      color:#94a3b8;
+      font-weight: 700;
+    }
+    .yearResultTable .yearMetricStrong {
+      font-weight: 800;
+      color:#0f172a;
+    }
+
+
+
     @media (max-width: 1360px) {
       #page {
         max-width: 1380px;
@@ -365,7 +430,7 @@
           <div class="headLeft">
             <div class="icon">📊</div>
             <div>
-              <div class="kicker">Offline • Version 236.04.26</div>
+              <div class="kicker">Offline • Version 241.04.26</div>
               <h1>Jahresübersicht</h1>
               <div class="sub">Einfache Tabellenansicht mit Einnahmen, Umsatzsteuer, Ausgaben, Vorsteuer, Kunden, Kunden / Tag, Arbeitstagen sowie Urlaubs- und Krankheitstagen pro Monat.</div>
             </div>
@@ -453,6 +518,39 @@
         </div>
       </div>
     </div>
+
+
+    <div class="panel year-summary-panel" aria-label="Gesamtergebnisse der Jahre">
+      <div class="taxPanelTitle">
+        <div class="icon">📅</div>
+        <div>
+          <div class="kicker">Mehrjahres-Überblick</div>
+          <h1>Gesamtergebnisse der Jahre</h1>
+          <div class="sub">Direkter Vergleich aller vorhandenen Jahreswerte. Die Summen basieren auf derselben Logik wie die Jahresübersicht oben.</div>
+        </div>
+      </div>
+
+      <div class="tableWrap">
+        <table class="yearResultTable" aria-label="Gesamtergebnisse der Jahre">
+          <thead>
+            <tr>
+              <th>Jahr</th>
+              <th class="num">Einnahmen</th>
+              <th class="num">USt</th>
+              <th class="num">Ausgaben</th>
+              <th class="num">Vorsteuer</th>
+              <th class="num">Kunden</th>
+              <th class="num">Kunden / Tag</th>
+              <th class="num">Ø Kunden / Monat</th>
+              <th class="num">Arbeitstage</th>
+              <th class="num">Urlaub</th>
+              <th class="num">Krank</th>
+            </tr>
+          </thead>
+          <tbody id="yearResultBody"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -470,6 +568,7 @@
     const yearSickTotal = document.getElementById('yearSickTotal');
     const taxQuarterGroups = document.getElementById('taxQuarterGroups');
     const taxYearTotal = document.getElementById('taxYearTotal');
+    const yearResultBody = document.getElementById('yearResultBody');
 
     const monthNames = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 
@@ -778,6 +877,103 @@ function computeIncomeOverview(year) {
       return byMonth;
     }
 
+
+    function computeYearSummary(year) {
+      const incomeByMonth = computeIncomeOverview(year);
+      const expenseByMonth = computeExpenseOverview(year);
+      const freeDayByMonth = computeFreeDayOverview(year);
+
+      let totalIncome = 0;
+      let totalIncomeVat = 0;
+      let totalExpenses = 0;
+      let totalExpenseVat = 0;
+      let totalCustomers = 0;
+      let totalWorkdays = 0;
+      let totalVacationDays = 0;
+      let totalSickDays = 0;
+      let activeCustomerMonths = 0;
+
+      for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
+        const income = incomeByMonth[monthIndex]?.income || 0;
+        const incomeVat = calculateVatFromGross(income);
+        const expenses = expenseByMonth[monthIndex]?.expenses || 0;
+        const expenseVat = calculateVatFromGross(expenses);
+        const customers = incomeByMonth[monthIndex]?.customers || 0;
+        const workdays = incomeByMonth[monthIndex]?.workdays || 0;
+        const vacationDays = freeDayByMonth[monthIndex]?.vacation || 0;
+        const sickDays = freeDayByMonth[monthIndex]?.sick || 0;
+
+        totalIncome += income;
+        totalIncomeVat += incomeVat;
+        totalExpenses += expenses;
+        totalExpenseVat += expenseVat;
+        totalCustomers += customers;
+        totalWorkdays += workdays;
+        totalVacationDays += vacationDays;
+        totalSickDays += sickDays;
+        if (customers > 0) activeCustomerMonths += 1;
+      }
+
+      const taxDue = totalIncomeVat - totalExpenseVat;
+      const customersPerDay = totalWorkdays > 0 ? (totalCustomers / totalWorkdays) : 0;
+      const customerAveragePerActiveMonth = activeCustomerMonths > 0 ? (totalCustomers / activeCustomerMonths) : 0;
+
+      return {
+        year,
+        incomeByMonth,
+        expenseByMonth,
+        freeDayByMonth,
+        totalIncome,
+        totalIncomeVat,
+        totalExpenses,
+        totalExpenseVat,
+        totalCustomers,
+        totalWorkdays,
+        totalVacationDays,
+        totalSickDays,
+        activeCustomerMonths,
+        customersPerDay,
+        customerAveragePerActiveMonth,
+        taxDue,
+        result: totalIncome - totalExpenses
+      };
+    }
+
+    function renderYearResultsOverview(years, selectedYear) {
+      if (!yearResultBody) return;
+
+      yearResultBody.innerHTML = '';
+
+      years.forEach(year => {
+        const summary = computeYearSummary(year);
+        const hasData = summary.totalIncome !== 0
+          || summary.totalExpenses !== 0
+          || summary.totalCustomers !== 0
+          || summary.totalWorkdays !== 0
+          || summary.totalVacationDays !== 0
+          || summary.totalSickDays !== 0;
+
+        const tr = document.createElement('tr');
+        if (year === selectedYear) tr.classList.add('isSelectedYear');
+
+        tr.innerHTML = `
+          <td class="yearLabelCell">${year}</td>
+          <td class="num ${summary.totalIncome !== 0 ? 'yearMetricStrong' : 'muted'}">${summary.totalIncome !== 0 ? formatEuro(summary.totalIncome) : '–'}</td>
+          <td class="num ${summary.totalIncomeVat !== 0 ? '' : 'muted'}">${summary.totalIncomeVat !== 0 ? formatEuro(summary.totalIncomeVat) : '–'}</td>
+          <td class="num ${summary.totalExpenses !== 0 ? 'yearMetricStrong' : 'muted'}">${summary.totalExpenses !== 0 ? formatEuro(summary.totalExpenses) : '–'}</td>
+          <td class="num ${summary.totalExpenseVat !== 0 ? '' : 'muted'}">${summary.totalExpenseVat !== 0 ? formatEuro(summary.totalExpenseVat) : '–'}</td>
+          <td class="num ${summary.totalCustomers > 0 ? '' : 'muted'}">${summary.totalCustomers > 0 ? summary.totalCustomers : '–'}</td>
+          <td class="num ${summary.totalWorkdays > 0 ? '' : 'muted'}">${summary.totalWorkdays > 0 ? formatDecimal(summary.customersPerDay) : '–'}</td>
+          <td class="num ${summary.activeCustomerMonths > 0 ? '' : 'muted'}">${summary.activeCustomerMonths > 0 ? formatDecimal(summary.customerAveragePerActiveMonth) : '–'}</td>
+          <td class="num ${summary.totalWorkdays > 0 ? '' : 'muted'}">${summary.totalWorkdays > 0 ? summary.totalWorkdays : '–'}</td>
+          <td class="num ${summary.totalVacationDays > 0 ? '' : 'muted'}">${summary.totalVacationDays > 0 ? summary.totalVacationDays : '–'}</td>
+          <td class="num ${summary.totalSickDays > 0 ? '' : 'muted'}">${summary.totalSickDays > 0 ? summary.totalSickDays : '–'}</td>
+        `;
+        yearResultBody.appendChild(tr);
+      });
+    }
+
+
     function renderTaxQuarterOverview(incomeByMonth, expenseByMonth) {
       const quarterRanges = [
         { title: '1. Quartal', months: [0, 1, 2] },
@@ -832,24 +1028,16 @@ function computeIncomeOverview(year) {
     }
 
     function renderYearOverview() {
-      populateOverviewYearSelect();
+      const years = getOverviewYears();
+      populateOverviewYearSelect(years);
+
       const year = parseInt(overviewYearSelect.value || String(new Date().getFullYear()), 10);
-      const incomeByMonth = computeIncomeOverview(year);
-      const expenseByMonth = computeExpenseOverview(year);
-      const freeDayByMonth = computeFreeDayOverview(year);
+      const summary = computeYearSummary(year);
+      const { incomeByMonth, expenseByMonth, freeDayByMonth } = summary;
 
       yearOverviewBody.innerHTML = '';
       renderTaxQuarterOverview(incomeByMonth, expenseByMonth);
-
-      let totalIncome = 0;
-      let totalIncomeVat = 0;
-      let totalExpenses = 0;
-      let totalExpenseVat = 0;
-      let totalCustomers = 0;
-      let totalWorkdays = 0;
-      let totalVacationDays = 0;
-      let totalSickDays = 0;
-      let activeCustomerMonths = 0;
+      renderYearResultsOverview(years, year);
 
       for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
         const income = incomeByMonth[monthIndex]?.income || 0;
@@ -861,16 +1049,6 @@ function computeIncomeOverview(year) {
         const vacationDays = freeDayByMonth[monthIndex]?.vacation || 0;
         const sickDays = freeDayByMonth[monthIndex]?.sick || 0;
         const customersPerDay = workdays > 0 ? (customers / workdays) : 0;
-
-        totalIncome += income;
-        totalIncomeVat += incomeVat;
-        totalExpenses += expenses;
-        totalExpenseVat += expenseVat;
-        totalCustomers += customers;
-        totalWorkdays += workdays;
-        totalVacationDays += vacationDays;
-        totalSickDays += sickDays;
-        if (customers > 0) activeCustomerMonths += 1;
 
         const tr = document.createElement('tr');
         const hasAnyData = income !== 0 || expenses !== 0 || customers !== 0 || workdays > 0 || vacationDays > 0 || sickDays > 0;
@@ -890,16 +1068,16 @@ function computeIncomeOverview(year) {
         yearOverviewBody.appendChild(tr);
       }
 
-      yearIncomeTotal.textContent = totalIncome !== 0 ? formatEuro(totalIncome) : '–';
-      yearIncomeVatTotal.textContent = totalIncomeVat !== 0 ? formatEuro(totalIncomeVat) : '–';
-      yearExpenseTotal.textContent = totalExpenses !== 0 ? formatEuro(totalExpenses) : '–';
-      yearExpenseVatTotal.textContent = totalExpenseVat !== 0 ? formatEuro(totalExpenseVat) : '–';
-      yearCustomerTotal.textContent = totalCustomers > 0 ? String(totalCustomers) : '–';
-      yearWorkdayTotal.textContent = totalWorkdays > 0 ? String(totalWorkdays) : '–';
-      yearCustomerPerDayTotal.textContent = totalWorkdays > 0 ? formatDecimal(totalCustomers / totalWorkdays) : '–';
-      yearCustomerAverage.textContent = activeCustomerMonths > 0 ? formatDecimal(totalCustomers / activeCustomerMonths) : '–';
-      yearVacationTotal.textContent = totalVacationDays > 0 ? String(totalVacationDays) : '–';
-      yearSickTotal.textContent = totalSickDays > 0 ? String(totalSickDays) : '–';
+      yearIncomeTotal.textContent = summary.totalIncome !== 0 ? formatEuro(summary.totalIncome) : '–';
+      yearIncomeVatTotal.textContent = summary.totalIncomeVat !== 0 ? formatEuro(summary.totalIncomeVat) : '–';
+      yearExpenseTotal.textContent = summary.totalExpenses !== 0 ? formatEuro(summary.totalExpenses) : '–';
+      yearExpenseVatTotal.textContent = summary.totalExpenseVat !== 0 ? formatEuro(summary.totalExpenseVat) : '–';
+      yearCustomerTotal.textContent = summary.totalCustomers > 0 ? String(summary.totalCustomers) : '–';
+      yearWorkdayTotal.textContent = summary.totalWorkdays > 0 ? String(summary.totalWorkdays) : '–';
+      yearCustomerPerDayTotal.textContent = summary.totalWorkdays > 0 ? formatDecimal(summary.totalCustomers / summary.totalWorkdays) : '–';
+      yearCustomerAverage.textContent = summary.activeCustomerMonths > 0 ? formatDecimal(summary.totalCustomers / summary.activeCustomerMonths) : '–';
+      yearVacationTotal.textContent = summary.totalVacationDays > 0 ? String(summary.totalVacationDays) : '–';
+      yearSickTotal.textContent = summary.totalSickDays > 0 ? String(summary.totalSickDays) : '–';
     }
 
     overviewYearSelect.addEventListener('change', renderYearOverview);
