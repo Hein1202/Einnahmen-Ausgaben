@@ -460,6 +460,7 @@
           <th class="p-2 border">Datum</th>
           <th class="p-2 border">Betrag (€)</th>
           <th class="p-2 border">Beschreibung</th>
+          <th class="p-2 border">AfA</th>
           <th class="p-2 border">Aktion</th>
         </tr>
       </thead>
@@ -468,11 +469,12 @@
         
 <tr id="enterHintRow" style="display:none;">
   <td></td>
-  <td colspan="3" class="text-center text-gray-700 text-sm">Enter für neue Zeile – für mehrere Positionen im selben Beleg kein Datum angeben</td>
+  <td colspan="4" class="text-center text-gray-700 text-sm">Enter für neue Zeile – für mehrere Positionen im selben Beleg kein Datum angeben</td>
+  <td></td>
 </tr>
 <tr>
           <td class="border-t p-1"></td>
-          <td class="border-t p-1 align-top">
+          <td class="border-t p-1 align-top" colspan="3">
             <div class="text-sm space-y-1">
               <div class="flex justify-between">
                 <strong>Gesamtsumme (Brutto):</strong>
@@ -841,6 +843,15 @@ const MONTH_NAMES = {
       saveCurrentMonth();
     }
 
+    function ensureAfaFlag(list) {
+      if (!Array.isArray(list)) return [];
+      return list.map(exp => {
+        if (!exp || typeof exp !== 'object') return exp;
+        if (exp.isAfa === true) return exp;
+        return { ...exp, isAfa: false };
+      });
+    }
+
     function parseAmount(value) {
       if (typeof value !== 'string') {
         value = String(value ?? '');
@@ -952,6 +963,7 @@ const MONTH_NAMES = {
         amount: "",
         desc: "",
         receipt: "",
+        isAfa: false,
         hideDate: false
       };
 
@@ -984,7 +996,7 @@ const MONTH_NAMES = {
       const descRaw = String(exp.desc ?? '').trim();
       const receiptRaw = String(exp.receipt ?? '').trim();
       const periodRaw = String(exp.period ?? '').trim();
-      return !!(dateRaw || amountRaw || descRaw || receiptRaw || periodRaw);
+      return !!(dateRaw || amountRaw || descRaw || receiptRaw || periodRaw || exp?.isAfa === true);
     }
 
     function getMonthDefaults(key) {
@@ -1220,6 +1232,20 @@ function render() {
             />
           </td>
           <td class="border p-1 text-center">
+            ${
+              (isRent || isSwaprad)
+                ? `<span class="text-gray-400">–</span>`
+                : `<input
+                    type="checkbox"
+                    ${exp.isAfa === true ? 'checked' : ''}
+                    data-index="${index}"
+                    data-field="isAfa"
+                    title="Für Einkommensteuer als AfA/Abschreibung markieren"
+                    aria-label="AfA markieren"
+                  />`
+            }
+          </td>
+          <td class="border p-1 text-center">
             <div class="flex justify-center gap-2">
               ${
                 (isRent || isSwaprad)
@@ -1343,50 +1369,36 @@ function getPrintTitle() {
       return 'Ausgaben';
     }
 
-    function buildPrintArea() {
-      if (!printArea) return;
+    function formatPlainAmount(value) {
+      return (Math.round(value * 100) / 100).toFixed(2).replace('.', ',');
+    }
 
-      const title = getPrintTitle();
+    function buildTaxAdjustedSummaryRows({ total, receiptsTotal, rentTotal, afaTotal, hasRows }) {
+      if (!hasRows) return '';
 
-      const rows = getEffectiveMonthRows(currentKey, expenses);
+      const net = total / 1.19;
+      const vat = total - net;
+      const totalWithoutRent = total - rentTotal;
+      const netWithoutRent = totalWithoutRent / 1.19;
+      const vatWithoutRent = totalWithoutRent - netWithoutRent;
+      const totalWithoutRentAndAfa = totalWithoutRent - afaTotal;
+      const netWithoutRentAndAfa = totalWithoutRentAndAfa / 1.19;
+      const vatWithoutRentAndAfa = totalWithoutRentAndAfa - netWithoutRentAndAfa;
 
-      let rowsHtml = '';
-      let receiptsTotal = 0;
-      rows.forEach(exp => {
-        const dateRaw = String(exp.date ?? '').trim();
-        const amountRaw = String(exp.amount ?? '').trim();
-        const descRaw = String(exp.desc ?? '').trim();
-        const receiptRaw = String(exp.receipt ?? '').trim();
-        if (!(dateRaw || amountRaw || descRaw || receiptRaw)) return;
-        const date = escHtml(getPrintDate(exp));
-        const amountNumber = parseAmount(exp.amount);
-        if (exp.isRent !== true && exp.isSwaprad !== true) {
-          receiptsTotal += amountNumber;
-        }
-        const amountFormatted = amountNumber ? (Math.round(amountNumber*100)/100).toFixed(2).replace('.', ',') : '';
-        const desc = escHtml(exp.desc || '');
-        const receipt = escHtml(exp.receipt || '');
-        rowsHtml += `
-          <tr>
-            <td style="padding:2px 4px;width:60px;text-align:right;">${receipt}</td>
-            <td style="padding:2px 4px;width:80px;">${date}</td>
-            <td style="padding:2px 8px;text-align:right;width:100px;">${amountFormatted}</td>
-            <td style="padding:2px 4px 2px 20px;">${desc}</td>
-          </tr>
-        `;
-      });
+      const totalPlain = formatPlainAmount(total);
+      const netPlain = formatPlainAmount(net);
+      const vatPlain = formatPlainAmount(vat);
+      const receiptsPlain = formatPlainAmount(receiptsTotal);
+      const rentPlain = formatPlainAmount(rentTotal);
+      const totalWithoutRentPlain = formatPlainAmount(totalWithoutRent);
+      const netWithoutRentPlain = formatPlainAmount(netWithoutRent);
+      const vatWithoutRentPlain = formatPlainAmount(vatWithoutRent);
+      const afaPlain = formatPlainAmount(afaTotal);
+      const totalWithoutRentAndAfaPlain = formatPlainAmount(totalWithoutRentAndAfa);
+      const netWithoutRentAndAfaPlain = formatPlainAmount(netWithoutRentAndAfa);
+      const vatWithoutRentAndAfaPlain = formatPlainAmount(vatWithoutRentAndAfa);
 
-      // Summen über alle Einträge berechnen (wie auf der Hauptseite)
-      recalcTotals();
-      const totalText = totalDisplay.textContent;
-      const netText = netDisplay.textContent;
-      const vatText = vatDisplay.textContent;
-
-      const totalPlain = totalText.replace('€','').trim();
-const netPlain = netText.replace('€','').trim();
-const vatPlain = vatText.replace('€','').trim();
-const receiptsPlain = (Math.round(receiptsTotal * 100) / 100).toFixed(2).replace('.', ',');
-const summaryRows = rows.length ? `
+      return `
         <tr>
           <td colspan="2" style="padding:40px 4px 4px 4px;font-weight:bold;">Gesamtsumme (Brutto gesamt):</td>
           <td style="padding:40px 4px 4px 4px;text-align:right;">${totalPlain}</td>
@@ -1407,7 +1419,99 @@ const summaryRows = rows.length ? `
           <td style="padding:4px;text-align:right;">${vatPlain}</td>
           <td style="padding:4px;"></td>
         </tr>
-      ` : '';
+        <tr>
+          <td colspan="2" style="padding:18px 4px 4px 4px;font-weight:bold;">Raummiete:</td>
+          <td style="padding:18px 4px 4px 4px;text-align:right;">${rentPlain}</td>
+          <td style="padding:18px 4px 4px 4px;"></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:4px;font-weight:bold;">AfA-markierte Positionen:</td>
+          <td style="padding:4px;text-align:right;">${afaPlain}</td>
+          <td style="padding:4px;"></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:4px;font-weight:bold;">Gesamtsumme o. Raummiete (Brutto):</td>
+          <td style="padding:4px;text-align:right;">${totalWithoutRentPlain}</td>
+          <td style="padding:4px;"></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:4px;font-weight:bold;">Nettobetrag o. Raummiete:</td>
+          <td style="padding:4px;text-align:right;">${netWithoutRentPlain}</td>
+          <td style="padding:4px;"></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:4px;font-weight:bold;">Mehrwertsteuer (19 % o. Raummiete):</td>
+          <td style="padding:4px;text-align:right;">${vatWithoutRentPlain}</td>
+          <td style="padding:4px;"></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:18px 4px 4px 4px;font-weight:bold;">Gesamtsumme o. Raummiete &amp; AfA (Brutto):</td>
+          <td style="padding:18px 4px 4px 4px;text-align:right;">${totalWithoutRentAndAfaPlain}</td>
+          <td style="padding:18px 4px 4px 4px;"></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:4px;font-weight:bold;">Nettobetrag o. Raummiete &amp; AfA:</td>
+          <td style="padding:4px;text-align:right;">${netWithoutRentAndAfaPlain}</td>
+          <td style="padding:4px;"></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:4px;font-weight:bold;">Mehrwertsteuer (19 % o. Raummiete &amp; AfA):</td>
+          <td style="padding:4px;text-align:right;">${vatWithoutRentAndAfaPlain}</td>
+          <td style="padding:4px;"></td>
+        </tr>
+      `;
+    }
+
+    function buildPrintArea() {
+      if (!printArea) return;
+
+      const title = getPrintTitle();
+
+      const rows = getEffectiveMonthRows(currentKey, expenses);
+
+      let rowsHtml = '';
+      let total = 0;
+      let receiptsTotal = 0;
+      let rentTotal = 0;
+      let afaTotal = 0;
+      rows.forEach(exp => {
+        const dateRaw = String(exp.date ?? '').trim();
+        const amountRaw = String(exp.amount ?? '').trim();
+        const descRaw = String(exp.desc ?? '').trim();
+        const receiptRaw = String(exp.receipt ?? '').trim();
+        if (!(dateRaw || amountRaw || descRaw || receiptRaw || exp.isAfa === true)) return;
+        const date = escHtml(getPrintDate(exp));
+        const amountNumber = parseAmount(exp.amount);
+        total += amountNumber;
+        if (exp.isRent === true) {
+          rentTotal += amountNumber;
+        }
+        if (exp.isAfa === true) {
+          afaTotal += amountNumber;
+        }
+        if (exp.isRent !== true && exp.isSwaprad !== true) {
+          receiptsTotal += amountNumber;
+        }
+        const amountFormatted = amountNumber ? (Math.round(amountNumber*100)/100).toFixed(2).replace('.', ',') : '';
+        const desc = escHtml(exp.desc || '');
+        const receipt = escHtml(exp.receipt || '');
+        rowsHtml += `
+          <tr>
+            <td style="padding:2px 4px;width:60px;text-align:right;">${receipt}</td>
+            <td style="padding:2px 4px;width:80px;">${date}</td>
+            <td style="padding:2px 8px;text-align:right;width:100px;">${amountFormatted}</td>
+            <td style="padding:2px 4px 2px 20px;">${desc}</td>
+          </tr>
+        `;
+      });
+
+      const summaryRows = buildTaxAdjustedSummaryRows({
+        total,
+        receiptsTotal,
+        rentTotal,
+        afaTotal,
+        hasRows: rows.length > 0
+      });
 
       printArea.innerHTML = `
         <h1 style="font-size:22px;font-weight:bold;margin-bottom:6px;">${PRINT_MAIN_TITLE}</h1>
@@ -1438,6 +1542,8 @@ const summaryRows = rows.length ? `
       let rowsHtml = '';
       let total = 0;
       let receiptsTotal = 0;
+      let rentTotal = 0;
+      let afaTotal = 0;
 
       (info.rows || []).forEach(exp => {
         if (exp && exp.__monthHeader) {
@@ -1453,6 +1559,8 @@ const summaryRows = rows.length ? `
         const date = escHtml(getPrintDate(exp));
         const amountNumber = parseAmount(exp.amount);
         total += amountNumber;
+        if (exp.isRent === true) rentTotal += amountNumber;
+        if (exp.isAfa === true) afaTotal += amountNumber;
         if (exp.isRent !== true && exp.isSwaprad !== true) receiptsTotal += amountNumber;
         const amountFormatted = amountNumber ? (Math.round(amountNumber * 100) / 100).toFixed(2).replace('.', ',') : '';
         const desc = escHtml(exp.desc || '');
@@ -1468,36 +1576,13 @@ const summaryRows = rows.length ? `
         `;
       });
 
-      const net = total / 1.19;
-      const vat = total - net;
-
-      const totalPlain = (Math.round(total * 100) / 100).toFixed(2).replace('.', ',');
-      const netPlain = (Math.round(net * 100) / 100).toFixed(2).replace('.', ',');
-      const vatPlain = (Math.round(vat * 100) / 100).toFixed(2).replace('.', ',');
-      const receiptsPlain = (Math.round(receiptsTotal * 100) / 100).toFixed(2).replace('.', ',');
-
-      const summaryRows = (info.rows || []).length ? `
-        <tr>
-          <td colspan="2" style="padding:40px 4px 4px 4px;font-weight:bold;">Gesamtsumme (Brutto gesamt):</td>
-          <td style="padding:40px 4px 4px 4px;text-align:right;">${totalPlain}</td>
-          <td style="padding:40px 4px 4px 4px;"></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding:4px 4px 10px 22px;font-weight:bold;">Davon Quittungen:</td>
-          <td style="padding:4px 4px 10px 4px;text-align:right;">${receiptsPlain}</td>
-          <td style="padding:4px 4px 10px 4px;"></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding:4px;font-weight:bold;">Nettobetrag (gesamt):</td>
-          <td style="padding:4px;text-align:right;">${netPlain}</td>
-          <td style="padding:4px;"></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding:4px;font-weight:bold;">Mehrwertsteuer (19 % gesamt):</td>
-          <td style="padding:4px;text-align:right;">${vatPlain}</td>
-          <td style="padding:4px;"></td>
-        </tr>
-      ` : '';
+      const summaryRows = buildTaxAdjustedSummaryRows({
+        total,
+        receiptsTotal,
+        rentTotal,
+        afaTotal,
+        hasRows: (info.rows || []).length > 0
+      });
 
       printArea.innerHTML = `
         <h1 style="font-size:22px;font-weight:bold;margin-bottom:6px;">${PRINT_MAIN_TITLE}</h1>
@@ -1528,6 +1613,12 @@ const summaryRows = rows.length ? `
         return;
       }
       if (index !== undefined && field) {
+        if (field === 'isAfa') {
+          expenses[index].isAfa = !!e.target.checked;
+          save();
+          recalcTotals();
+          return;
+        }
         if (field === 'date') {
           expenses[index].date = buildDateFromDay(e.target.value, expenses[index].date);
           // Belegnummern: Raummiete & Swaprad erhalten keine Belegnummer.
@@ -1557,6 +1648,7 @@ const summaryRows = rows.length ? `
     expenseBody.addEventListener('keydown', (e) => {
       const input = e.target;
       if (!input || input.tagName !== 'INPUT') return;
+      if (input.type === 'checkbox') return;
       if (e.key !== 'Enter') return;
 
       e.preventDefault();
@@ -1673,6 +1765,7 @@ expenseBody.addEventListener('focusin', (e) => {
           amount: "392,70",
           desc: "Raummiete",
           receipt: "",      // Belegnummer entfällt in dieser Zeile
+          isAfa: false,
           hideDate: false
         },
         {
@@ -1683,6 +1776,7 @@ expenseBody.addEventListener('focusin', (e) => {
           amount: "69,90",
           desc: "Swaprad Miete für E-Bike",
           receipt: "",
+          isAfa: false,
           hideDate: false
         },
         {
@@ -1690,6 +1784,7 @@ expenseBody.addEventListener('focusin', (e) => {
           amount: "",
           desc: "",
           receipt: "",
+          isAfa: false,
           hideDate: false
         }
       ];
@@ -1828,6 +1923,7 @@ function normalizeRentRowForMonth(key, list) {
           amount: "",
           desc: "",
           receipt: "",
+          isAfa: false,
           hideDate: false
         });
         changed = true;
@@ -1957,6 +2053,7 @@ function normalizeRentRowForMonth(key, list) {
           amount: "",
           desc: "",
           receipt: "",
+          isAfa: false,
           hideDate: false
         });
         changed = true;
@@ -1982,14 +2079,14 @@ function monthHasMeaningfulData(list, key = currentKey) {
       // auch in "leeren" Monaten, damit Monat/Hidden-Status sofort korrekt sind.
       if (!Array.isArray(list) || list.length === 0 || !monthHasMeaningfulData(list, key)) {
         const def = getDefaultEmptyMonth();
-        const normalized = normalizeSwapradRowForMonth(key, normalizeRentRowForMonth(key, def));
+        const normalized = ensureAfaFlag(normalizeSwapradRowForMonth(key, normalizeRentRowForMonth(key, def)));
         // direkt in allExpenses schreiben, damit es beim nächsten Öffnen bleibt
         allExpenses[key] = normalized;
         saveAll();
         return normalized;
       }
 
-      const normalized = normalizeSwapradRowForMonth(key, normalizeRentRowForMonth(key, list));
+      const normalized = ensureAfaFlag(normalizeSwapradRowForMonth(key, normalizeRentRowForMonth(key, list)));
       allExpenses[key] = normalized;
       saveAll();
       return normalized;
@@ -2208,7 +2305,8 @@ function handleMonthYearChange() {
               date: item.date || '',
               amount: item.amount || '',
               desc: item.desc || item.description || '',
-              receipt: item.receipt || item.beleg || ''
+              receipt: item.receipt || item.beleg || '',
+              isAfa: item.isAfa === true || item.afa === true
             }));
             autoAssignReceiptsIfMissing();
             // Monat/Jahr anhand der geladenen Daten einstellen
@@ -2341,7 +2439,7 @@ document.getElementById('lockIcon').addEventListener('click', toggleLock);
         [EXCEL_MAIN_TITLE],
         [`${month} ${year}`],
         [],
-        ["Beleg", "Datum", "Betrag (€)", "Beschreibung"]
+        ["Beleg", "Datum", "Betrag (€)", "Beschreibung", "AfA"]
       ];
 
       let total = 0;
@@ -2388,7 +2486,8 @@ wsData.push([
           exp?.receipt || "",
           excelDate,
           amount,
-          exp?.desc || ""
+          exp?.desc || "",
+          exp?.isAfa === true ? "Ja" : ""
         ]);
       });
 
@@ -2439,7 +2538,7 @@ wsData.push([
         [EXCEL_MAIN_TITLE],
         [`Q${info.q} ${info.year}`],
         [],
-        ["Beleg", "Datum", "Betrag (€)", "Beschreibung"]
+        ["Beleg", "Datum", "Betrag (€)", "Beschreibung", "AfA"]
       ];
 
       let total = 0;
@@ -2448,7 +2547,7 @@ wsData.push([
       (info.rows || []).forEach(exp => {
         if (exp && exp.__monthHeader) {
           const monthName = MONTH_NAMES[exp.month] || exp.month;
-          wsData.push([`${monthName} ${exp.year}`, "", "", ""]);
+          wsData.push([`${monthName} ${exp.year}`, "", "", "", ""]);
           return;
         }
 
@@ -2480,7 +2579,8 @@ wsData.push([
           exp.receipt || "",
           excelDate,
           amount,
-          exp.desc || ""
+          exp.desc || "",
+          exp.isAfa === true ? "Ja" : ""
         ]);
       });
 
@@ -2527,7 +2627,8 @@ wsData.push([
           date: "",
           amount: "",
           desc: "",
-          receipt: ""
+          receipt: "",
+          isAfa: false
         }];
         save();
         render();
