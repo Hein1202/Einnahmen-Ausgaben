@@ -3,7 +3,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8"/>
-<title>Einnahmen (Offline) – Version 238.04.26</title>
+<title>Einnahmen (Offline) – Version 254.04.26</title>
 <style>
 body { margin:0; padding:0; }
 .container { max-width:600px; margin:0 auto; background:white; padding:20px; }
@@ -2194,6 +2194,64 @@ function exportCSV(){
 // Jahresarchiv (Backup)
 // ======================
 
+let selectedArchiveYear = null;
+const ARCHIVE_YEAR_STORAGE_KEY = "einnahmen_archive_selected_year";
+
+function _normalizeArchiveYear(value){
+  const y = parseInt(value, 10);
+  return Number.isFinite(y) ? y : null;
+}
+
+function _readArchiveYearFromDom(){
+  const sel = document.getElementById("year-archive-select");
+  return sel ? _normalizeArchiveYear(sel.value) : null;
+}
+
+function _loadRememberedArchiveYear(){
+  if(_normalizeArchiveYear(selectedArchiveYear) !== null) return _normalizeArchiveYear(selectedArchiveYear);
+  try{
+    const stored = _normalizeArchiveYear(localStorage.getItem(ARCHIVE_YEAR_STORAGE_KEY));
+    if(stored !== null){
+      selectedArchiveYear = stored;
+      return stored;
+    }
+  }catch(e){}
+  return null;
+}
+
+function _rememberSelectedArchiveYear(value){
+  const y = _normalizeArchiveYear(value);
+  if(y === null) return null;
+
+  selectedArchiveYear = y;
+  try { localStorage.setItem(ARCHIVE_YEAR_STORAGE_KEY, String(y)); } catch(e) {}
+
+  const sel = document.getElementById("year-archive-select");
+  if(sel && sel.value !== String(y)) sel.value = String(y);
+
+  return y;
+}
+
+function _resolveArchiveYear(explicitValue){
+  const explicitYear = _normalizeArchiveYear(explicitValue);
+  if(explicitYear !== null) return _rememberSelectedArchiveYear(explicitYear);
+
+  const domYear = _readArchiveYearFromDom();
+  if(domYear !== null) return _rememberSelectedArchiveYear(domYear);
+
+  const remembered = _loadRememberedArchiveYear();
+  if(remembered !== null) return remembered;
+
+  if(typeof selYear === "number" && Number.isFinite(selYear)) return selYear;
+
+  return (new Date()).getFullYear();
+}
+
+function handleArchiveYearSelectChange(value){
+  _rememberSelectedArchiveYear(value);
+}
+window.handleArchiveYearSelectChange = handleArchiveYearSelectChange;
+
 // Ermittelt alle Jahre, die aktuell im localStorage vorkommen (day-/cf-/locked-/income-month-Keys)
 function getArchiveYearsFromStorage(){
   const years = new Set();
@@ -2205,41 +2263,60 @@ function getArchiveYearsFromStorage(){
       if(m) years.add(parseInt(m[2], 10));
     }
   } catch(e){}
-  if(typeof selYear === "number") years.add(selYear);
+
+  const remembered = _loadRememberedArchiveYear();
+  if(remembered !== null) years.add(remembered);
+  if(typeof selYear === "number" && Number.isFinite(selYear)) years.add(selYear);
+
   return Array.from(years).filter(y => !isNaN(y)).sort((a,b) => b-a);
 }
 
 function populateYearArchiveSelect(){
   const sel = document.getElementById("year-archive-select");
   if(!sel) return;
+
+  const currentDomYear = _normalizeArchiveYear(sel.value);
+  const remembered = _loadRememberedArchiveYear();
+  const preferredYear = currentDomYear ?? remembered ?? (Number.isFinite(selYear) ? selYear : (new Date()).getFullYear());
+
   const years = getArchiveYearsFromStorage();
+  if(Number.isFinite(preferredYear)) years.unshift(preferredYear);
+  const uniqueYears = Array.from(new Set(years)).sort((a,b) => b-a);
+
   sel.innerHTML = "";
-  years.forEach(y => {
+  uniqueYears.forEach(y => {
     const opt = document.createElement("option");
     opt.value = String(y);
     opt.textContent = String(y);
-    if (typeof selYear === "number" && y === selYear) opt.selected = true;
     sel.appendChild(opt);
   });
-  // Falls noch kein Jahr vorhanden ist, wenigstens aktuelles Jahr anbieten
-  if(!sel.options.length && typeof selYear === "number"){
+
+  if(!sel.options.length){
+    const fallbackYear = Number.isFinite(preferredYear) ? preferredYear : (new Date()).getFullYear();
     const opt = document.createElement("option");
-    opt.value = String(selYear);
-    opt.textContent = String(selYear);
+    opt.value = String(fallbackYear);
+    opt.textContent = String(fallbackYear);
     sel.appendChild(opt);
+  }
+
+  const finalYear = Number.isFinite(preferredYear) ? preferredYear : parseInt(sel.options[0].value, 10);
+  sel.value = String(finalYear);
+  _rememberSelectedArchiveYear(finalYear);
+
+  if(!sel.dataset.bound){
+    sel.addEventListener("change", () => _rememberSelectedArchiveYear(sel.value));
+    sel.dataset.bound = "1";
   }
 }
 
-function _getSelectedArchiveYear(){
-  const sel = document.getElementById("year-archive-select");
-  const y = sel ? parseInt(sel.value, 10) : NaN;
-  return (!isNaN(y) ? y : selYear);
+function _getSelectedArchiveYear(explicitValue){
+  return _resolveArchiveYear(explicitValue);
 }
 
 function _buildYearArchiveData(year){
   const data = {
     app: "Einnahmen",
-    version: "V234.04.26",
+    version: "V254.04.26",
     year: year,
     createdAt: new Date().toISOString(),
     days: {},
@@ -2319,7 +2396,7 @@ const blob = new Blob([jsonText], {type:"application/json"});
 
 
 function _getAllProgramDataPrefixes(){
-  return ["day-", "cf-", "locked-", "income-month-", "all_expenses", "locked_months"];
+  return ["day-", "cf-", "locked-", "income-month-", "all_expenses", "locked_months", ARCHIVE_YEAR_STORAGE_KEY];
 }
 
 function _isAllProgramDataKey(key){
@@ -2429,8 +2506,8 @@ function importAllProgramData(ev){
 }
 
 // Manuelles Jahres-Backup (nur speichern)
-async function exportYearArchive(){
-  const year = _getSelectedArchiveYear();
+async function exportYearArchive(selectedYearOverride){
+  const year = _getSelectedArchiveYear(selectedYearOverride);
   try{
     const data = _buildYearArchiveData(year);
     const defaultName = `einnahmen_${year}_gesamt.json`;
@@ -2517,8 +2594,8 @@ function importYearArchive(ev){
 }
 
 // Backup + Löschen für ein komplettes Jahr
-async function archiveAndDeleteYear(){
-  const year = _getSelectedArchiveYear();
+async function archiveAndDeleteYear(selectedYearOverride){
+  const year = _getSelectedArchiveYear(selectedYearOverride);
 
   const confirmMsg =
     "Es wird zuerst ein Jahres-Backup für das Jahr " + year + " erstellt,\n" +
@@ -2802,11 +2879,11 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 <div style="margin-top:12px; padding-top:10px; border-top:1px dashed #666;">
 <div style="margin-bottom:6px; font-weight:bold;">Jahresarchiv</div>
 <label for="year-archive-select">Jahr:</label>
-<select id="year-archive-select"></select>
+<select id="year-archive-select" onchange="handleArchiveYearSelectChange(this.value)"></select>
 <div style="display:inline-block; margin-left:10px;">
-<button class="modern-btn" onclick="exportYearArchive()">💾 Jahres-Backup speichern</button>
+<button class="modern-btn" onclick="exportYearArchive(document.getElementById('year-archive-select')?.value)">💾 Jahres-Backup speichern</button>
 <br/>
-<button class="modern-btn" onclick="archiveAndDeleteYear()" style="margin-top:6px;">🧹 Jahr archivieren &amp; löschen</button>
+<button class="modern-btn" onclick="archiveAndDeleteYear(document.getElementById('year-archive-select')?.value)" style="margin-top:6px;">🧹 Jahr archivieren &amp; löschen</button>
 </div>
 <div style="display:inline-block; margin-left:10px;">
 <input accept="application/json" id="year-archive-input" onchange="importYearArchive(event)" style="display:none;" type="file"/>
@@ -2886,6 +2963,23 @@ function getSelectedQuarter() {
 function getQuarterMonths(q) {
   const start = (q - 1) * 3;
   return [start, start + 1, start + 2];
+}
+
+// Liefert das Jahr für die Quartals- und Jahresberichte.
+// Wenn im freigeschalteten Bereich (Code 1202) ein Jahr im Dropdown
+// "Jahresarchiv" ausgewählt wurde, wird dieses verwendet.
+// Ansonsten fällt die Funktion auf das aktuell ausgewählte Jahr (selYear) zurück.
+function getSelectedReportYear() {
+  try {
+    const sel = document.getElementById('year-archive-select');
+    if (sel) {
+      const val = parseInt(sel.value, 10);
+      if (!isNaN(val)) return val;
+    }
+  } catch (e) {
+    // Ignorieren und auf selYear zurückgreifen
+  }
+  return selYear;
 }
 
 
@@ -3010,7 +3104,9 @@ function initReducedPrintPreview() {
 function generateQuarterReducedPrint() {
   const q = getSelectedQuarter();
   const months = getQuarterMonths(q);
-  const year = selYear;
+  // Für Quartalsvorschauen das Jahr aus dem Jahres-Archiv-Dropdown verwenden,
+  // falls vorhanden. Andernfalls das aktuell ausgewählte Jahr (selYear).
+  const year = getSelectedReportYear();
   let output = "";
   let total = 0;
   let totalCustomers = 0;
@@ -3547,7 +3643,9 @@ const rp = document.getElementById("reduced-print");
 async function exportQuarterExcel() {
   const q = getSelectedQuarter();
   const months = getQuarterMonths(q);
-  const year = selYear;
+  // Für den Quartals-Excel-Export das Jahr aus dem Jahres-Archiv-Dropdown
+  // verwenden, falls vorhanden. Ansonsten das aktuell ausgewählte Jahr.
+  const year = getSelectedReportYear();
   const ws_data = [];
   // Titelzeile + Leerzeile (für den Excel-Ausdruck / Archiv)
   ws_data.push([`Einnahmen Quartal Q${q} ${year}`]);
@@ -4638,7 +4736,9 @@ importJSON = function (ev) {
 
 // Schnelleingabe für einen Standardbetrag (z.B. 33 €) in das aktuell ausgewählte Betrag-1-Fel
 function generateYearOverview() {
-  const year = selYear;
+  // Für die Jahresübersicht das Jahr aus dem Jahres-Archiv-Dropdown verwenden,
+  // falls vorhanden. Andernfalls das aktuell ausgewählte Jahr (selYear).
+  const year = getSelectedReportYear();
   let output = "";
   let grandTotal = 0;
   let grandCustomers = 0;
