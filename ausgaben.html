@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ausgaben (Offline)</title>
+  <title>Ausgaben (Offline) – Version 248.04.26</title>
       <link id="tailwindStylesheet" rel="stylesheet" href="assets/tailwind.css" />
   <style>
     body { font-family: sans-serif; background-color: #f7fafc; color: #000000; }
@@ -64,6 +64,14 @@
     body.advanced-unlocked .advanced-only { display: inline-flex; }
     body.advanced-unlocked select.advanced-only { display: inline-block; }
 
+    /* AfA ist standardmäßig ausgeblendet und wird erst über einen
+       separaten Schalter nach Code-Eingabe sichtbar gemacht. */
+    .afa-toggle-control { display: none; }
+    body.advanced-unlocked .afa-toggle-control { display: inline-flex; }
+    .afa-col { display: none; }
+    body.afa-visible th.afa-col,
+    body.afa-visible td.afa-col { display: table-cell; }
+
     /* Gut lesbarer Speicher-Button für den angezeigten Monat */
     .month-save-btn {
       background: #4b5563;
@@ -77,6 +85,35 @@
     }
     .month-save-btn:hover {
       filter: brightness(0.97);
+    }
+
+    /* Ergebnisblock unten: wieder kompakter wie zuvor, mit näher stehenden Werten */
+    .expense-summary-block {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-start;
+      margin: 0 0 0 42px;
+      max-width: none;
+    }
+    .expense-summary-row {
+      display: grid;
+      grid-template-columns: 148px 92px;
+      align-items: start;
+      column-gap: 16px;
+      width: max-content;
+    }
+    .expense-summary-label {
+      text-align: left;
+      line-height: 1.2;
+      white-space: normal;
+    }
+    .expense-summary-label.is-sub {
+      padding-left: 18px;
+    }
+    .expense-summary-value {
+      text-align: right;
+      white-space: nowrap;
+      line-height: 1.2;
     }
 
 
@@ -420,6 +457,11 @@
         <span id="advancedStatus" class="text-xs text-green-700" style="display:none;">✔</span>
         <button id="advancedLockBtn" class="advanced-only bg-gray-200 text-gray-800 px-3 py-2 rounded">Sperren</button>
       </div>
+
+      <label id="afaToggleWrap" class="afa-toggle-control items-center gap-2 px-3 py-2 rounded border bg-white" style="border-color:#9ca3af;">
+        <input id="afaVisibilityToggle" type="checkbox" />
+        <span class="text-sm font-semibold text-gray-800">AfA aktivieren</span>
+      </label>
 <button id="excelExportBtn" class="bg-purple-600 text-white px-4 py-2 rounded advanced-only">📄 Excel speichern</button>
             <select id="quarterSelect" class="border rounded px-2 py-2 text-sm bg-white ml-4 advanced-only">
         <option value="">(Quartal)</option>
@@ -460,7 +502,7 @@
           <th class="p-2 border">Datum</th>
           <th class="p-2 border">Betrag (€)</th>
           <th class="p-2 border">Beschreibung</th>
-          <th class="p-2 border">AfA</th>
+          <th class="p-2 border afa-col">AfA</th>
           <th class="p-2 border">Aktion</th>
         </tr>
       </thead>
@@ -469,33 +511,33 @@
         
 <tr id="enterHintRow" style="display:none;">
   <td></td>
-  <td colspan="4" class="text-center text-gray-700 text-sm">Enter für neue Zeile – für mehrere Positionen im selben Beleg kein Datum angeben</td>
+  <td id="enterHintMessageCell" colspan="3" class="text-center text-gray-700 text-sm">Enter für neue Zeile – für mehrere Positionen im selben Beleg kein Datum angeben</td>
   <td></td>
 </tr>
 <tr>
           <td class="border-t p-1"></td>
           <td class="border-t p-1 align-top" colspan="3">
-            <div class="text-sm space-y-1">
-              <div class="flex justify-between">
-                <strong>Gesamtsumme (Brutto):</strong>
-                <span id="total" class="ml-4"> 0.00</span>
+            <div class="text-sm space-y-1 expense-summary-block">
+              <div class="expense-summary-row">
+                <strong class="expense-summary-label">Gesamtsumme (Brutto):</strong>
+                <span id="total" class="expense-summary-value"> 0.00</span>
               </div>
-              <div class="flex justify-between" style="padding-left:18px;">
-                <strong>Davon Quittungen:</strong>
-                <span id="receiptsTotal" class="ml-4"> 0.00</span>
+              <div class="expense-summary-row">
+                <strong class="expense-summary-label is-sub">Davon Quittungen:</strong>
+                <span id="receiptsTotal" class="expense-summary-value"> 0.00</span>
               </div>
               <div style="height:6px;"></div>
-              <div class="flex justify-between">
-                <strong>Nettobetrag:</strong>
-                <span id="net" class="ml-4"> 0.00</span>
+              <div class="expense-summary-row">
+                <strong class="expense-summary-label">Nettobetrag:</strong>
+                <span id="net" class="expense-summary-value"> 0.00</span>
               </div>
-              <div class="flex justify-between">
-                <strong>Mehrwertsteuer (19%):</strong>
-                <span id="vat" class="ml-4"> 0.00</span>
+              <div class="expense-summary-row">
+                <strong class="expense-summary-label">Mehrwertsteuer (19%):</strong>
+                <span id="vat" class="expense-summary-value"> 0.00</span>
               </div>
             </div>
           </td>
-          <td class="border-t p-1"></td>
+          <td class="border-t p-1 afa-col"></td>
           <td class="border-t p-1"></td>
         </tr>
       </tfoot>
@@ -562,17 +604,33 @@
     const advancedCodeInput = document.getElementById('advancedCodeInput');
     const advancedStatus = document.getElementById('advancedStatus');
     const advancedLockBtn = document.getElementById('advancedLockBtn');
+    const afaVisibilityToggle = document.getElementById('afaVisibilityToggle');
+    const enterHintMessageCell = document.getElementById('enterHintMessageCell');
 
     function isAdvancedUnlocked() {
       return document.body.classList.contains('advanced-unlocked');
     }
 
+    function isAfaVisible() {
+      return document.body.classList.contains('afa-visible');
+    }
+
+    function setAfaVisible(isVisible) {
+      const visible = !!isVisible;
+      document.body.classList.toggle('afa-visible', visible);
+      if (afaVisibilityToggle) afaVisibilityToggle.checked = visible;
+      if (enterHintMessageCell) enterHintMessageCell.colSpan = visible ? 4 : 3;
+    }
+
     function setAdvancedUnlocked(isUnlocked) {
-      document.body.classList.toggle('advanced-unlocked', !!isUnlocked);
-      if (advancedStatus) advancedStatus.style.display = isUnlocked ? 'inline' : 'none';
+      const unlocked = !!isUnlocked;
+      document.body.classList.toggle('advanced-unlocked', unlocked);
+      if (advancedStatus) advancedStatus.style.display = unlocked ? 'inline' : 'none';
+      if (!unlocked) setAfaVisible(false);
     }
 
     // Default: locked (nur "Druckvorschau" sichtbar)
+    setAfaVisible(false);
     setAdvancedUnlocked(false);
 
     function tryUnlockAdvanced() {
@@ -597,6 +655,15 @@
       advancedLockBtn.addEventListener('click', () => setAdvancedUnlocked(false));
     }
 
+    if (afaVisibilityToggle) {
+      afaVisibilityToggle.addEventListener('change', (e) => {
+        if (!isAdvancedUnlocked()) {
+          setAfaVisible(false);
+          return;
+        }
+        setAfaVisible(!!e.target.checked);
+      });
+    }
 
 
     
@@ -1231,7 +1298,7 @@ function render() {
               class="w-[400px] p-1"
             />
           </td>
-          <td class="border p-1 text-center">
+          <td class="border p-1 text-center afa-col">
             ${
               (isRent || isSwaprad)
                 ? `<span class="text-gray-400">–</span>`
@@ -1379,8 +1446,6 @@ function getPrintTitle() {
       const net = total / 1.19;
       const vat = total - net;
       const totalWithoutRent = total - rentTotal;
-      const netWithoutRent = totalWithoutRent / 1.19;
-      const vatWithoutRent = totalWithoutRent - netWithoutRent;
       const totalWithoutRentAndAfa = totalWithoutRent - afaTotal;
       const netWithoutRentAndAfa = totalWithoutRentAndAfa / 1.19;
       const vatWithoutRentAndAfa = totalWithoutRentAndAfa - netWithoutRentAndAfa;
@@ -1389,75 +1454,60 @@ function getPrintTitle() {
       const netPlain = formatPlainAmount(net);
       const vatPlain = formatPlainAmount(vat);
       const receiptsPlain = formatPlainAmount(receiptsTotal);
-      const rentPlain = formatPlainAmount(rentTotal);
-      const totalWithoutRentPlain = formatPlainAmount(totalWithoutRent);
-      const netWithoutRentPlain = formatPlainAmount(netWithoutRent);
-      const vatWithoutRentPlain = formatPlainAmount(vatWithoutRent);
-      const afaPlain = formatPlainAmount(afaTotal);
       const totalWithoutRentAndAfaPlain = formatPlainAmount(totalWithoutRentAndAfa);
       const netWithoutRentAndAfaPlain = formatPlainAmount(netWithoutRentAndAfa);
       const vatWithoutRentAndAfaPlain = formatPlainAmount(vatWithoutRentAndAfa);
 
+      const hasAfa = Math.abs(afaTotal) > 0.0001;
+      const resultTitle = hasAfa
+        ? 'Ergebnis ohne Raummiete &amp; AfA'
+        : 'Ergebnis ohne Raummiete';
+
       return `
         <tr>
-          <td colspan="2" style="padding:40px 4px 4px 4px;font-weight:bold;">Gesamtsumme (Brutto gesamt):</td>
-          <td style="padding:40px 4px 4px 4px;text-align:right;">${totalPlain}</td>
-          <td style="padding:40px 4px 4px 4px;"></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding:4px 4px 10px 22px;font-weight:bold;">Davon Quittungen:</td>
-          <td style="padding:4px 4px 10px 4px;text-align:right;">${receiptsPlain}</td>
-          <td style="padding:4px 4px 10px 4px;"></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding:4px;font-weight:bold;">Nettobetrag (gesamt):</td>
-          <td style="padding:4px;text-align:right;">${netPlain}</td>
-          <td style="padding:4px;"></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding:4px;font-weight:bold;">Mehrwertsteuer (19 % gesamt):</td>
-          <td style="padding:4px;text-align:right;">${vatPlain}</td>
-          <td style="padding:4px;"></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding:18px 4px 4px 4px;font-weight:bold;">Raummiete:</td>
-          <td style="padding:18px 4px 4px 4px;text-align:right;">${rentPlain}</td>
-          <td style="padding:18px 4px 4px 4px;"></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding:4px;font-weight:bold;">AfA-markierte Positionen:</td>
-          <td style="padding:4px;text-align:right;">${afaPlain}</td>
-          <td style="padding:4px;"></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding:4px;font-weight:bold;">Gesamtsumme o. Raummiete (Brutto):</td>
-          <td style="padding:4px;text-align:right;">${totalWithoutRentPlain}</td>
-          <td style="padding:4px;"></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding:4px;font-weight:bold;">Nettobetrag o. Raummiete:</td>
-          <td style="padding:4px;text-align:right;">${netWithoutRentPlain}</td>
-          <td style="padding:4px;"></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding:4px;font-weight:bold;">Mehrwertsteuer (19 % o. Raummiete):</td>
-          <td style="padding:4px;text-align:right;">${vatWithoutRentPlain}</td>
-          <td style="padding:4px;"></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding:18px 4px 4px 4px;font-weight:bold;">Gesamtsumme o. Raummiete &amp; AfA (Brutto):</td>
-          <td style="padding:18px 4px 4px 4px;text-align:right;">${totalWithoutRentAndAfaPlain}</td>
-          <td style="padding:18px 4px 4px 4px;"></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding:4px;font-weight:bold;">Nettobetrag o. Raummiete &amp; AfA:</td>
-          <td style="padding:4px;text-align:right;">${netWithoutRentAndAfaPlain}</td>
-          <td style="padding:4px;"></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding:4px;font-weight:bold;">Mehrwertsteuer (19 % o. Raummiete &amp; AfA):</td>
-          <td style="padding:4px;text-align:right;">${vatWithoutRentAndAfaPlain}</td>
-          <td style="padding:4px;"></td>
+          <td colspan="4" style="padding:34px 0 0 0;">
+            <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+              <tr>
+                <td style="width:50%;vertical-align:top;padding:0 26px 0 0;">
+                  <table style="width:100%;border-collapse:collapse;font-size:15px;">
+                    <tr>
+                      <td style="padding:4px 6px 10px 0;font-weight:bold;">Gesamtsumme (Brutto gesamt):</td>
+                      <td style="padding:4px 0 10px 6px;text-align:right;font-weight:bold;white-space:nowrap;">${totalPlain}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:4px 6px 10px 18px;font-weight:bold;">Davon Quittungen:</td>
+                      <td style="padding:4px 0 10px 6px;text-align:right;white-space:nowrap;">${receiptsPlain}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:4px 6px 10px 0;font-weight:bold;">Nettobetrag (gesamt):</td>
+                      <td style="padding:4px 0 10px 6px;text-align:right;white-space:nowrap;">${netPlain}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:4px 6px 0 0;font-weight:bold;">Mehrwertsteuer (19 % gesamt):</td>
+                      <td style="padding:4px 0 0 6px;text-align:right;white-space:nowrap;">${vatPlain}</td>
+                    </tr>
+                  </table>
+                </td>
+                <td style="width:50%;vertical-align:top;padding:0 0 0 26px;">
+                  <div style="font-size:16px;font-weight:bold;margin:0 0 14px 0;">${resultTitle}</div>
+                  <table style="width:100%;border-collapse:collapse;font-size:15px;">
+                    <tr>
+                      <td style="padding:4px 6px 10px 0;font-weight:bold;">Brutto:</td>
+                      <td style="padding:4px 0 10px 6px;text-align:right;font-weight:bold;white-space:nowrap;">${totalWithoutRentAndAfaPlain}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:4px 6px 10px 0;font-weight:bold;">Netto:</td>
+                      <td style="padding:4px 0 10px 6px;text-align:right;white-space:nowrap;">${netWithoutRentAndAfaPlain}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:4px 6px 0 0;font-weight:bold;">MwSt (19 %):</td>
+                      <td style="padding:4px 0 0 6px;text-align:right;white-space:nowrap;">${vatWithoutRentAndAfaPlain}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
         </tr>
       `;
     }
@@ -2439,7 +2489,7 @@ document.getElementById('lockIcon').addEventListener('click', toggleLock);
         [EXCEL_MAIN_TITLE],
         [`${month} ${year}`],
         [],
-        ["Beleg", "Datum", "Betrag (€)", "Beschreibung", "AfA"]
+        ["Beleg", "Datum", "Betrag (€)", "Beschreibung"]
       ];
 
       let total = 0;
@@ -2486,8 +2536,7 @@ wsData.push([
           exp?.receipt || "",
           excelDate,
           amount,
-          exp?.desc || "",
-          exp?.isAfa === true ? "Ja" : ""
+          exp?.desc || ""
         ]);
       });
 
@@ -2538,7 +2587,7 @@ wsData.push([
         [EXCEL_MAIN_TITLE],
         [`Q${info.q} ${info.year}`],
         [],
-        ["Beleg", "Datum", "Betrag (€)", "Beschreibung", "AfA"]
+        ["Beleg", "Datum", "Betrag (€)", "Beschreibung"]
       ];
 
       let total = 0;
@@ -2547,7 +2596,7 @@ wsData.push([
       (info.rows || []).forEach(exp => {
         if (exp && exp.__monthHeader) {
           const monthName = MONTH_NAMES[exp.month] || exp.month;
-          wsData.push([`${monthName} ${exp.year}`, "", "", "", ""]);
+          wsData.push([`${monthName} ${exp.year}`, "", "", ""]);
           return;
         }
 
@@ -2579,8 +2628,7 @@ wsData.push([
           exp.receipt || "",
           excelDate,
           amount,
-          exp.desc || "",
-          exp.isAfa === true ? "Ja" : ""
+          exp.desc || ""
         ]);
       });
 
