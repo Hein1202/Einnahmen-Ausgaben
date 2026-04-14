@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ausgaben (Offline) – Version 248.04.26</title>
+  <title>Ausgaben (Offline) – Version 273.04.26</title>
       <link id="tailwindStylesheet" rel="stylesheet" href="assets/tailwind.css" />
   <style>
     body { font-family: sans-serif; background-color: #f7fafc; color: #000000; }
@@ -445,6 +445,10 @@
 
     <div class="flex flex-wrap items-center gap-2 mb-4">
       <button id="printBtn" class="bg-gray-600 text-white px-4 py-2 rounded">Druckvorschau</button>
+      <label id="withoutRentToggleWrap" class="items-center gap-2 px-3 py-2 rounded border bg-white" style="border-color:#9ca3af;display:inline-flex;">
+        <input id="withoutRentToggle" type="checkbox" />
+        <span class="text-sm font-semibold text-gray-800">Ergebnis ohne Raummiete anzeigen</span>
+      </label>
       <button id="exportMonthBtn" class="month-save-btn px-4 py-2">Diesen Monat speichern</button>
       
       <button id="importBtn" class="bg-yellow-500 text-white px-4 py-2 rounded advanced-only">Daten laden</button>
@@ -471,6 +475,7 @@
         <option value="4">Q4 (Okt–Dez)</option>
       </select>
 <button id="quarterPrintBtn" class="bg-gray-800 text-white px-4 py-2 rounded advanced-only">🖨️ Quartal-Vorschau</button>
+      <button id="yearPrintBtn" class="bg-gray-800 text-white px-4 py-2 rounded advanced-only">🖨️ Jahresübersicht</button>
       <button id="quarterExcelBtn" class="bg-purple-800 text-white px-4 py-2 rounded advanced-only">📄 Quartal Excel</button>
       
     </div>
@@ -535,6 +540,21 @@
                 <strong class="expense-summary-label">Mehrwertsteuer (19%):</strong>
                 <span id="vat" class="expense-summary-value"> 0.00</span>
               </div>
+              <div id="withoutRentSummaryBlock" class="text-sm space-y-1" style="display:none;margin-top:14px;">
+                <div id="withoutRentSummaryTitle" class="font-bold" style="margin:4px 0 6px 0;">Ergebnis ohne Raummiete</div>
+                <div class="expense-summary-row">
+                  <strong class="expense-summary-label">Brutto:</strong>
+                  <span id="withoutRentTotal" class="expense-summary-value"> 0.00</span>
+                </div>
+                <div class="expense-summary-row">
+                  <strong class="expense-summary-label">Netto:</strong>
+                  <span id="withoutRentNet" class="expense-summary-value"> 0.00</span>
+                </div>
+                <div class="expense-summary-row">
+                  <strong class="expense-summary-label">MwSt (19%):</strong>
+                  <span id="withoutRentVat" class="expense-summary-value"> 0.00</span>
+                </div>
+              </div>
             </div>
           </td>
           <td class="border-t p-1 afa-col"></td>
@@ -558,6 +578,12 @@
     const receiptsDisplay = document.getElementById('receiptsTotal');
     const netDisplay = document.getElementById('net');
     const vatDisplay = document.getElementById('vat');
+    const withoutRentToggle = document.getElementById('withoutRentToggle');
+    const withoutRentSummaryBlock = document.getElementById('withoutRentSummaryBlock');
+    const withoutRentSummaryTitle = document.getElementById('withoutRentSummaryTitle');
+    const withoutRentTotalDisplay = document.getElementById('withoutRentTotal');
+    const withoutRentNetDisplay = document.getElementById('withoutRentNet');
+    const withoutRentVatDisplay = document.getElementById('withoutRentVat');
     const printArea = document.getElementById('printArea');
     const printPreviewOverlay = document.getElementById('printPreviewOverlay');
     const printPreviewPage = document.getElementById('printPreviewPage');
@@ -569,6 +595,7 @@
     const quarterSelect = document.getElementById('quarterSelect');
     const yearSelect = document.getElementById('yearSelect');
     let currentPreviewMode = 'month';
+    let showWithoutRentSummary = false;
 
     // --- Tailwind-Fallback aktivieren, falls assets/tailwind.css nicht geladen ist ---
     function enableTailwindFallbackIfNeeded() {
@@ -1142,16 +1169,19 @@ const MONTH_NAMES = {
       });
     }
 
-    function recalcTotals() {
+    function calculateTaxAdjustedSummary(rows) {
       let total = 0;
       let receiptsTotal = 0;
+      let rentTotal = 0;
+      let afaTotal = 0;
 
-      const rows = getEffectiveMonthRows(currentKey, expenses);
-
-      rows.forEach(exp => {
+      (rows || []).forEach(exp => {
+        if (!exp) return;
         const amount = parseAmount(exp.amount);
         total += amount;
 
+        if (exp.isRent === true) rentTotal += amount;
+        if (exp.isAfa === true) afaTotal += amount;
         if (exp.isRent !== true && exp.isSwaprad !== true) {
           receiptsTotal += amount;
         }
@@ -1159,11 +1189,45 @@ const MONTH_NAMES = {
 
       const net = total / 1.19;
       const vat = total - net;
+      const totalWithoutRent = total - rentTotal;
+      const totalWithoutRentAndAfa = totalWithoutRent - afaTotal;
+      const netWithoutRentAndAfa = totalWithoutRentAndAfa / 1.19;
+      const vatWithoutRentAndAfa = totalWithoutRentAndAfa - netWithoutRentAndAfa;
 
-      totalDisplay.textContent = formatEuro(total);
-      if (receiptsDisplay) receiptsDisplay.textContent = formatEuro(receiptsTotal);
-      netDisplay.textContent = formatEuro(net);
-      vatDisplay.textContent = formatEuro(vat);
+      return {
+        total,
+        receiptsTotal,
+        rentTotal,
+        afaTotal,
+        net,
+        vat,
+        totalWithoutRentAndAfa,
+        netWithoutRentAndAfa,
+        vatWithoutRentAndAfa,
+        hasRows: (rows || []).length > 0
+      };
+    }
+
+    function recalcTotals() {
+      const rows = getEffectiveMonthRows(currentKey, expenses);
+      const summary = calculateTaxAdjustedSummary(rows);
+
+      totalDisplay.textContent = formatEuro(summary.total);
+      if (receiptsDisplay) receiptsDisplay.textContent = formatEuro(summary.receiptsTotal);
+      netDisplay.textContent = formatEuro(summary.net);
+      vatDisplay.textContent = formatEuro(summary.vat);
+
+      if (withoutRentSummaryTitle) {
+        withoutRentSummaryTitle.textContent = Math.abs(summary.afaTotal) > 0.0001
+          ? 'Ergebnis ohne Raummiete & AfA'
+          : 'Ergebnis ohne Raummiete';
+      }
+      if (withoutRentTotalDisplay) withoutRentTotalDisplay.textContent = formatEuro(summary.totalWithoutRentAndAfa);
+      if (withoutRentNetDisplay) withoutRentNetDisplay.textContent = formatEuro(summary.netWithoutRentAndAfa);
+      if (withoutRentVatDisplay) withoutRentVatDisplay.textContent = formatEuro(summary.vatWithoutRentAndAfa);
+      if (withoutRentSummaryBlock) {
+        withoutRentSummaryBlock.style.display = (showWithoutRentSummary && summary.hasRows) ? 'block' : 'none';
+      }
     }
 
 
@@ -1402,6 +1466,85 @@ function formatDateGerman(iso) {
       return 'Ausgaben – Quartal';
     }
 
+    function getYearTitle() {
+      const year = getSelectedYear();
+      if (year) return `Umsatzsteuer – Jahresübersicht ${year}`;
+      return 'Umsatzsteuer – Jahresübersicht';
+    }
+
+    function getMonthTaxSummaryByKey(key) {
+      const list = allExpenses[key];
+      const rows = getEffectiveMonthRows(key, list);
+      let total = 0;
+
+      rows.forEach(exp => {
+        total += parseAmount(exp?.amount);
+      });
+
+      const net = total / 1.19;
+      const vat = total - net;
+
+      return { total, net, vat, hasRows: rows.length > 0 };
+    }
+
+    function buildYearSummaryRows(year) {
+      const rows = [];
+      let yearTotal = 0;
+      let yearNet = 0;
+      let yearVat = 0;
+      let quarterTotal = 0;
+      let quarterNet = 0;
+      let quarterVat = 0;
+
+      for (let month = 1; month <= 12; month++) {
+        const mm = String(month).padStart(2, '0');
+        const key = `${year}-${mm}`;
+        const monthSummary = getMonthTaxSummaryByKey(key);
+
+        rows.push({
+          type: 'month',
+          month: mm,
+          label: `${MONTH_NAMES[mm]} ${year}`,
+          total: monthSummary.total,
+          net: monthSummary.net,
+          vat: monthSummary.vat
+        });
+
+        quarterTotal += monthSummary.total;
+        quarterNet += monthSummary.net;
+        quarterVat += monthSummary.vat;
+
+        yearTotal += monthSummary.total;
+        yearNet += monthSummary.net;
+        yearVat += monthSummary.vat;
+
+        if (month % 3 === 0) {
+          const quarter = Math.ceil(month / 3);
+          rows.push({
+            type: 'quarter',
+            quarter,
+            label: `Summe Q${quarter}`,
+            total: quarterTotal,
+            net: quarterNet,
+            vat: quarterVat
+          });
+          quarterTotal = 0;
+          quarterNet = 0;
+          quarterVat = 0;
+        }
+      }
+
+      rows.push({
+        type: 'year',
+        label: `Gesamtsumme ${year}`,
+        total: yearTotal,
+        net: yearNet,
+        vat: yearVat
+      });
+
+      return rows;
+    }
+
     function getQuarterRows() {
       const q = getSelectedQuarter();
       const year = getSelectedYear();
@@ -1440,77 +1583,68 @@ function getPrintTitle() {
       return (Math.round(value * 100) / 100).toFixed(2).replace('.', ',');
     }
 
-    function buildTaxAdjustedSummaryRows({ total, receiptsTotal, rentTotal, afaTotal, hasRows }) {
-      if (!hasRows) return '';
+    function buildTaxAdjustedSummaryRows(summary, options = {}) {
+      const { showWithoutRent = false } = options;
+      if (!summary || !summary.hasRows) return '';
 
-      const net = total / 1.19;
-      const vat = total - net;
-      const totalWithoutRent = total - rentTotal;
-      const totalWithoutRentAndAfa = totalWithoutRent - afaTotal;
-      const netWithoutRentAndAfa = totalWithoutRentAndAfa / 1.19;
-      const vatWithoutRentAndAfa = totalWithoutRentAndAfa - netWithoutRentAndAfa;
+      const totalPlain = formatPlainAmount(summary.total);
+      const netPlain = formatPlainAmount(summary.net);
+      const vatPlain = formatPlainAmount(summary.vat);
+      const receiptsPlain = formatPlainAmount(summary.receiptsTotal);
+      const totalWithoutRentAndAfaPlain = formatPlainAmount(summary.totalWithoutRentAndAfa);
+      const netWithoutRentAndAfaPlain = formatPlainAmount(summary.netWithoutRentAndAfa);
+      const vatWithoutRentAndAfaPlain = formatPlainAmount(summary.vatWithoutRentAndAfa);
 
-      const totalPlain = formatPlainAmount(total);
-      const netPlain = formatPlainAmount(net);
-      const vatPlain = formatPlainAmount(vat);
-      const receiptsPlain = formatPlainAmount(receiptsTotal);
-      const totalWithoutRentAndAfaPlain = formatPlainAmount(totalWithoutRentAndAfa);
-      const netWithoutRentAndAfaPlain = formatPlainAmount(netWithoutRentAndAfa);
-      const vatWithoutRentAndAfaPlain = formatPlainAmount(vatWithoutRentAndAfa);
-
-      const hasAfa = Math.abs(afaTotal) > 0.0001;
-      const resultTitle = hasAfa
+      const resultTitle = Math.abs(summary.afaTotal) > 0.0001
         ? 'Ergebnis ohne Raummiete &amp; AfA'
         : 'Ergebnis ohne Raummiete';
+
+      const withoutRentBlock = showWithoutRent ? `
+        <div style="font-size:16px;font-weight:bold;margin:18px 0 10px 0;">${resultTitle}</div>
+        <table style="border-collapse:collapse;font-size:15px;width:auto;">
+          <tr>
+            <td style="padding:4px 18px 10px 0;font-weight:bold;white-space:nowrap;">Brutto:</td>
+            <td style="padding:4px 0 10px 0;text-align:right;white-space:nowrap;">${totalWithoutRentAndAfaPlain}</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 18px 10px 0;font-weight:bold;white-space:nowrap;">Netto:</td>
+            <td style="padding:4px 0 10px 0;text-align:right;white-space:nowrap;">${netWithoutRentAndAfaPlain}</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 18px 0 0;font-weight:bold;white-space:nowrap;">MwSt (19 %):</td>
+            <td style="padding:4px 0 0 0;text-align:right;white-space:nowrap;">${vatWithoutRentAndAfaPlain}</td>
+          </tr>
+        </table>` : '';
 
       return `
         <tr>
           <td colspan="4" style="padding:34px 0 0 0;">
-            <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
-              <tr>
-                <td style="width:50%;vertical-align:top;padding:0 26px 0 0;">
-                  <table style="width:100%;border-collapse:collapse;font-size:15px;">
-                    <tr>
-                      <td style="padding:4px 6px 10px 0;font-weight:bold;">Gesamtsumme (Brutto gesamt):</td>
-                      <td style="padding:4px 0 10px 6px;text-align:right;font-weight:bold;white-space:nowrap;">${totalPlain}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding:4px 6px 10px 18px;font-weight:bold;">Davon Quittungen:</td>
-                      <td style="padding:4px 0 10px 6px;text-align:right;white-space:nowrap;">${receiptsPlain}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding:4px 6px 10px 0;font-weight:bold;">Nettobetrag (gesamt):</td>
-                      <td style="padding:4px 0 10px 6px;text-align:right;white-space:nowrap;">${netPlain}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding:4px 6px 0 0;font-weight:bold;">Mehrwertsteuer (19 % gesamt):</td>
-                      <td style="padding:4px 0 0 6px;text-align:right;white-space:nowrap;">${vatPlain}</td>
-                    </tr>
-                  </table>
-                </td>
-                <td style="width:50%;vertical-align:top;padding:0 0 0 26px;">
-                  <div style="font-size:16px;font-weight:bold;margin:0 0 14px 0;">${resultTitle}</div>
-                  <table style="width:100%;border-collapse:collapse;font-size:15px;">
-                    <tr>
-                      <td style="padding:4px 6px 10px 0;font-weight:bold;">Brutto:</td>
-                      <td style="padding:4px 0 10px 6px;text-align:right;font-weight:bold;white-space:nowrap;">${totalWithoutRentAndAfaPlain}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding:4px 6px 10px 0;font-weight:bold;">Netto:</td>
-                      <td style="padding:4px 0 10px 6px;text-align:right;white-space:nowrap;">${netWithoutRentAndAfaPlain}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding:4px 6px 0 0;font-weight:bold;">MwSt (19 %):</td>
-                      <td style="padding:4px 0 0 6px;text-align:right;white-space:nowrap;">${vatWithoutRentAndAfaPlain}</td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
+            <div style="display:inline-block;max-width:100%;">
+              <table style="border-collapse:collapse;font-size:15px;width:auto;">
+                <tr>
+                  <td style="padding:4px 18px 10px 0;font-weight:bold;white-space:nowrap;">Gesamtsumme (Brutto gesamt):</td>
+                  <td style="padding:4px 0 10px 0;text-align:right;white-space:nowrap;">${totalPlain}</td>
+                </tr>
+                <tr>
+                  <td style="padding:4px 18px 10px 18px;font-weight:bold;white-space:nowrap;">Davon Quittungen:</td>
+                  <td style="padding:4px 0 10px 0;text-align:right;white-space:nowrap;">${receiptsPlain}</td>
+                </tr>
+                <tr>
+                  <td style="padding:4px 18px 10px 0;font-weight:bold;white-space:nowrap;">Nettobetrag (gesamt):</td>
+                  <td style="padding:4px 0 10px 0;text-align:right;white-space:nowrap;">${netPlain}</td>
+                </tr>
+                <tr>
+                  <td style="padding:4px 18px 0 0;font-weight:bold;white-space:nowrap;">Mehrwertsteuer (19 % gesamt):</td>
+                  <td style="padding:4px 0 0 0;text-align:right;white-space:nowrap;">${vatPlain}</td>
+                </tr>
+              </table>
+              ${withoutRentBlock}
+            </div>
           </td>
         </tr>
       `;
     }
+
 
     function buildPrintArea() {
       if (!printArea) return;
@@ -1555,13 +1689,10 @@ function getPrintTitle() {
         `;
       });
 
-      const summaryRows = buildTaxAdjustedSummaryRows({
-        total,
-        receiptsTotal,
-        rentTotal,
-        afaTotal,
-        hasRows: rows.length > 0
-      });
+      const summaryRows = buildTaxAdjustedSummaryRows(
+        calculateTaxAdjustedSummary(rows),
+        { showWithoutRent: showWithoutRentSummary }
+      );
 
       printArea.innerHTML = `
         <h1 style="font-size:22px;font-weight:bold;margin-bottom:6px;">${PRINT_MAIN_TITLE}</h1>
@@ -1626,13 +1757,10 @@ function getPrintTitle() {
         `;
       });
 
-      const summaryRows = buildTaxAdjustedSummaryRows({
-        total,
-        receiptsTotal,
-        rentTotal,
-        afaTotal,
-        hasRows: (info.rows || []).length > 0
-      });
+      const summaryRows = buildTaxAdjustedSummaryRows(
+        calculateTaxAdjustedSummary(info.rows || []),
+        { showWithoutRent: showWithoutRentSummary }
+      );
 
       printArea.innerHTML = `
         <h1 style="font-size:22px;font-weight:bold;margin-bottom:6px;">${PRINT_MAIN_TITLE}</h1>
@@ -1654,6 +1782,50 @@ function getPrintTitle() {
       `;
     }
 
+    function buildYearPrintArea() {
+      if (!printArea) return;
+
+      const year = getSelectedYear();
+      const title = getYearTitle();
+      const rows = year ? buildYearSummaryRows(year) : [];
+
+      let rowsHtml = '';
+      rows.forEach(row => {
+        const isQuarter = row.type === 'quarter';
+        const isYear = row.type === 'year';
+        const bg = isQuarter ? '#f3f4f6' : (isYear ? '#e5e7eb' : 'transparent');
+        const weight = (isQuarter || isYear) ? '700' : '400';
+        const topBorder = (isQuarter || isYear) ? '2px solid #9ca3af' : '1px solid #d1d5db';
+        const labelPadding = isQuarter || isYear ? '10px 8px' : '6px 8px';
+
+        rowsHtml += `
+          <tr style="background:${bg};font-weight:${weight};">
+            <td style="padding:${labelPadding};border-top:${topBorder};">${escHtml(row.label)}</td>
+            <td style="padding:${labelPadding};text-align:right;border-top:${topBorder};white-space:nowrap;">${formatPlainAmount(row.total)}</td>
+            <td style="padding:${labelPadding};text-align:right;border-top:${topBorder};white-space:nowrap;">${formatPlainAmount(row.net)}</td>
+            <td style="padding:${labelPadding};text-align:right;border-top:${topBorder};white-space:nowrap;">${formatPlainAmount(row.vat)}</td>
+          </tr>
+        `;
+      });
+
+      printArea.innerHTML = `
+        <h1 style="font-size:22px;font-weight:bold;margin-bottom:6px;">${PRINT_MAIN_TITLE}</h1>
+        <div style="font-size:18px;font-weight:bold;margin-bottom:14px;">${title}</div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:14px;">
+          <thead>
+            <tr>
+              <th style="padding:6px 8px;text-align:left;border-bottom:2px solid #9ca3af;">Monat / Zeitraum</th>
+              <th style="padding:6px 8px;text-align:right;border-bottom:2px solid #9ca3af;white-space:nowrap;">Brutto</th>
+              <th style="padding:6px 8px;text-align:right;border-bottom:2px solid #9ca3af;white-space:nowrap;">Netto</th>
+              <th style="padding:6px 8px;text-align:right;border-bottom:2px solid #9ca3af;white-space:nowrap;">Vorsteuer</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml || `<tr><td colspan="4" style="padding:6px 8px;font-style:italic;">Bitte Jahr auswählen.</td></tr>`}
+          </tbody>
+        </table>
+      `;
+    }
 
 
     expenseBody.addEventListener('change', (e) => {
@@ -2179,12 +2351,16 @@ function handleMonthYearChange() {
     }
 
     function openPrintPreview(mode = 'month') {
-      currentPreviewMode = mode === 'quarter' ? 'quarter' : 'month';
+      currentPreviewMode = mode === 'quarter' ? 'quarter' : (mode === 'year' ? 'year' : 'month');
 
       if (currentPreviewMode === 'quarter') {
         buildQuarterPrintArea();
         if (printPreviewTitle) printPreviewTitle.textContent = 'Druckvorschau – Quartal';
         if (printPreviewSubtitle) printPreviewSubtitle.textContent = 'Vorschau für Quartalsdruck bzw. PDF-Ausgabe.';
+      } else if (currentPreviewMode === 'year') {
+        buildYearPrintArea();
+        if (printPreviewTitle) printPreviewTitle.textContent = 'Druckvorschau – Jahresübersicht';
+        if (printPreviewSubtitle) printPreviewSubtitle.textContent = 'Vorschau für die Jahresübersicht mit Monatswerten, Quartalssummen und Vorsteuer.';
       } else {
         buildPrintArea();
         if (printPreviewTitle) printPreviewTitle.textContent = 'Druckvorschau – Monat';
@@ -2236,6 +2412,16 @@ function handleMonthYearChange() {
         closePrintPreview(true);
       }
     });
+
+    if (withoutRentToggle) {
+      withoutRentToggle.addEventListener('change', () => {
+        showWithoutRentSummary = !!withoutRentToggle.checked;
+        recalcTotals();
+        if (printPreviewOverlay && printPreviewOverlay.classList.contains('is-open') && currentPreviewMode !== 'year') {
+          openPrintPreview(currentPreviewMode);
+        }
+      });
+    }
 
     document.getElementById('printBtn').addEventListener('click', () => {
       openPrintPreview('month');
@@ -2398,6 +2584,8 @@ function handleMonthYearChange() {
       initMonthSelector();
       currentKey = getCurrentKey();
       expenses = getMonthExpensesOrDefault(currentKey);
+      showWithoutRentSummary = false;
+      if (withoutRentToggle) withoutRentToggle.checked = false;
       render();
       updateLockIcon();
       updateEditability();
@@ -2667,6 +2855,9 @@ wsData.push([
       openPrintPreview('quarter');
     });
 
+    document.getElementById('yearPrintBtn').addEventListener('click', () => {
+      openPrintPreview('year');
+    });
 
 
     document.getElementById('clearAllBtn').addEventListener('click', () => {

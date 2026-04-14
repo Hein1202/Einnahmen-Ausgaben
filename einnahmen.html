@@ -3,7 +3,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8"/>
-<title>Einnahmen (Offline) – Version 254.04.26</title>
+<title>Einnahmen (Offline) – Version 273.04.26</title>
 <style>
 body { margin:0; padding:0; }
 .container { max-width:600px; margin:0 auto; background:white; padding:20px; }
@@ -2194,64 +2194,6 @@ function exportCSV(){
 // Jahresarchiv (Backup)
 // ======================
 
-let selectedArchiveYear = null;
-const ARCHIVE_YEAR_STORAGE_KEY = "einnahmen_archive_selected_year";
-
-function _normalizeArchiveYear(value){
-  const y = parseInt(value, 10);
-  return Number.isFinite(y) ? y : null;
-}
-
-function _readArchiveYearFromDom(){
-  const sel = document.getElementById("year-archive-select");
-  return sel ? _normalizeArchiveYear(sel.value) : null;
-}
-
-function _loadRememberedArchiveYear(){
-  if(_normalizeArchiveYear(selectedArchiveYear) !== null) return _normalizeArchiveYear(selectedArchiveYear);
-  try{
-    const stored = _normalizeArchiveYear(localStorage.getItem(ARCHIVE_YEAR_STORAGE_KEY));
-    if(stored !== null){
-      selectedArchiveYear = stored;
-      return stored;
-    }
-  }catch(e){}
-  return null;
-}
-
-function _rememberSelectedArchiveYear(value){
-  const y = _normalizeArchiveYear(value);
-  if(y === null) return null;
-
-  selectedArchiveYear = y;
-  try { localStorage.setItem(ARCHIVE_YEAR_STORAGE_KEY, String(y)); } catch(e) {}
-
-  const sel = document.getElementById("year-archive-select");
-  if(sel && sel.value !== String(y)) sel.value = String(y);
-
-  return y;
-}
-
-function _resolveArchiveYear(explicitValue){
-  const explicitYear = _normalizeArchiveYear(explicitValue);
-  if(explicitYear !== null) return _rememberSelectedArchiveYear(explicitYear);
-
-  const domYear = _readArchiveYearFromDom();
-  if(domYear !== null) return _rememberSelectedArchiveYear(domYear);
-
-  const remembered = _loadRememberedArchiveYear();
-  if(remembered !== null) return remembered;
-
-  if(typeof selYear === "number" && Number.isFinite(selYear)) return selYear;
-
-  return (new Date()).getFullYear();
-}
-
-function handleArchiveYearSelectChange(value){
-  _rememberSelectedArchiveYear(value);
-}
-window.handleArchiveYearSelectChange = handleArchiveYearSelectChange;
-
 // Ermittelt alle Jahre, die aktuell im localStorage vorkommen (day-/cf-/locked-/income-month-Keys)
 function getArchiveYearsFromStorage(){
   const years = new Set();
@@ -2263,60 +2205,41 @@ function getArchiveYearsFromStorage(){
       if(m) years.add(parseInt(m[2], 10));
     }
   } catch(e){}
-
-  const remembered = _loadRememberedArchiveYear();
-  if(remembered !== null) years.add(remembered);
-  if(typeof selYear === "number" && Number.isFinite(selYear)) years.add(selYear);
-
+  if(typeof selYear === "number") years.add(selYear);
   return Array.from(years).filter(y => !isNaN(y)).sort((a,b) => b-a);
 }
 
 function populateYearArchiveSelect(){
   const sel = document.getElementById("year-archive-select");
   if(!sel) return;
-
-  const currentDomYear = _normalizeArchiveYear(sel.value);
-  const remembered = _loadRememberedArchiveYear();
-  const preferredYear = currentDomYear ?? remembered ?? (Number.isFinite(selYear) ? selYear : (new Date()).getFullYear());
-
   const years = getArchiveYearsFromStorage();
-  if(Number.isFinite(preferredYear)) years.unshift(preferredYear);
-  const uniqueYears = Array.from(new Set(years)).sort((a,b) => b-a);
-
   sel.innerHTML = "";
-  uniqueYears.forEach(y => {
+  years.forEach(y => {
     const opt = document.createElement("option");
     opt.value = String(y);
     opt.textContent = String(y);
+    if (typeof selYear === "number" && y === selYear) opt.selected = true;
     sel.appendChild(opt);
   });
-
-  if(!sel.options.length){
-    const fallbackYear = Number.isFinite(preferredYear) ? preferredYear : (new Date()).getFullYear();
+  // Falls noch kein Jahr vorhanden ist, wenigstens aktuelles Jahr anbieten
+  if(!sel.options.length && typeof selYear === "number"){
     const opt = document.createElement("option");
-    opt.value = String(fallbackYear);
-    opt.textContent = String(fallbackYear);
+    opt.value = String(selYear);
+    opt.textContent = String(selYear);
     sel.appendChild(opt);
-  }
-
-  const finalYear = Number.isFinite(preferredYear) ? preferredYear : parseInt(sel.options[0].value, 10);
-  sel.value = String(finalYear);
-  _rememberSelectedArchiveYear(finalYear);
-
-  if(!sel.dataset.bound){
-    sel.addEventListener("change", () => _rememberSelectedArchiveYear(sel.value));
-    sel.dataset.bound = "1";
   }
 }
 
-function _getSelectedArchiveYear(explicitValue){
-  return _resolveArchiveYear(explicitValue);
+function _getSelectedArchiveYear(){
+  const sel = document.getElementById("year-archive-select");
+  const y = sel ? parseInt(sel.value, 10) : NaN;
+  return (!isNaN(y) ? y : selYear);
 }
 
 function _buildYearArchiveData(year){
   const data = {
     app: "Einnahmen",
-    version: "V254.04.26",
+    version: "V273.04.26",
     year: year,
     createdAt: new Date().toISOString(),
     days: {},
@@ -2396,7 +2319,7 @@ const blob = new Blob([jsonText], {type:"application/json"});
 
 
 function _getAllProgramDataPrefixes(){
-  return ["day-", "cf-", "locked-", "income-month-", "all_expenses", "locked_months", ARCHIVE_YEAR_STORAGE_KEY];
+  return ["day-", "cf-", "locked-", "income-month-", "all_expenses", "locked_months"];
 }
 
 function _isAllProgramDataKey(key){
@@ -2408,7 +2331,7 @@ function buildAllProgramDataExport(){
   const payload = {
     app: "Einnahmen-Ausgaben",
     scope: "all-data",
-    version: "234.04.26",
+    version: "273.04.26",
     createdAt: new Date().toISOString(),
     storage: {}
   };
@@ -2506,8 +2429,8 @@ function importAllProgramData(ev){
 }
 
 // Manuelles Jahres-Backup (nur speichern)
-async function exportYearArchive(selectedYearOverride){
-  const year = _getSelectedArchiveYear(selectedYearOverride);
+async function exportYearArchive(){
+  const year = _getSelectedArchiveYear();
   try{
     const data = _buildYearArchiveData(year);
     const defaultName = `einnahmen_${year}_gesamt.json`;
@@ -2594,8 +2517,8 @@ function importYearArchive(ev){
 }
 
 // Backup + Löschen für ein komplettes Jahr
-async function archiveAndDeleteYear(selectedYearOverride){
-  const year = _getSelectedArchiveYear(selectedYearOverride);
+async function archiveAndDeleteYear(){
+  const year = _getSelectedArchiveYear();
 
   const confirmMsg =
     "Es wird zuerst ein Jahres-Backup für das Jahr " + year + " erstellt,\n" +
@@ -2879,11 +2802,11 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 <div style="margin-top:12px; padding-top:10px; border-top:1px dashed #666;">
 <div style="margin-bottom:6px; font-weight:bold;">Jahresarchiv</div>
 <label for="year-archive-select">Jahr:</label>
-<select id="year-archive-select" onchange="handleArchiveYearSelectChange(this.value)"></select>
+<select id="year-archive-select"></select>
 <div style="display:inline-block; margin-left:10px;">
-<button class="modern-btn" onclick="exportYearArchive(document.getElementById('year-archive-select')?.value)">💾 Jahres-Backup speichern</button>
+<button class="modern-btn" onclick="exportYearArchive()">💾 Jahres-Backup speichern</button>
 <br/>
-<button class="modern-btn" onclick="archiveAndDeleteYear(document.getElementById('year-archive-select')?.value)" style="margin-top:6px;">🧹 Jahr archivieren &amp; löschen</button>
+<button class="modern-btn" onclick="archiveAndDeleteYear()" style="margin-top:6px;">🧹 Jahr archivieren &amp; löschen</button>
 </div>
 <div style="display:inline-block; margin-left:10px;">
 <input accept="application/json" id="year-archive-input" onchange="importYearArchive(event)" style="display:none;" type="file"/>
@@ -2965,19 +2888,11 @@ function getQuarterMonths(q) {
   return [start, start + 1, start + 2];
 }
 
-// Liefert das Jahr für die Quartals- und Jahresberichte.
-// Wenn im freigeschalteten Bereich (Code 1202) ein Jahr im Dropdown
-// "Jahresarchiv" ausgewählt wurde, wird dieses verwendet.
-// Ansonsten fällt die Funktion auf das aktuell ausgewählte Jahr (selYear) zurück.
 function getSelectedReportYear() {
-  try {
-    const sel = document.getElementById('year-archive-select');
-    if (sel) {
-      const val = parseInt(sel.value, 10);
-      if (!isNaN(val)) return val;
-    }
-  } catch (e) {
-    // Ignorieren und auf selYear zurückgreifen
+  const archiveSelect = document.getElementById("year-archive-select");
+  const archiveYear = archiveSelect ? parseInt(archiveSelect.value, 10) : NaN;
+  if (Number.isFinite(archiveYear)) {
+    return archiveYear;
   }
   return selYear;
 }
@@ -3104,8 +3019,6 @@ function initReducedPrintPreview() {
 function generateQuarterReducedPrint() {
   const q = getSelectedQuarter();
   const months = getQuarterMonths(q);
-  // Für Quartalsvorschauen das Jahr aus dem Jahres-Archiv-Dropdown verwenden,
-  // falls vorhanden. Andernfalls das aktuell ausgewählte Jahr (selYear).
   const year = getSelectedReportYear();
   let output = "";
   let total = 0;
@@ -3643,24 +3556,25 @@ const rp = document.getElementById("reduced-print");
 async function exportQuarterExcel() {
   const q = getSelectedQuarter();
   const months = getQuarterMonths(q);
-  // Für den Quartals-Excel-Export das Jahr aus dem Jahres-Archiv-Dropdown
-  // verwenden, falls vorhanden. Ansonsten das aktuell ausgewählte Jahr.
   const year = getSelectedReportYear();
   const ws_data = [];
-  // Titelzeile + Leerzeile (für den Excel-Ausdruck / Archiv)
-  ws_data.push([`Einnahmen Quartal Q${q} ${year}`]);
+
+  const money = n => ({ v: Number(n.toFixed(2)), isDecimal: true });
+
+  ws_data.push([`Einnahmen – Quartalsübersicht`]);
+  ws_data.push([`Quartal Q${q}`, `Jahr ${year}`]);
   ws_data.push([]);
+
   let grandTotal = 0;
-  let grandCustomers = 0;
-  let grandWorkdays = 0;
+  let grandPrintedTotal = 0;
 
   months.forEach(m => {
     const days = daysInMonth(year, m);
     let monthTotal = 0;
-    let monthCustomers = 0;
-    let monthWorkdays = 0;
-    ws_data.push([]);
+    let monthPrintedTotal = 0;
+
     ws_data.push([monthNames[m] + " " + year]);
+    ws_data.push(["Datum", "Betrag (EUR)", "Hinweis"]);
 
     for (let d = 1; d <= days; d++) {
       const dateStr = String(d).padStart(2, "0") + "." + String(m + 1).padStart(2, "0") + "." + year;
@@ -3674,20 +3588,11 @@ async function exportQuarterExcel() {
       const freeKey = "cf-" + year + "-" + m + "-" + d;
       const freeType = localStorage.getItem(freeKey);
 
-      const hasEntries = rows && rows.some(r => {
-        const a1 = r.amount1 !== undefined ? r.amount1 : (r.a1 || "");
-        const a2 = r.amount2 !== undefined ? r.amount2 : (r.a2 || "");
-        const tip = r.amountTip !== undefined ? r.amountTip : "";
-        return (a1 && parseFloat(String(a1).replace(",", ".")) > 0) ||
-               (a2 && parseFloat(String(a2).replace(",", ".")) > 0) ||
-               (tip && parseFloat(String(tip).replace(",", ".")) > 0);
-      });
-
       if (freeType) {
         const label = freeType === "urlaub"
           ? "Urlaubstag"
           : (freeType === "krank" ? "Krankheitstag" : "Eigener freier Tag");
-        ws_data.push([dateStr, label]);
+        ws_data.push([dateStr, "", label]);
         ws_data.push([]);
         continue;
       }
@@ -3711,113 +3616,84 @@ async function exportQuarterExcel() {
 
           if (sumVal > 0) {
             kunden++;
-            const fmt = n => n.toFixed(2).replace(".", ",");
-            // Für jede Buchungszeile unterscheiden wir zwischen numerischer Darstellung (für Summen) und Textdarstellung
-            // (für die kombinierten Teile). fmtNum liefert eine Zahl mit zwei Dezimalstellen, fmtStr liefert einen
-            // formatierten String mit deutschem Dezimaltrennzeichen für Texte.
-            const fmtStr = n => n.toFixed(2).replace(".", ",");
-            // Wrap numeric values for Excel export: returns an object marking
-            // monetary values for two‑decimal formatting. See _inferCell.
-            const fmtNum = n => ({ v: Number(n.toFixed(2)), isDecimal: true });
-            const formattedSumObj = fmtNum(sumVal);
-            const fmt1 = !isNaN(num1) ? fmtStr(num1) : "";
-            const fmt2 = !isNaN(num2) && num2 > 0 ? fmtStr(num2) : "";
-            const fmtTip = !isNaN(numTip) && numTip > 0 ? "Trinkgeld " + fmtStr(numTip) : "";
-
-            let parts = [];
-            if (fmt1) parts.push(fmt1);
-            if (fmt2) parts.push(fmt2);
-            if (fmtTip) parts.push(fmtTip);
-
-            if (parts.length > 1) {
-              dayLines.push(["", formattedSumObj, parts.join(" + ")]);
-            } else {
-              dayLines.push(["", formattedSumObj, ""]);
+            const fmtText = n => n.toFixed(2).replace(".", ",");
+            const baseAmount =
+              (isNaN(num1) ? 0 : num1) +
+              (isNaN(num2) ? 0 : num2);
+            let detailText = "";
+            if (!isNaN(numTip) && numTip > 0) {
+              const detailParts = [];
+              if (baseAmount > 0) {
+                detailParts.push(`Einzelbetrag ${fmtText(baseAmount)}`);
+              }
+              detailParts.push(`Trinkgeld ${fmtText(numTip)}`);
+              detailText = detailParts.join(" + ");
             }
+            dayLines.push({ amount: money(sumVal), detailText });
             tagSum += sumVal;
           }
         });
       }
 
       if (tagSum > 0) {
-  const kundenLabel = (kunden === 1 ? "Kunde" : "Kunden");
-  const isSingleCustomer = (kunden === 1 && dayLines.length === 1);
+        const roundedDay = Math.round(tagSum * 100) / 100;
 
-  if (isSingleCustomer) {
-    const details = String(dayLines[0][2] || "").trim();
-    const kundenCell = `|   ${kunden} ${kundenLabel}` + (details ? `   ${details}` : "");
-    ws_data.push([dateStr, dayLines[0][1], kundenCell]);
-    ws_data.push([]);
-  } else {
-    dayLines.forEach((l, index) => {
-      if (index === 0) {
-        ws_data.push([dateStr, l[1], l[2]]);
-  }
-else {
-        ws_data.push(["", l[1], l[2]]);
+        if (kunden === 1 && dayLines.length === 1) {
+          ws_data.push([
+            dateStr,
+            dayLines[0].amount,
+            dayLines[0].detailText || ""
+          ]);
+        } else {
+          dayLines.forEach((entry, index) => {
+            ws_data.push([
+              index === 0 ? dateStr : "",
+              entry.amount,
+              entry.detailText || ""
+            ]);
+          });
+          ws_data.push(["", money(roundedDay), "Tagessumme"]);
+        }
+
+        ws_data.push([]);
+        monthPrintedTotal += roundedDay;
+        monthTotal += tagSum;
       }
-    });
+    }
 
-    ws_data.push(["", "----------"]);
-    // Tagessumme als Zahl speichern (nicht als Text), um Excel-Warnung zu vermeiden
-    // Tagessumme als Objekt mit Dezimalformat markieren
-    ws_data.push(["", { v: Number(tagSum.toFixed(2)), isDecimal: true }, `|   ${kunden} ${kundenLabel}`]);
+    const netto = monthTotal / 1.19;
+    const mwst = monthTotal - netto;
+    const roundedMonth = Math.round(monthPrintedTotal * 100) / 100;
+    const roundingDiffM = Math.round((roundedMonth - monthTotal) * 100) / 100;
+
+    ws_data.push(["Monatsübersicht " + monthNames[m] + " " + year]);
+    ws_data.push(["Summe Tagessummen", money(roundedMonth)]);
+    ws_data.push(["Exakte Gesamtsumme", money(monthTotal)]);
+    ws_data.push(["Rundungsdifferenz", money(roundingDiffM)]);
+    ws_data.push(["Netto", money(netto)]);
+    ws_data.push(["MwSt (19 %)", money(mwst)]);
     ws_data.push([]);
-  }
-
-  monthTotal += tagSum;
-  monthCustomers += kunden;
-  monthWorkdays += 1;
-}
-    }
-
-    if (monthTotal > 0) {
-      // Für Monatsübersicht im Quartal: Zahlen mit zwei Dezimalstellen als numerische Werte zurückgeben
-      const fmt = n => {
-        const rounded = Number(n.toFixed(2));
-        return { v: rounded, isDecimal: true };
-      };
-      const netto = monthTotal / 1.19;
-      const mwst = monthTotal - netto;
-      ws_data.push([]);
-      ws_data.push(["Monatsübersicht " + monthNames[m] + " " + year]);
-      ws_data.push(["Gesamtsumme", fmt(monthTotal)]);
-      ws_data.push(["Netto", fmt(netto)]);
-      ws_data.push(["MwSt", fmt(mwst)]);
-      // Die Gesamtzahlen sollen in Spalte C erscheinen. Wir fügen eine leere
-      // Spalte ein und platzieren die Werte in Spalte C.
-      // Gesamtzahlen in Spalte C anstatt D
-      ws_data.push(["Gesamtanzahl Kunden", "", monthCustomers]);
-      ws_data.push(["Gesamtanzahl Arbeitstage", "", monthWorkdays]);
-      ws_data.push([]);
-    }
 
     grandTotal += monthTotal;
-    grandCustomers += monthCustomers;
-    grandWorkdays += monthWorkdays;
+    grandPrintedTotal += roundedMonth;
   });
 
-  if (grandTotal > 0) {
-    // Für die Quartalsübersicht: Zahlen mit zwei Dezimalstellen als numerische Werte zurückgeben
-    const fmt = n => {
-      const rounded = Number(n.toFixed(2));
-      return { v: rounded, isDecimal: true };
-    };
-    const netto = grandTotal / 1.19;
-    const mwst = grandTotal - netto;
-    ws_data.push([]);
-    ws_data.push([`Quartalsübersicht Q${q} ${year}`]);
-    ws_data.push(["Gesamtsumme", fmt(grandTotal)]);
-    ws_data.push(["Netto", fmt(netto)]);
-    ws_data.push(["MwSt", fmt(mwst)]);
-    // Gesamtzahlen des Quartals ebenfalls in Spalte C ausgeben
-    // Gesamtzahlen des Quartals in Spalte C anstatt D
-    ws_data.push(["Gesamtanzahl Kunden", "", grandCustomers]);
-    ws_data.push(["Gesamtanzahl Arbeitstage", "", grandWorkdays]);
-}
+  const netto = grandTotal / 1.19;
+  const mwst = grandTotal - netto;
+  const roundedTotal = Math.round(grandPrintedTotal * 100) / 100;
+  const roundingDiff = Math.round((roundedTotal - grandTotal) * 100) / 100;
+
+  ws_data.push([`Quartalsübersicht Q${q} ${year}`]);
+  ws_data.push(["Summe Tagessummen", money(roundedTotal)]);
+  ws_data.push(["Exakte Gesamtsumme", money(grandTotal)]);
+  ws_data.push(["Rundungsdifferenz", money(roundingDiff)]);
+  ws_data.push(["Netto", money(netto)]);
+  ws_data.push(["MwSt (19 %)", money(mwst)]);
+
   const defaultName = `einnahmen_quartal_Q${q}_${year}.xlsx`;
   await saveAoAToXlsxFile(ws_data, 'Quartal', defaultName);
 }
+
 function generateReducedPrint() {
   let output = "";
   const month = document.getElementById("selected-month").innerText;
@@ -4270,19 +4146,19 @@ function scrollToMonthStart() {
 <script>
 async function exportExcel() {
   const ws_data = [];
+  const money = n => ({ v: Number(n.toFixed(2)), isDecimal: true });
+  const monthLabel = (document.getElementById('selected-month') && document.getElementById('selected-month').innerText)
+    ? document.getElementById('selected-month').innerText
+    : ((typeof monthNames !== 'undefined' && monthNames[selMonth]) ? (monthNames[selMonth] + ' ' + selYear) : (String(selMonth+1).padStart(2,'0') + '.' + selYear));
 
-  // Titelzeile + Leerzeile (für den Excel-Ausdruck / Archiv)
-  (function addExcelTitleRow(){
-    const monthLabel = (document.getElementById('selected-month') && document.getElementById('selected-month').innerText)
-      ? document.getElementById('selected-month').innerText
-      : ((typeof monthNames !== 'undefined' && monthNames[selMonth]) ? (monthNames[selMonth] + ' ' + selYear) : (String(selMonth+1).padStart(2,'0') + '.' + selYear));
-    ws_data.push([`Einnahmen ${monthLabel}`]);
-    ws_data.push([]);
-  })();
+  ws_data.push([`Einnahmen – Monatsübersicht`]);
+  ws_data.push([`Monat ${monthNames[selMonth]}`, `Jahr ${selYear}`]);
+  ws_data.push([]);
+  ws_data.push([monthLabel]);
+  ws_data.push(["Datum", "Betrag (EUR)", "Hinweis"]);
 
-  let total = 0;
-  let totalCustomers = 0;
-  let totalWorkdays = 0;
+  let monthTotal = 0;
+  let monthPrintedTotal = 0;
 
   for (let d = 1; d <= selDays; d++) {
     const dateStr = String(d).padStart(2, "0") + "." + String(selMonth + 1).padStart(2, "0") + "." + selYear;
@@ -4291,8 +4167,6 @@ async function exportExcel() {
 
     const rows = tbody.querySelectorAll("tr.entry-row");
 
-    // Eigene freie Tage (Urlaub / Krankheit / sonstiger freier Tag) ohne Einträge
-    // sollen ebenfalls im Excel erscheinen.
     if (rows.length === 0) {
       let freeType = null;
       try {
@@ -4304,26 +4178,18 @@ async function exportExcel() {
       }
 
       if (freeType) {
-        let label;
-        if (freeType === "urlaub") {
-          label = "Urlaubstag";
-        } else if (freeType === "krank") {
-          label = "Krankheitstag";
-        } else {
-          // z.B. ältere Daten, bei denen nur ein generischer Wert gespeichert wurde
-          label = "Eigener freier Tag";
-        }
-
-        ws_data.push([dateStr, label]);
-        ws_data.push([]); // Leerzeile als Abstand
+        const label = freeType === "urlaub"
+          ? "Urlaubstag"
+          : (freeType === "krank" ? "Krankheitstag" : "Eigener freier Tag");
+        ws_data.push([dateStr, "", label]);
+        ws_data.push([]);
       }
-      // Keine Umsätze/Kunden für freie Tage
       continue;
     }
 
-    let dayLines = [];
     let tagSum = 0;
     let kunden = 0;
+    const dayLines = [];
 
     rows.forEach(r => {
       const a1Str = r.querySelector(".amount1")?.value || "";
@@ -4340,92 +4206,64 @@ async function exportExcel() {
 
       if (sumVal > 0) {
         kunden++;
-        // Formatierungsfunktionen: fmtStr liefert einen formatierten String (deutsches Dezimaltrennzeichen) für Texte,
-        // fmtNum liefert eine Zahl mit zwei Dezimalstellen für numerische Excel-Zellen.
-        const fmtStr = n => n.toFixed(2).replace('.', ',');
-        // For numeric Excel cells, wrap the value in an object with
-        // isDecimal=true so the export logic knows to apply a two‑decimal
-        // style. Without wrapping, numbers would use the default format and
-        // drop trailing zeros.
-        const fmtNum = n => ({ v: Number(n.toFixed(2)), isDecimal: true });
-        const formattedSumObj = fmtNum(sumVal);
-        const fmt1 = !isNaN(num1) ? fmtStr(num1) : "";
-        const fmt2 = !isNaN(num2) && num2 > 0 ? fmtStr(num2) : "";
-        const fmtTip = !isNaN(numTip) && numTip > 0 ? "Trinkgeld " + fmtStr(numTip) : "";
-
-        let parts = [];
-        if (fmt1) parts.push(fmt1);
-        if (fmt2) parts.push(fmt2);
-        if (fmtTip) parts.push(fmtTip);
-
-        if (parts.length > 1) {
-          dayLines.push(["", formattedSumObj, parts.join(" + ")]);
-        } else {
-          dayLines.push(["", formattedSumObj, ""]);
+        const fmtText = n => n.toFixed(2).replace(".", ",");
+        const baseAmount =
+          (isNaN(num1) ? 0 : num1) +
+          (isNaN(num2) ? 0 : num2);
+        let detailText = "";
+        if (!isNaN(numTip) && numTip > 0) {
+          const detailParts = [];
+          if (baseAmount > 0) {
+            detailParts.push(`Einzelbetrag ${fmtText(baseAmount)}`);
+          }
+          detailParts.push(`Trinkgeld ${fmtText(numTip)}`);
+          detailText = detailParts.join(" + ");
         }
-
+        dayLines.push({ amount: money(sumVal), detailText });
         tagSum += sumVal;
       }
     });
 
     if (tagSum > 0) {
-  const kundenLabel = (kunden === 1 ? "Kunde" : "Kunden");
-  const isSingleCustomer = (kunden === 1 && dayLines.length === 1);
+      const roundedDay = Math.round(tagSum * 100) / 100;
 
-  if (isSingleCustomer) {
-    const details = String(dayLines[0][2] || "").trim();
-    const kundenCell = `|   ${kunden} ${kundenLabel}` + (details ? `   ${details}` : "");
-    ws_data.push([dateStr, dayLines[0][1], kundenCell]);
-    ws_data.push([]);
-  } else {
-    dayLines.forEach((l, index) => {
-      if (index === 0) {
-        ws_data.push([dateStr, l[1], l[2]]);
-  }
-else {
-        ws_data.push(["", l[1], l[2]]);
+      if (kunden === 1 && dayLines.length === 1) {
+        ws_data.push([
+          dateStr,
+          dayLines[0].amount,
+          dayLines[0].detailText || ""
+        ]);
+      } else {
+        dayLines.forEach((entry, index) => {
+          ws_data.push([
+            index === 0 ? dateStr : "",
+            entry.amount,
+            entry.detailText || ""
+          ]);
+        });
+        ws_data.push(["", money(roundedDay), "Tagessumme"]);
       }
-    });
 
-    ws_data.push(["", "----------"]);
-    // Tagessumme als Zahl speichern (nicht als Text)
-    // Tagessumme als Objekt mit Dezimalformat markieren
-    ws_data.push(["", { v: Number(tagSum.toFixed(2)), isDecimal: true }, `|   ${kunden} ${kundenLabel}`]);
-    ws_data.push([]); // Leere Zeile
+      ws_data.push([]);
+      monthPrintedTotal += roundedDay;
+      monthTotal += tagSum;
+    }
   }
 
-  total += tagSum;
-  totalCustomers += kunden;
-  totalWorkdays += 1;
-}
-  }
+  const netto = monthTotal / 1.19;
+  const mwst = monthTotal - netto;
+  const roundedMonth = Math.round(monthPrintedTotal * 100) / 100;
+  const roundingDiff = Math.round((roundedMonth - monthTotal) * 100) / 100;
 
-  // Monatsübersicht mit Netto und MwSt (inkl. Trinkgeld)
-  const netto = total / 1.19;
-  const mwst = total - netto;
+  ws_data.push(["Monatsübersicht " + monthNames[selMonth] + " " + selYear]);
+  ws_data.push(["Summe Tagessummen", money(roundedMonth)]);
+  ws_data.push(["Exakte Gesamtsumme", money(monthTotal)]);
+  ws_data.push(["Rundungsdifferenz", money(roundingDiff)]);
+  ws_data.push(["Netto", money(netto)]);
+  ws_data.push(["MwSt (19 %)", money(mwst)]);
 
-  // Für den Excel-Export Zahlen mit zwei Dezimalstellen als numerische Werte zurückgeben.
-  // Der Rückgabewert ist ein Objekt mit dem numerischen Wert und dem Flag
-  // isDecimal=true. So kann _inferCell/_buildSheetXml die Zelle mit dem
-  // passenden Zahlenformat versehen.
-  const fmt = n => {
-    const rounded = Number(n.toFixed(2));
-    return { v: rounded, isDecimal: true };
-  };
-
-  ws_data.push([]);
-  ws_data.push(["Monatsübersicht"]);
-  ws_data.push(["----------------"]);
-  ws_data.push(["Gesamtsumme:", fmt(total)]);
-  ws_data.push(["Netto:", fmt(netto)]);
-  ws_data.push(["MwSt (19%):", fmt(mwst)]);
-  // Die Gesamtzahlen sollen in Spalte C erscheinen. Wir fügen daher
-  // eine leere Spalte (B) ein und platzieren die Werte in Spalte C.
-      // Verschiebe die Gesamtzahlen eine Spalte nach links (C statt D)
-      ws_data.push(["Gesamtanzahl Kunden:", "", totalCustomers]);
-      ws_data.push(["Gesamtanzahl Arbeitstage:", "", totalWorkdays]);
-  const filename = `Einnahmen_${selYear}-${String(selMonth+1).padStart(2,"0")}.xlsx`;
-  await saveAoAToXlsxFile(ws_data, 'Einnahmen', filename);
+  const filename = `einnahmen_monat_${selYear}-${String(selMonth + 1).padStart(2, "0")}.xlsx`;
+  await saveAoAToXlsxFile(ws_data, 'Monat', filename);
 }
 
 </script>
@@ -4736,98 +4574,116 @@ importJSON = function (ev) {
 
 // Schnelleingabe für einen Standardbetrag (z.B. 33 €) in das aktuell ausgewählte Betrag-1-Fel
 function generateYearOverview() {
-  // Für die Jahresübersicht das Jahr aus dem Jahres-Archiv-Dropdown verwenden,
-  // falls vorhanden. Andernfalls das aktuell ausgewählte Jahr (selYear).
-  const year = getSelectedReportYear();
+  const year = selYear;
   let output = "";
   let grandTotal = 0;
   let grandCustomers = 0;
   let grandWorkdays = 0;
 
+  const fmt = n => n.toFixed(2).replace(".", ",");
+  const lineLabelWidth = 18;
+
+  function buildMonthLine(labelText, brutto, kunden, arbeitstage) {
+    const netto = brutto / 1.19;
+    const mwst = brutto - netto;
+    const label = String(labelText).padEnd(lineLabelWidth);
+    return label
+      + "Brutto: " + fmt(brutto).padStart(10)
+      + "   Netto: " + fmt(netto).padStart(10)
+      + "   MwSt: " + fmt(mwst).padStart(10)
+      + "   Kunden: " + String(kunden).padStart(4)
+      + "   AT: " + String(arbeitstage).padStart(3)
+      + "\n";
+  }
+
   output += "Einnahmen Jahresübersicht " + year + "\n\n";
 
-  for (let m = 0; m < 12; m++) {
-    const days = daysInMonth(year, m);
-    let monthTotal = 0;
-    let monthCustomers = 0;
-    let monthWorkdays = 0;
+  for (let q = 0; q < 4; q++) {
+    const startMonth = q * 3;
+    const endMonth = startMonth + 2;
+    let quarterOutput = "";
+    let quarterTotal = 0;
+    let quarterCustomers = 0;
+    let quarterWorkdays = 0;
 
-    for (let d = 1; d <= days; d++) {
-      const key = "day-" + year + "-" + m + "-" + d;
-      let rows = [];
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        try { rows = JSON.parse(raw); } catch (e) { rows = []; }
+    for (let m = startMonth; m <= endMonth; m++) {
+      const days = daysInMonth(year, m);
+      let monthTotal = 0;
+      let monthCustomers = 0;
+      let monthWorkdays = 0;
+
+      for (let d = 1; d <= days; d++) {
+        const key = "day-" + year + "-" + m + "-" + d;
+        let rows = [];
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          try { rows = JSON.parse(raw); } catch (e) { rows = []; }
+        }
+
+        const freeKey = "cf-" + year + "-" + m + "-" + d;
+        const freeType = localStorage.getItem(freeKey);
+        if (freeType) {
+          continue;
+        }
+
+        let daySum = 0;
+        let dayCustomers = 0;
+
+        if (rows && rows.length) {
+          rows.forEach(r => {
+            const a1Str = r.amount1 !== undefined ? r.amount1 : (r.a1 || "");
+            const a2Str = r.amount2 !== undefined ? r.amount2 : (r.a2 || "");
+            const tipStr = r.amountTip !== undefined ? r.amountTip : "";
+            const num1 = parseFloat(String(a1Str).replace(",", "."));
+            const num2 = parseFloat(String(a2Str).replace(",", "."));
+            const numTip = parseFloat(String(tipStr).replace(",", "."));
+
+            const sumVal =
+              (isNaN(num1) ? 0 : num1) +
+              (isNaN(num2) ? 0 : num2) +
+              (isNaN(numTip) ? 0 : numTip);
+
+            if (sumVal > 0) {
+              daySum += sumVal;
+              dayCustomers++;
+            }
+          });
+        }
+
+        if (dayCustomers > 0) {
+          monthTotal += daySum;
+          monthCustomers += dayCustomers;
+          monthWorkdays += 1;
+        }
       }
 
-      const freeKey = "cf-" + year + "-" + m + "-" + d;
-      const freeType = localStorage.getItem(freeKey);
-      if (freeType) {
-        // Freier Tag überschreibt evtl. alte gespeicherte Beträge: nicht als Einnahme zählen
-        continue;
-      }
-
-      let daySum = 0;
-      let dayCustomers = 0;
-
-      if (rows && rows.length) {
-        rows.forEach(r => {
-          const a1Str = r.amount1 !== undefined ? r.amount1 : (r.a1 || "");
-          const a2Str = r.amount2 !== undefined ? r.amount2 : (r.a2 || "");
-          const tipStr = r.amountTip !== undefined ? r.amountTip : "";
-          const num1 = parseFloat(String(a1Str).replace(",", "."));
-          const num2 = parseFloat(String(a2Str).replace(",", "."));
-          const numTip = parseFloat(String(tipStr).replace(",", "."));
-
-          const sumVal =
-            (isNaN(num1) ? 0 : num1) +
-            (isNaN(num2) ? 0 : num2) +
-            (isNaN(numTip) ? 0 : numTip);
-
-          if (sumVal > 0) {
-            daySum += sumVal;
-            dayCustomers++;
-          }
-        });
-      }
-
-      // Ein Arbeitstag ist ein Tag, an dem mindestens 1 Kunde mit Betrag erfasst wurde.
-      if (dayCustomers > 0) {
-        monthTotal += daySum;
-        monthCustomers += dayCustomers;
-        monthWorkdays += 1;
+      if (monthTotal > 0) {
+        quarterOutput += buildMonthLine(monthNames[m] + " " + year, monthTotal, monthCustomers, monthWorkdays);
+        quarterTotal += monthTotal;
+        quarterCustomers += monthCustomers;
+        quarterWorkdays += monthWorkdays;
+        grandTotal += monthTotal;
+        grandCustomers += monthCustomers;
+        grandWorkdays += monthWorkdays;
       }
     }
 
-    if (monthTotal > 0) {
-      const fmt = n => n.toFixed(2).replace(".", ",");
-      const netto = monthTotal / 1.19;
-      const mwst = monthTotal - netto;
-      const label = (monthNames[m] + " " + year).padEnd(18);
-
-      output += label
-        + "Brutto: " + fmt(monthTotal).padStart(10)
-        + "   Netto: " + fmt(netto).padStart(10)
-        + "   MwSt: " + fmt(mwst).padStart(10)
-        + "   Kunden: " + String(monthCustomers).padStart(4)
-        + "   AT: " + String(monthWorkdays).padStart(3)
-        + "\n";
-
-      grandTotal += monthTotal;
-      grandCustomers += monthCustomers;
-      grandWorkdays += monthWorkdays;
+    if (quarterOutput) {
+      output += "Q" + (q + 1) + " (" + monthNames[startMonth] + "–" + monthNames[endMonth] + ")\n";
+      output += "-------------------------\n";
+      output += quarterOutput;
+      output += buildMonthLine("Quartalssumme Q" + (q + 1), quarterTotal, quarterCustomers, quarterWorkdays);
+      output += "\n";
     }
   }
 
   if (grandTotal > 0) {
-    const fmt = n => n.toFixed(2).replace(".", ",");
     const netto = grandTotal / 1.19;
     const mwst = grandTotal - netto;
 
-    output += "\n";
     output += "Jahresgesamt " + year + "\n";
     output += "-------------------------\n";
-    const labelWidth = 14; // muss mind. so breit sein wie "Arbeitstage:"
+    const labelWidth = 14;
     output += "Brutto:".padEnd(labelWidth) + fmt(grandTotal).padStart(10) + "\n";
     output += "Netto:".padEnd(labelWidth) + fmt(netto).padStart(10) + "\n";
     output += "MwSt:".padEnd(labelWidth) + fmt(mwst).padStart(10) + "\n";
@@ -4846,8 +4702,8 @@ function generateYearOverview() {
     }
     initReducedPrintPreview();
     openReducedPrintPreview(
-      "Druckvorschau – Jahresübersicht",
-      "So sieht die Jahresübersicht bzw. das PDF im Programm ungefähr aus."
+      "Druckvorschau – Jahresvorschau",
+      "So sieht die Jahresvorschau bzw. das PDF im Programm ungefähr aus."
     );
   }
 }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jahresübersicht – Einnahmen-Ausgaben 241.04.26</title>
+  <title>Jahresübersicht – Einnahmen-Ausgaben 273.04.26</title>
   <style>
     :root {
       --border-strong: #94a3b8;
@@ -237,6 +237,26 @@
     tbody tr:last-child td {
       border-bottom: none;
     }
+    .quarterSectionRow td {
+      background:#dbe7f5 !important;
+      color:#0f172a;
+      font-weight: 900;
+      border-top: 2px solid #cbd5e1;
+      border-bottom: 1px solid #cbd5e1;
+      letter-spacing: 0.01em;
+    }
+    .quarterSectionRow td:first-child {
+      text-transform: none;
+    }
+    .quarterSummaryRow td {
+      background:#eef4fb !important;
+      font-weight: 900;
+      color:#0f172a;
+      border-top: 1px solid #d7e0ec;
+    }
+    .quarterSummaryRow td:first-child {
+      white-space: nowrap;
+    }
     .muted {
       color:#94a3b8;
       font-weight: 700;
@@ -430,7 +450,7 @@
           <div class="headLeft">
             <div class="icon">📊</div>
             <div>
-              <div class="kicker">Offline • Version 241.04.26</div>
+              <div class="kicker">Offline • Version 273.04.26</div>
               <h1>Jahresübersicht</h1>
               <div class="sub">Einfache Tabellenansicht mit Einnahmen, Umsatzsteuer, Ausgaben, Vorsteuer, Kunden, Kunden / Tag, Arbeitstagen sowie Urlaubs- und Krankheitstagen pro Monat.</div>
             </div>
@@ -1039,34 +1059,82 @@ function computeIncomeOverview(year) {
       renderTaxQuarterOverview(incomeByMonth, expenseByMonth);
       renderYearResultsOverview(years, year);
 
-      for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
-        const income = incomeByMonth[monthIndex]?.income || 0;
-        const incomeVat = calculateVatFromGross(income);
-        const expenses = expenseByMonth[monthIndex]?.expenses || 0;
-        const expenseVat = calculateVatFromGross(expenses);
-        const customers = incomeByMonth[monthIndex]?.customers || 0;
-        const workdays = incomeByMonth[monthIndex]?.workdays || 0;
-        const vacationDays = freeDayByMonth[monthIndex]?.vacation || 0;
-        const sickDays = freeDayByMonth[monthIndex]?.sick || 0;
-        const customersPerDay = workdays > 0 ? (customers / workdays) : 0;
+      const quarterRanges = [
+        { label: 'Q1 (Januar–März)', start: 0, end: 2 },
+        { label: 'Q2 (April–Juni)', start: 3, end: 5 },
+        { label: 'Q3 (Juli–September)', start: 6, end: 8 },
+        { label: 'Q4 (Oktober–Dezember)', start: 9, end: 11 }
+      ];
 
-        const tr = document.createElement('tr');
-        const hasAnyData = income !== 0 || expenses !== 0 || customers !== 0 || workdays > 0 || vacationDays > 0 || sickDays > 0;
+      quarterRanges.forEach((quarter, quarterIndex) => {
+        const quarterHeader = document.createElement('tr');
+        quarterHeader.className = 'quarterSectionRow';
+        quarterHeader.innerHTML = `<td colspan="10">${quarter.label}</td>`;
+        yearOverviewBody.appendChild(quarterHeader);
 
-        tr.innerHTML = `
-          <td>${monthNames[monthIndex]}</td>
-          <td class="num ${income !== 0 ? '' : 'muted'}">${income !== 0 ? formatEuro(income) : '–'}</td>
-          <td class="num dividerCell ${incomeVat !== 0 ? '' : 'muted'}">${incomeVat !== 0 ? formatEuro(incomeVat) : '–'}</td>
-          <td class="num ${expenses !== 0 ? '' : 'muted'}">${expenses !== 0 ? formatEuro(expenses) : '–'}</td>
-          <td class="num dividerCell ${expenseVat !== 0 ? '' : 'muted'}">${expenseVat !== 0 ? formatEuro(expenseVat) : '–'}</td>
-          <td class="num ${hasAnyData ? '' : 'muted'}">${customers > 0 ? customers : '–'}</td>
-          <td class="num dividerCell ${workdays > 0 ? '' : 'muted'}">${workdays > 0 ? formatDecimal(customersPerDay) : '–'}</td>
-          <td class="num ${workdays > 0 ? '' : 'muted'}">${workdays > 0 ? workdays : '–'}</td>
-          <td class="num ${vacationDays > 0 ? '' : 'muted'}">${vacationDays > 0 ? vacationDays : '–'}</td>
-          <td class="num ${sickDays > 0 ? '' : 'muted'}">${sickDays > 0 ? sickDays : '–'}</td>
+        let quarterIncome = 0;
+        let quarterIncomeVat = 0;
+        let quarterExpenses = 0;
+        let quarterExpenseVat = 0;
+        let quarterCustomers = 0;
+        let quarterWorkdays = 0;
+        let quarterVacationDays = 0;
+        let quarterSickDays = 0;
+
+        for (let monthIndex = quarter.start; monthIndex <= quarter.end; monthIndex++) {
+          const income = incomeByMonth[monthIndex]?.income || 0;
+          const incomeVat = calculateVatFromGross(income);
+          const expenses = expenseByMonth[monthIndex]?.expenses || 0;
+          const expenseVat = calculateVatFromGross(expenses);
+          const customers = incomeByMonth[monthIndex]?.customers || 0;
+          const workdays = incomeByMonth[monthIndex]?.workdays || 0;
+          const vacationDays = freeDayByMonth[monthIndex]?.vacation || 0;
+          const sickDays = freeDayByMonth[monthIndex]?.sick || 0;
+          const customersPerDay = workdays > 0 ? (customers / workdays) : 0;
+
+          quarterIncome += income;
+          quarterIncomeVat += incomeVat;
+          quarterExpenses += expenses;
+          quarterExpenseVat += expenseVat;
+          quarterCustomers += customers;
+          quarterWorkdays += workdays;
+          quarterVacationDays += vacationDays;
+          quarterSickDays += sickDays;
+
+          const tr = document.createElement('tr');
+          const hasAnyData = income !== 0 || expenses !== 0 || customers !== 0 || workdays > 0 || vacationDays > 0 || sickDays > 0;
+
+          tr.innerHTML = `
+            <td>${monthNames[monthIndex]}</td>
+            <td class="num ${income !== 0 ? '' : 'muted'}">${income !== 0 ? formatEuro(income) : '–'}</td>
+            <td class="num dividerCell ${incomeVat !== 0 ? '' : 'muted'}">${incomeVat !== 0 ? formatEuro(incomeVat) : '–'}</td>
+            <td class="num ${expenses !== 0 ? '' : 'muted'}">${expenses !== 0 ? formatEuro(expenses) : '–'}</td>
+            <td class="num dividerCell ${expenseVat !== 0 ? '' : 'muted'}">${expenseVat !== 0 ? formatEuro(expenseVat) : '–'}</td>
+            <td class="num ${hasAnyData ? '' : 'muted'}">${customers > 0 ? customers : '–'}</td>
+            <td class="num dividerCell ${workdays > 0 ? '' : 'muted'}">${workdays > 0 ? formatDecimal(customersPerDay) : '–'}</td>
+            <td class="num ${workdays > 0 ? '' : 'muted'}">${workdays > 0 ? workdays : '–'}</td>
+            <td class="num ${vacationDays > 0 ? '' : 'muted'}">${vacationDays > 0 ? vacationDays : '–'}</td>
+            <td class="num ${sickDays > 0 ? '' : 'muted'}">${sickDays > 0 ? sickDays : '–'}</td>
+          `;
+          yearOverviewBody.appendChild(tr);
+        }
+
+        const quarterSummary = document.createElement('tr');
+        quarterSummary.className = 'quarterSummaryRow';
+        quarterSummary.innerHTML = `
+          <td>Summe ${quarter.label.split(' ')[0]}</td>
+          <td class="num ${quarterIncome !== 0 ? '' : 'muted'}">${quarterIncome !== 0 ? formatEuro(quarterIncome) : '–'}</td>
+          <td class="num dividerCell ${quarterIncomeVat !== 0 ? '' : 'muted'}">${quarterIncomeVat !== 0 ? formatEuro(quarterIncomeVat) : '–'}</td>
+          <td class="num ${quarterExpenses !== 0 ? '' : 'muted'}">${quarterExpenses !== 0 ? formatEuro(quarterExpenses) : '–'}</td>
+          <td class="num dividerCell ${quarterExpenseVat !== 0 ? '' : 'muted'}">${quarterExpenseVat !== 0 ? formatEuro(quarterExpenseVat) : '–'}</td>
+          <td class="num ${quarterCustomers > 0 ? '' : 'muted'}">${quarterCustomers > 0 ? quarterCustomers : '–'}</td>
+          <td class="num dividerCell ${quarterWorkdays > 0 ? '' : 'muted'}">${quarterWorkdays > 0 ? formatDecimal(quarterCustomers / quarterWorkdays) : '–'}</td>
+          <td class="num ${quarterWorkdays > 0 ? '' : 'muted'}">${quarterWorkdays > 0 ? quarterWorkdays : '–'}</td>
+          <td class="num ${quarterVacationDays > 0 ? '' : 'muted'}">${quarterVacationDays > 0 ? quarterVacationDays : '–'}</td>
+          <td class="num ${quarterSickDays > 0 ? '' : 'muted'}">${quarterSickDays > 0 ? quarterSickDays : '–'}</td>
         `;
-        yearOverviewBody.appendChild(tr);
-      }
+        yearOverviewBody.appendChild(quarterSummary);
+      });
 
       yearIncomeTotal.textContent = summary.totalIncome !== 0 ? formatEuro(summary.totalIncome) : '–';
       yearIncomeVatTotal.textContent = summary.totalIncomeVat !== 0 ? formatEuro(summary.totalIncomeVat) : '–';
