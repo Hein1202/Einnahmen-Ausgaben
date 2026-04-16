@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wohngeld-Hochrechnung – Einnahmen-Ausgaben 279.04.26</title>
+  <style>
+    :root {
+      --border-strong: #94a3b8;
+      --inner-highlight: rgba(255,255,255,0.70);
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#e5e7eb;
+      color:#0f172a;
+    }
+    #page {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 24px 22px 30px;
+      box-sizing: border-box;
+    }
+    .controlsPanel,
+    .documentPanel {
+      background:#ffffff;
+      border: 2px solid var(--border-strong);
+      border-radius: 18px;
+      box-shadow:
+        inset 0 0 0 1px var(--inner-highlight),
+        0 12px 28px rgba(0,0,0,0.07);
+    }
+    .controlsPanel {
+      padding: 16px 18px;
+      margin-bottom: 16px;
+    }
+    .controls {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .controlsLeft {
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      flex-wrap: wrap;
+      color:#475569;
+      font-weight:700;
+      font-size:14px;
+    }
+    .pageTitle {
+      font-size: 22px;
+      font-weight: 900;
+      color:#0f172a;
+      letter-spacing: -0.02em;
+    }
+    select, button {
+      appearance: none;
+      border: 2px solid var(--border-strong);
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-weight: 800;
+      color: #0f172a;
+      cursor: pointer;
+    }
+    button.primary {
+      background:#111827;
+      color:#ffffff;
+      border-color:#111827;
+    }
+    .documentPanel {
+      padding: 26px 30px 30px;
+    }
+    .documentTitle {
+      font-size: 28px;
+      font-weight: 800;
+      color:#000000;
+      margin: 0 0 8px;
+      line-height: 1.25;
+    }
+    .documentSubtitle {
+      font-size: 24px;
+      font-weight: 700;
+      color:#000000;
+      margin: 0 0 24px;
+      line-height: 1.25;
+    }
+    .sectionTitle {
+      font-size: 22px;
+      font-weight: 700;
+      color:#000000;
+      margin: 24px 0 10px;
+    }
+    .entryList {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+    }
+    .entryRow {
+      display: grid;
+      grid-template-columns: 150px minmax(0, 1fr);
+      gap: 12px;
+      align-items: baseline;
+      color:#000000;
+      font-size: 22px;
+      line-height: 1.45;
+    }
+    .entryLabel,
+    .entryValue,
+    .totalLabel,
+    .totalValue,
+    .resultFormula,
+    .resultCalculation,
+    .footnote,
+    .printDate {
+      color:#000000;
+    }
+    .entryLabel,
+    .totalLabel {
+      font-weight: 400;
+    }
+    .entryValue,
+    .totalValue {
+      font-weight: 400;
+    }
+    .totals {
+      margin-top: 18px;
+      display: grid;
+      gap: 8px;
+    }
+    .totalRow {
+      display: grid;
+      grid-template-columns: minmax(0, auto) minmax(0, auto);
+      gap: 12px;
+      align-items: baseline;
+      justify-content: start;
+      font-size: 24px;
+      line-height: 1.4;
+    }
+    .resultBlock {
+      margin-top: 28px;
+      display: grid;
+      gap: 8px;
+    }
+    .resultTitle {
+      font-size: 24px;
+      font-weight: 700;
+      color:#000000;
+      line-height: 1.35;
+    }
+    .resultFormula,
+    .resultCalculation {
+      font-size: 24px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+    .footnote {
+      margin-top: 22px;
+      font-size: 20px;
+      line-height: 1.35;
+    }
+    .printDate {
+      margin-top: 16px;
+      font-size: 20px;
+      text-align: right;
+      line-height: 1.35;
+    }
+
+    .print-preview-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.56);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 2000;
+      box-sizing: border-box;
+    }
+    .print-preview-overlay.is-open {
+      display: flex;
+    }
+    .print-preview-shell {
+      width: min(1180px, 100%);
+      max-height: calc(100vh - 36px);
+      background: #ffffff;
+      border-radius: 18px;
+      box-shadow: 0 24px 60px rgba(15,23,42,0.30);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .print-preview-toolbar {
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid #dbe3ee;
+      background:#f8fafc;
+    }
+    .print-preview-title {
+      font-size: 18px;
+      font-weight: 900;
+      color:#0f172a;
+    }
+    .print-preview-subtitle {
+      margin-top: 4px;
+      color:#475569;
+      font-weight:600;
+      font-size:13px;
+      line-height:1.4;
+    }
+    .print-preview-actions {
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content:flex-end;
+    }
+    .print-preview-btn {
+      appearance: none;
+      border: 2px solid var(--border-strong);
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-weight: 800;
+      color: #0f172a;
+      cursor: pointer;
+    }
+    .print-preview-btn.primary {
+      background:#111827;
+      color:#ffffff;
+      border-color:#111827;
+    }
+    .print-preview-stage {
+      flex: 1 1 auto;
+      overflow: auto;
+      background:#e2e8f0;
+      padding: 18px;
+      box-sizing: border-box;
+    }
+    .print-preview-page {
+      width: min(960px, 100%);
+      margin: 0 auto;
+      background:#ffffff;
+      border-radius: 14px;
+      box-shadow: 0 10px 24px rgba(15,23,42,0.16);
+      padding: 22px;
+      box-sizing: border-box;
+    }
+    .print-preview-page .documentPanel {
+      border: none;
+      box-shadow: none;
+      border-radius: 0;
+      padding: 0;
+    }
+    body.preview-open {
+      overflow: hidden;
+    }
+
+    @media print {
+      html, body { background:#ffffff; }
+      #page {
+        max-width: none;
+        padding: 0;
+      }
+      .controlsPanel,
+      .print-preview-overlay {
+        display:none !important;
+      }
+      .documentPanel {
+        border:none;
+        border-radius:0;
+        box-shadow:none;
+        padding: 0;
+      }
+    }
+
+    @media (max-width: 760px) {
+      #page {
+        padding: 14px 12px 20px;
+      }
+      .documentPanel {
+        padding: 18px 16px 20px;
+      }
+      .documentTitle,
+      .documentSubtitle,
+      .sectionTitle,
+      .entryRow,
+      .totalRow,
+      .resultTitle,
+      .resultFormula,
+      .resultCalculation,
+      .footnote,
+      .printDate {
+        font-size: clamp(16px, 4vw, 20px);
+      }
+      .entryRow {
+        grid-template-columns: 110px minmax(0, 1fr);
+      }
+      .print-preview-overlay { padding: 10px; }
+      .print-preview-stage { padding: 10px; }
+      .print-preview-page { width: 100%; padding: 14px; border-radius: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="page">
+    <div class="controlsPanel note-screen">
+      <div class="controls">
+        <div class="controlsLeft">
+          <div class="pageTitle">Wohngeld-Hochrechnung</div>
+          <label for="yearSelect">Jahr</label>
+          <select id="yearSelect" aria-label="Jahr für Wohngeld-Hochrechnung"></select>
+        </div>
+        <div>
+          <button id="printBtn" class="primary" type="button">Druckvorschau</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="documentPanel">
+      <div class="documentTitle">Prognose des Einkommens für <span id="docYear">—</span></div>
+      <div class="documentSubtitle">Einnahmen und Ausgaben <span id="docYearSubtitle">—</span></div>
+
+      <div class="sectionTitle">Einnahmen:</div>
+      <div id="incomeList" class="entryList"></div>
+      <div class="totals">
+        <div class="totalRow">
+          <div class="totalLabel">Gesamtsumme Einnahmen :</div>
+          <div id="incomeTotal" class="totalValue">0,00 €</div>
+        </div>
+      </div>
+
+      <div class="sectionTitle">Ausgaben:</div>
+      <div id="expenseList" class="entryList"></div>
+      <div class="totals">
+        <div class="totalRow">
+          <div class="totalLabel">Gesamtsumme Ausgaben :</div>
+          <div id="expenseTotal" class="totalValue">0,00 €</div>
+        </div>
+      </div>
+
+      <div class="resultBlock">
+        <div class="resultTitle">Prognostizierter Gewinn <span id="docYearResult">—</span></div>
+        <div class="resultFormula">Berechnung: Einnahmen − Ausgaben</div>
+        <div id="resultCalculation" class="resultCalculation">0,00 € − 0,00 € = 0,00 €</div>
+      </div>
+
+      <div class="footnote">* Ist-Werte aus dem laufenden Jahr, übrige Werte auf Basis vorhandener Daten</div>
+      <div id="printDate" class="printDate"></div>
+    </div>
+  </div>
+
+  <div id="printPreviewOverlay" class="print-preview-overlay" aria-hidden="true">
+    <div class="print-preview-shell" role="dialog" aria-modal="true" aria-labelledby="printPreviewTitle">
+      <div class="print-preview-toolbar">
+        <div>
+          <div id="printPreviewTitle" class="print-preview-title">Druckvorschau – Wohngeld-Hochrechnung</div>
+          <div class="print-preview-subtitle">So sieht der Ausdruck bzw. das PDF im Programm ungefähr aus.</div>
+        </div>
+        <div class="print-preview-actions">
+          <button id="printPreviewPrintBtn" class="print-preview-btn primary" type="button">Jetzt drucken / als PDF speichern</button>
+          <button id="printPreviewCloseBtn" class="print-preview-btn" type="button">Schließen</button>
+        </div>
+      </div>
+      <div class="print-preview-stage">
+        <div id="printPreviewPage" class="print-preview-page"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const monthNames = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+
+    function fmtMoney(value, withDecimals = false) {
+      const n = Number(value || 0);
+      return n.toLocaleString('de-DE', {
+        minimumFractionDigits: withDecimals ? 2 : 0,
+        maximumFractionDigits: withDecimals ? 2 : 0
+      }) + ' €';
+    }
+
+    function parseAmount(value) {
+      if (typeof value !== 'string') value = String(value ?? '');
+      value = value.trim();
+      if (!value) return 0;
+      const hasComma = value.includes(',');
+      const hasDot = value.includes('.');
+      if (hasComma && hasDot) value = value.replace(/\./g, '').replace(',', '.');
+      else if (hasComma) value = value.replace(',', '.');
+      const n = parseFloat(value);
+      return isNaN(n) ? 0 : n;
+    }
+
+    function safeJsonParse(raw, fallback) {
+      try {
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (_) {
+        return fallback;
+      }
+    }
+
+    function incomeMonthSummaryKey(year, monthIndex) {
+      return `income-month-${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+    }
+
+    function dayStorageKey(year, monthIndex, day) {
+      return `day-${year}-${monthIndex}-${day}`;
+    }
+
+    function lockedExpenseMonths() {
+      return safeJsonParse(localStorage.getItem('locked_months'), {}) || {};
+    }
+
+    function allExpensesMap() {
+      return safeJsonParse(localStorage.getItem('all_expenses'), {}) || {};
+    }
+
+    function monthDefaults(year, monthIndex) {
+      const mm = String(monthIndex + 1).padStart(2, '0');
+      return {
+        rentDate: `${year}-${mm}-01`,
+        rentPeriod: monthNames[monthIndex],
+        rentAmount: 392.70,
+        rentDesc: 'Raummiete',
+        swapradDate: '',
+        swapradPeriod: monthNames[monthIndex],
+        swapradAmount: 69.90,
+        swapradDesc: 'Swaprad Miete für E-Bike'
+      };
+    }
+
+    function hasAnyExpenseRowContent(exp) {
+      if (!exp) return false;
+      const dateRaw = String(exp.date ?? '').trim();
+      const amountRaw = String(exp.amount ?? '').trim();
+      const descRaw = String(exp.desc ?? '').trim();
+      const receiptRaw = String(exp.receipt ?? '').trim();
+      const periodRaw = String(exp.period ?? '').trim();
+      return !!(dateRaw || amountRaw || descRaw || receiptRaw || periodRaw || exp?.isAfa === true);
+    }
+
+    function isDefaultRentRow(exp, year, monthIndex) {
+      if (!exp || exp.isRent !== true) return false;
+      const defs = monthDefaults(year, monthIndex);
+      const desc = String(exp.desc ?? '').trim();
+      const period = String(exp.period ?? '').trim();
+      const date = String(exp.date ?? '').trim();
+      return parseAmount(exp.amount) === defs.rentAmount
+        && (!desc || desc === defs.rentDesc)
+        && (!period || period === defs.rentPeriod)
+        && (!date || date === defs.rentDate);
+    }
+
+    function isDefaultSwapradRow(exp, year, monthIndex) {
+      if (!exp || exp.isSwaprad !== true) return false;
+      const defs = monthDefaults(year, monthIndex);
+      const desc = String(exp.desc ?? '').trim();
+      const period = String(exp.period ?? '').trim();
+      const date = String(exp.date ?? '').trim();
+      return parseAmount(exp.amount) === defs.swapradAmount
+        && (!desc || desc === defs.swapradDesc)
+        && (!period || period === defs.swapradPeriod)
+        && (!date || date === defs.swapradDate);
+    }
+
+    function getExpenseMonthActual(year, monthIndex) {
+      const mm = String(monthIndex + 1).padStart(2, '0');
+      const key = `${year}-${mm}`;
+      const allExpenses = allExpensesMap();
+      const list = Array.isArray(allExpenses[key]) ? allExpenses[key] : [];
+      const locks = lockedExpenseMonths();
+      const monthLocked = locks[key] === true;
+
+      const monthActive = monthLocked || list.some(exp => {
+        if (!exp) return false;
+        if (exp.isRent === true) return !isDefaultRentRow(exp, year, monthIndex);
+        if (exp.isSwaprad === true) return !isDefaultSwapradRow(exp, year, monthIndex);
+        return hasAnyExpenseRowContent(exp);
+      });
+
+      const effectiveRows = list.filter(exp => {
+        if (!exp) return false;
+        if (exp.isRent === true || exp.isSwaprad === true) return monthActive;
+        return hasAnyExpenseRowContent(exp);
+      });
+
+      let total = 0;
+      let meaningful = false;
+      effectiveRows.forEach(exp => {
+        const amount = parseAmount(exp.amount);
+        total += amount;
+        if (amount !== 0 || hasAnyExpenseRowContent(exp)) meaningful = true;
+      });
+
+      return { hasActual: meaningful, value: total };
+    }
+
+    function getIncomeMonthActual(year, monthIndex) {
+      const summary = safeJsonParse(localStorage.getItem(incomeMonthSummaryKey(year, monthIndex)), null);
+      if (summary && (Number(summary.total || 0) > 0 || Number(summary.workdays || 0) > 0 || Number(summary.customers || 0) > 0)) {
+        return { hasActual: true, value: Number(summary.net || 0) };
+      }
+
+      const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+      let grossTotal = 0;
+      let hasActual = false;
+      for (let day = 1; day <= daysInMonth; day++) {
+        const rows = safeJsonParse(localStorage.getItem(dayStorageKey(year, monthIndex, day)), []);
+        if (!Array.isArray(rows)) continue;
+        rows.forEach(row => {
+          const a1 = parseAmount(row?.amount1);
+          const a2 = parseAmount(row?.amount2);
+          const tip = parseAmount(row?.amountTip);
+          const daySum = a1 + a2 + tip;
+          if (daySum > 0) hasActual = true;
+          grossTotal += daySum;
+        });
+      }
+      return { hasActual, value: grossTotal > 0 ? (grossTotal / 1.19) : 0 };
+    }
+
+    function collectActualSeries(getter, year) {
+      const values = [];
+      for (let m = 0; m < 12; m++) {
+        const item = getter(year, m);
+        if (item && item.hasActual) values.push(Number(item.value || 0));
+      }
+      return values;
+    }
+
+    function averageFor(getter, year) {
+      let values = collectActualSeries(getter, year);
+      if (!values.length) values = collectActualSeries(getter, year - 1);
+      if (!values.length) return { value: 0 };
+      const sum = values.reduce((a, b) => a + b, 0);
+      return { value: sum / values.length };
+    }
+
+    function resolveMonthValue(getter, year, monthIndex) {
+      const actual = getter(year, monthIndex);
+      if (actual.hasActual) {
+        return { value: Number(actual.value || 0), isActual: true };
+      }
+      const previous = getter(year - 1, monthIndex);
+      if (previous.hasActual) {
+        return { value: Number(previous.value || 0), isActual: false };
+      }
+      const avg = averageFor(getter, year);
+      return { value: Number(avg.value || 0), isActual: false };
+    }
+
+    function getAvailableYears() {
+      const years = new Set();
+      const currentYear = new Date().getFullYear();
+      years.add(currentYear);
+      years.add(currentYear - 1);
+      years.add(currentYear + 1);
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i) || '';
+          let match = key.match(/^income-month-(\d{4})-\d{2}$/);
+          if (match) years.add(parseInt(match[1], 10));
+          match = key.match(/^day-(\d{4})-\d{1,2}-\d{1,2}$/);
+          if (match) years.add(parseInt(match[1], 10));
+        }
+      } catch (_) {}
+      const allExpenses = allExpensesMap();
+      Object.keys(allExpenses).forEach(key => {
+        const match = String(key).match(/^(\d{4})-\d{2}$/);
+        if (match) years.add(parseInt(match[1], 10));
+      });
+      const cleanYears = Array.from(years).filter(y => !isNaN(y));
+      const maxYear = cleanYears.length ? Math.max(...cleanYears) : currentYear;
+      cleanYears.push(maxYear + 1);
+      return Array.from(new Set(cleanYears)).sort((a, b) => b - a);
+    }
+
+    function getLatestActualYear(getter) {
+      const years = getAvailableYears();
+      for (const year of years) {
+        if (collectActualSeries(getter, year).length > 0) return year;
+      }
+      return null;
+    }
+
+    function resolveYearSeries(getter, year, cache) {
+      const latestActualYear = getLatestActualYear(getter);
+      const cacheKey = `${getter.name || 'getter'}-${year}`;
+      if (cache[cacheKey]) return cache[cacheKey];
+
+      let result;
+      if (latestActualYear !== null && year > latestActualYear) {
+        const previousSeries = resolveYearSeries(getter, year - 1, cache);
+        result = previousSeries.map(item => ({ value: Number(item.value || 0), isActual: false }));
+      } else {
+        const avg = averageFor(getter, year);
+        result = [];
+        for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
+          const actual = getter(year, monthIndex);
+          if (actual.hasActual) {
+            result.push({ value: Number(actual.value || 0), isActual: true });
+            continue;
+          }
+          const previous = getter(year - 1, monthIndex);
+          if (previous.hasActual) {
+            result.push({ value: Number(previous.value || 0), isActual: false });
+            continue;
+          }
+          result.push({ value: Number(avg.value || 0), isActual: false });
+        }
+      }
+
+      cache[cacheKey] = result;
+      return result;
+    }
+
+    function fillYearSelect() {
+      const select = document.getElementById('yearSelect');
+      const years = getAvailableYears();
+      const currentYear = new Date().getFullYear();
+      select.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+      if (years.includes(currentYear)) select.value = String(currentYear);
+      else if (years.length) select.value = String(years[0]);
+    }
+
+    function buildEntryRow(monthLabel, value, isActual) {
+      const star = isActual ? ' *' : '';
+      return `<div class="entryRow"><div class="entryLabel">${monthLabel}:</div><div class="entryValue">${fmtMoney(value)}${star}</div></div>`;
+    }
+
+    function renderWohngeld() {
+      const year = parseInt(document.getElementById('yearSelect').value, 10) || new Date().getFullYear();
+      const incomeSeries = resolveYearSeries(getIncomeMonthActual, year, {});
+      const expenseSeries = resolveYearSeries(getExpenseMonthActual, year, {});
+      let totalIncome = 0;
+      let totalExpense = 0;
+      const incomeRows = [];
+      const expenseRows = [];
+
+      for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
+        const income = incomeSeries[monthIndex] || { value: 0, isActual: false };
+        const expense = expenseSeries[monthIndex] || { value: 0, isActual: false };
+        totalIncome += Number(income.value || 0);
+        totalExpense += Number(expense.value || 0);
+        incomeRows.push(buildEntryRow(monthNames[monthIndex], income.value, income.isActual));
+        expenseRows.push(buildEntryRow(monthNames[monthIndex], expense.value, expense.isActual));
+      }
+
+      const totalResult = totalIncome - totalExpense;
+      const dateText = new Date().toLocaleDateString('de-DE');
+
+      document.getElementById('docYear').textContent = String(year);
+      document.getElementById('docYearSubtitle').textContent = String(year);
+      document.getElementById('docYearResult').textContent = String(year);
+      document.getElementById('incomeList').innerHTML = incomeRows.join('');
+      document.getElementById('expenseList').innerHTML = expenseRows.join('');
+      document.getElementById('incomeTotal').textContent = fmtMoney(totalIncome);
+      document.getElementById('expenseTotal').textContent = fmtMoney(totalExpense);
+      document.getElementById('resultCalculation').textContent = `${fmtMoney(totalIncome)} − ${fmtMoney(totalExpense)} = ${fmtMoney(totalResult)}`;
+      document.getElementById('printDate').textContent = dateText;
+    }
+
+    function buildPreviewMarkup() {
+      const sourcePanel = document.querySelector('.documentPanel');
+      const previewPage = document.getElementById('printPreviewPage');
+      if (!sourcePanel || !previewPage) return;
+      previewPage.innerHTML = '';
+      const clone = sourcePanel.cloneNode(true);
+      clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+      previewPage.appendChild(clone);
+    }
+
+    function openPrintPreview() {
+      buildPreviewMarkup();
+      const overlay = document.getElementById('printPreviewOverlay');
+      if (overlay) {
+        overlay.classList.add('is-open');
+        overlay.setAttribute('aria-hidden', 'false');
+      }
+      document.body.classList.add('preview-open');
+    }
+
+    function closePrintPreview() {
+      const overlay = document.getElementById('printPreviewOverlay');
+      if (overlay) {
+        overlay.classList.remove('is-open');
+        overlay.setAttribute('aria-hidden', 'true');
+      }
+      document.body.classList.remove('preview-open');
+    }
+
+    function initWohngeldPage() {
+      fillYearSelect();
+      document.getElementById('yearSelect').addEventListener('change', () => {
+        renderWohngeld();
+        const overlay = document.getElementById('printPreviewOverlay');
+        if (overlay && overlay.classList.contains('is-open')) buildPreviewMarkup();
+      });
+      document.getElementById('printBtn').addEventListener('click', openPrintPreview);
+      const previewPrintBtn = document.getElementById('printPreviewPrintBtn');
+      const previewCloseBtn = document.getElementById('printPreviewCloseBtn');
+      const previewOverlay = document.getElementById('printPreviewOverlay');
+      if (previewPrintBtn) previewPrintBtn.addEventListener('click', () => window.print());
+      if (previewCloseBtn) previewCloseBtn.addEventListener('click', closePrintPreview);
+      if (previewOverlay) {
+        previewOverlay.addEventListener('click', (e) => {
+          if (e.target === previewOverlay) closePrintPreview();
+        });
+      }
+      document.addEventListener('keydown', (e) => {
+        const overlay = document.getElementById('printPreviewOverlay');
+        if (e.key === 'Escape' && overlay && overlay.classList.contains('is-open')) {
+          closePrintPreview();
+        }
+      });
+      renderWohngeld();
+    }
+
+    window.refreshWohngeldHochrechnung = function() {
+      try { renderWohngeld(); } catch (err) { console.error('Fehler beim Aktualisieren der Wohngeld-Hochrechnung:', err); }
+    };
+
+    document.addEventListener('DOMContentLoaded', initWohngeldPage);
+  </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8"/>
-<title>Einnahmen (Offline) – Version 273.04.26</title>
+<title>Einnahmen (Offline) – Version 278.04.26</title>
 <style>
 body { margin:0; padding:0; }
 .container { max-width:600px; margin:0 auto; background:white; padding:20px; }
@@ -2239,7 +2239,7 @@ function _getSelectedArchiveYear(){
 function _buildYearArchiveData(year){
   const data = {
     app: "Einnahmen",
-    version: "V273.04.26",
+    version: "V278.04.26",
     year: year,
     createdAt: new Date().toISOString(),
     days: {},
@@ -2331,7 +2331,7 @@ function buildAllProgramDataExport(){
   const payload = {
     app: "Einnahmen-Ausgaben",
     scope: "all-data",
-    version: "273.04.26",
+    version: "278.04.26",
     createdAt: new Date().toISOString(),
     storage: {}
   };
@@ -3664,12 +3664,8 @@ async function exportQuarterExcel() {
     const netto = monthTotal / 1.19;
     const mwst = monthTotal - netto;
     const roundedMonth = Math.round(monthPrintedTotal * 100) / 100;
-    const roundingDiffM = Math.round((roundedMonth - monthTotal) * 100) / 100;
-
     ws_data.push(["Monatsübersicht " + monthNames[m] + " " + year]);
     ws_data.push(["Summe Tagessummen", money(roundedMonth)]);
-    ws_data.push(["Exakte Gesamtsumme", money(monthTotal)]);
-    ws_data.push(["Rundungsdifferenz", money(roundingDiffM)]);
     ws_data.push(["Netto", money(netto)]);
     ws_data.push(["MwSt (19 %)", money(mwst)]);
     ws_data.push([]);
@@ -3681,12 +3677,8 @@ async function exportQuarterExcel() {
   const netto = grandTotal / 1.19;
   const mwst = grandTotal - netto;
   const roundedTotal = Math.round(grandPrintedTotal * 100) / 100;
-  const roundingDiff = Math.round((roundedTotal - grandTotal) * 100) / 100;
-
   ws_data.push([`Quartalsübersicht Q${q} ${year}`]);
   ws_data.push(["Summe Tagessummen", money(roundedTotal)]);
-  ws_data.push(["Exakte Gesamtsumme", money(grandTotal)]);
-  ws_data.push(["Rundungsdifferenz", money(roundingDiff)]);
   ws_data.push(["Netto", money(netto)]);
   ws_data.push(["MwSt (19 %)", money(mwst)]);
 
@@ -4253,12 +4245,8 @@ async function exportExcel() {
   const netto = monthTotal / 1.19;
   const mwst = monthTotal - netto;
   const roundedMonth = Math.round(monthPrintedTotal * 100) / 100;
-  const roundingDiff = Math.round((roundedMonth - monthTotal) * 100) / 100;
-
   ws_data.push(["Monatsübersicht " + monthNames[selMonth] + " " + selYear]);
   ws_data.push(["Summe Tagessummen", money(roundedMonth)]);
-  ws_data.push(["Exakte Gesamtsumme", money(monthTotal)]);
-  ws_data.push(["Rundungsdifferenz", money(roundingDiff)]);
   ws_data.push(["Netto", money(netto)]);
   ws_data.push(["MwSt (19 %)", money(mwst)]);
 
