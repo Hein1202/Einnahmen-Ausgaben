@@ -3,7 +3,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8"/>
-<title>Einnahmen (Offline) – Version 284.04.26</title>
+<title>Einnahmen (Offline) – Version 285.04.26</title>
 <style>
 body { margin:0; padding:0; }
 .container { max-width:600px; margin:0 auto; background:white; padding:20px; }
@@ -2239,7 +2239,7 @@ function _getSelectedArchiveYear(){
 function _buildYearArchiveData(year){
   const data = {
     app: "Einnahmen",
-    version: "V284.04.26",
+    version: "V285.04.26",
     year: year,
     createdAt: new Date().toISOString(),
     days: {},
@@ -2331,7 +2331,7 @@ function buildAllProgramDataExport(){
   const payload = {
     app: "Einnahmen-Ausgaben",
     scope: "all-data",
-    version: "284.04.26",
+    version: "285.04.26",
     createdAt: new Date().toISOString(),
     storage: {}
   };
@@ -2688,7 +2688,7 @@ tbody[id^="day-"] tr:last-child td:nth-last-child(2) {
 
 </style>
 </head>
-<body class="bg-darkblue" onload="updateMonth()">
+<body class="bg-darkblue">
 <div class="container">
 <h1>Einnahmen</h1>
 <div id="month-nav">
@@ -3881,9 +3881,44 @@ function updateCustomerTotal() {
   if (wdTarget) wdTarget.textContent = String(workdays.size);
 }
 
-document.addEventListener("DOMContentLoaded", updateCustomerTotal);
-window.refreshEinnahmenPage = function(){
-  try { updateMonth(); } catch(err) { console.error('Fehler beim Aktualisieren der Einnahmen-Seite:', err); }
+let __einnahmenInitialized = false;
+
+function initializeEinnahmenPage(){
+  if (__einnahmenInitialized) return;
+  __einnahmenInitialized = true;
+  try { updateMonth(); } catch(err) { console.error('Fehler beim Initialisieren der Einnahmen-Seite:', err); }
+}
+
+function refreshEinnahmenViewLight(){
+  try { _populateMonthYearPicker(); } catch(err) {}
+  try { populateYearArchiveSelect(); } catch(err) {}
+  try { updateTotals(); } catch(err) {}
+  try { updateCustomerTotal(); } catch(err) {}
+  try { applyLockStatus(); } catch(err) {}
+  try { updateBackArrowLabel(); } catch(err) {}
+}
+
+document.addEventListener("DOMContentLoaded", function(){
+  initializeEinnahmenPage();
+  updateCustomerTotal();
+});
+
+window.refreshEinnahmenPage = function(forceFullRefresh){
+  try {
+    if (!__einnahmenInitialized) {
+      initializeEinnahmenPage();
+      return;
+    }
+
+    if (forceFullRefresh === true) {
+      updateMonth();
+      return;
+    }
+
+    refreshEinnahmenViewLight();
+  } catch(err) {
+    console.error('Fehler beim Aktualisieren der Einnahmen-Seite:', err);
+  }
 };
 document.addEventListener("input", function(e) {
   if (e.target.classList.contains("amount1") ||
@@ -4719,6 +4754,11 @@ function generateYearOverview() {
   });
 
   document.addEventListener('DOMContentLoaded', updateAdvancedControlsVisibility);
+
+  if (document.readyState === 'interactive' || document.readyState === 'complete') {
+    updateAdvancedControlsVisibility();
+    try { initializeEinnahmenPage(); } catch(_) {}
+  }
 })();
 </script>
 </body>
