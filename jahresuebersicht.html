@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jahresübersicht – Einnahmen-Ausgaben 282.04.26</title>
+  <title>Jahresübersicht – Einnahmen-Ausgaben 291.04.26</title>
   <style>
     :root {
       --border-strong: #94a3b8;
@@ -180,36 +180,36 @@
       padding-left: 2px;
     }
 
-    tbody td:nth-child(6),
-    tbody td:nth-child(7),
     tbody td:nth-child(8),
-    tfoot td:nth-child(6),
-    tfoot td:nth-child(7),
-    tfoot td:nth-child(8) {
+    tbody td:nth-child(9),
+    tbody td:nth-child(10),
+    tfoot td:nth-child(8),
+    tfoot td:nth-child(9),
+    tfoot td:nth-child(10) {
       width: 106px;
       min-width: 106px;
       max-width: 106px;
       padding-left: 8px;
       padding-right: 8px;
     }
-    tbody td:nth-child(7),
-    tfoot td:nth-child(7) {
+    tbody td:nth-child(9),
+    tfoot td:nth-child(9) {
       width: 118px;
       min-width: 118px;
       max-width: 118px;
     }
-    tbody td:nth-child(8),
-    tfoot td:nth-child(8) {
+    tbody td:nth-child(10),
+    tfoot td:nth-child(10) {
       width: 104px;
       min-width: 104px;
       max-width: 104px;
     }
-    tbody td:nth-child(9),
-    tbody td:nth-child(10),
     tbody td:nth-child(11),
-    tfoot td:nth-child(9),
-    tfoot td:nth-child(10),
-    tfoot td:nth-child(11) {
+    tbody td:nth-child(12),
+    tbody td:nth-child(13),
+    tfoot td:nth-child(11),
+    tfoot td:nth-child(12),
+    tfoot td:nth-child(13) {
       width: 92px;
       min-width: 92px;
       max-width: 92px;
@@ -218,30 +218,34 @@
     }
     tbody td:nth-child(2),
     tbody td:nth-child(3),
-    tfoot td:nth-child(2),
-    tfoot td:nth-child(3) {
-      background:#f1f5f9;
-    }
     tbody td:nth-child(4),
-    tbody td:nth-child(5),
-    tfoot td:nth-child(4),
-    tfoot td:nth-child(5) {
+    tfoot td:nth-child(2),
+    tfoot td:nth-child(3),
+    tfoot td:nth-child(4) {
       background:#f1f5f9;
     }
+    tbody td:nth-child(5),
     tbody td:nth-child(6),
     tbody td:nth-child(7),
-    tbody td:nth-child(8),
+    tfoot td:nth-child(5),
     tfoot td:nth-child(6),
-    tfoot td:nth-child(7),
-    tfoot td:nth-child(8) {
+    tfoot td:nth-child(7) {
       background:#f1f5f9;
     }
+    tbody td:nth-child(8),
     tbody td:nth-child(9),
     tbody td:nth-child(10),
-    tbody td:nth-child(11),
+    tfoot td:nth-child(8),
     tfoot td:nth-child(9),
-    tfoot td:nth-child(10),
-    tfoot td:nth-child(11) {
+    tfoot td:nth-child(10) {
+      background:#f1f5f9;
+    }
+    tbody td:nth-child(11),
+    tbody td:nth-child(12),
+    tbody td:nth-child(13),
+    tfoot td:nth-child(11),
+    tfoot td:nth-child(12),
+    tfoot td:nth-child(13) {
       background:#f1f5f9;
     }
     tbody tr:last-child td {
@@ -339,15 +343,37 @@
       color:#0f172a;
       margin-bottom: 8px;
     }
+    .taxHeaderRow,
     .taxRow,
     .taxQuarterSum,
     .taxYearSum {
       display:grid;
-      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) minmax(90px, auto) minmax(116px, auto);
       align-items:center;
       gap: 12px;
       padding: 6px 0;
       font-size: 14px;
+    }
+    .taxHeaderRow {
+      padding-top: 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #dbe5f0;
+      color:#64748b;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .taxHeaderRow span:nth-child(2),
+    .taxHeaderRow span:nth-child(3),
+    .taxRow span:nth-child(2),
+    .taxRow span:nth-child(3),
+    .taxQuarterSum span:nth-child(2),
+    .taxQuarterSum span:nth-child(3),
+    .taxYearSum span:nth-child(2),
+    .taxYearSum span:nth-child(3) {
+      text-align: right;
+      white-space: nowrap;
     }
     .taxRow + .taxRow {
       border-top: 1px solid #e2e8f0;
@@ -365,6 +391,14 @@
       border-top: 2px solid #cbd5e1;
       font-weight: 900;
       color:#0f172a;
+    }
+    .taxFinanceLabel {
+      color:#475569;
+      font-weight: 800;
+    }
+    .taxFinanceValue {
+      color:#0f172a;
+      font-weight: 900;
     }
     .taxMuted {
       color:#94a3b8;
@@ -447,7 +481,10 @@
         overflow-x: auto;
       }
       table {
-        min-width: 1120px;
+        min-width: 1320px;
+      }
+      .yearResultTable {
+        min-width: 1500px;
       }
     }
   </style>
@@ -460,9 +497,9 @@
           <div class="headLeft">
             <div class="icon">📊</div>
             <div>
-              <div class="kicker">Offline • Version 282.04.26</div>
+              <div class="kicker">Offline • Version 291.04.26</div>
               <h1>Jahresübersicht</h1>
-              <div class="sub">Einfache Tabellenansicht mit Einnahmen, Umsatzsteuer, Ausgaben, Vorsteuer, Kunden, Kunden / Tag, Max / Tag, Arbeitstagen sowie Urlaubs- und Krankheitstagen pro Monat.</div>
+              <div class="sub">Einfache Tabellenansicht mit Einnahmen und Ausgaben jeweils als Brutto, Netto und Steueranteil sowie Kunden, Kunden / Tag, Max / Tag, Arbeitstagen und Ausfalltagen pro Monat.</div>
             </div>
           </div>
           <div class="controls">
@@ -476,15 +513,17 @@
             <thead>
               <tr class="groupRow">
                 <th rowspan="2">Monat</th>
-                <th colspan="2" class="groupIncome groupDivider">Einnahmen</th>
-                <th colspan="2" class="groupExpense groupDivider">Ausgaben</th>
+                <th colspan="3" class="groupIncome groupDivider">Einnahmen</th>
+                <th colspan="3" class="groupExpense groupDivider">Ausgaben</th>
                 <th colspan="3" class="groupCustomer groupDivider">Kunden</th>
                 <th colspan="3" class="groupStatus">Arbeitstage / Ausfalltage</th>
               </tr>
               <tr class="labelRow">
-                <th class="num subIncome">Betrag</th>
+                <th class="num subIncome">Brutto</th>
+                <th class="num subIncome">Netto</th>
                 <th class="num subIncome groupDivider">USt</th>
-                <th class="num subExpense">Betrag</th>
+                <th class="num subExpense">Brutto</th>
+                <th class="num subExpense">Netto</th>
                 <th class="num subExpense groupDivider">Vorsteuer</th>
                 <th class="num subCustomer">Kunden</th>
                 <th class="num subCustomer">Kunden / Tag</th>
@@ -499,8 +538,10 @@
               <tr>
                 <td>Gesamt</td>
                 <td class="num" id="yearIncomeTotal">–</td>
+                <td class="num" id="yearIncomeNetTotal">–</td>
                 <td class="num dividerCell" id="yearIncomeVatTotal">–</td>
                 <td class="num" id="yearExpenseTotal">–</td>
+                <td class="num" id="yearExpenseNetTotal">–</td>
                 <td class="num dividerCell" id="yearExpenseVatTotal">–</td>
                 <td class="num footerCustomerWrap dividerCell" colspan="3">
                   <div class="footerCustomerGrid" aria-label="Kunden-Zusammenfassung">
@@ -542,13 +583,14 @@
           <div>
             <div class="kicker">Quartalsweise Übersicht</div>
             <h1>Umsatzsteuer an Finanzamt</h1>
-            <div class="sub">Monatswerte mit Quartalssumme – identisch zur Umsatzsteuer-Logik der Quartalsausdrucke abzüglich Vorsteuer</div>
+            <div class="sub">Monatswerte cent-genau. Für den Finanzamt-Wert wird zuerst das quartalsweise Netto-Ergebnis der Einnahmen auf volle Euro nach unten gerundet. Daraus wird die Umsatzsteuer berechnet; anschließend wird die quartalsweise Vorsteuer aus Ausgaben cent-genau abgezogen.</div>
           </div>
         </div>
 
         <div id="taxQuarterGroups" class="taxGroups"></div>
         <div class="taxYearSum">
           <span>Gesamt Jahr</span>
+          <span id="taxYearTotalExact">–</span>
           <span id="taxYearTotal">–</span>
         </div>
       </div>
@@ -570,9 +612,11 @@
           <thead>
             <tr>
               <th>Jahr</th>
-              <th class="num">Einnahmen</th>
+              <th class="num">Einnahmen Brutto</th>
+              <th class="num">Einnahmen Netto</th>
               <th class="num">USt</th>
-              <th class="num">Ausgaben</th>
+              <th class="num">Ausgaben Brutto</th>
+              <th class="num">Ausgaben Netto</th>
               <th class="num">Vorsteuer</th>
               <th class="num">Kunden</th>
               <th class="num">Kunden / Tag</th>
@@ -592,8 +636,10 @@
     const overviewYearSelect = document.getElementById('overviewYearSelect');
     const yearOverviewBody = document.getElementById('yearOverviewBody');
     const yearIncomeTotal = document.getElementById('yearIncomeTotal');
+    const yearIncomeNetTotal = document.getElementById('yearIncomeNetTotal');
     const yearIncomeVatTotal = document.getElementById('yearIncomeVatTotal');
     const yearExpenseTotal = document.getElementById('yearExpenseTotal');
+    const yearExpenseNetTotal = document.getElementById('yearExpenseNetTotal');
     const yearExpenseVatTotal = document.getElementById('yearExpenseVatTotal');
     const yearCustomerTotal = document.getElementById('yearCustomerTotal');
     const yearCustomerPerDayTotal = document.getElementById('yearCustomerPerDayTotal');
@@ -603,6 +649,7 @@
     const yearVacationTotal = document.getElementById('yearVacationTotal');
     const yearSickTotal = document.getElementById('yearSickTotal');
     const taxQuarterGroups = document.getElementById('taxQuarterGroups');
+    const taxYearTotalExact = document.getElementById('taxYearTotalExact');
     const taxYearTotal = document.getElementById('taxYearTotal');
     const yearResultBody = document.getElementById('yearResultBody');
 
@@ -633,6 +680,22 @@
     function formatDecimal(value) {
       return new Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(value || 0);
     }
+
+    function roundDownToWholeEuroForFinanzamt(value) {
+      const amount = Number(value) || 0;
+      return amount >= 0 ? Math.floor(amount) : Math.ceil(amount);
+    }
+
+    function calculateVatFromNet(net) {
+      const amount = Number(net) || 0;
+      if (amount === 0) return 0;
+      return amount * 0.19;
+    }
+
+    function formatTaxDisplay(value) {
+      return value !== 0 ? formatEuro(value) : '–';
+    }
+
 
     function calculateVatFromGross(gross) {
       const amount = Number(gross) || 0;
@@ -939,8 +1002,10 @@ function computeIncomeOverview(year) {
 
       let totalIncome = 0;
       let totalIncomeVat = 0;
+      let totalIncomeNet = 0;
       let totalExpenses = 0;
       let totalExpenseVat = 0;
+      let totalExpenseNet = 0;
       let totalCustomers = 0;
       let totalWorkdays = 0;
       let totalVacationDays = 0;
@@ -951,8 +1016,10 @@ function computeIncomeOverview(year) {
       for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
         const income = incomeByMonth[monthIndex]?.income || 0;
         const incomeVat = calculateVatFromGross(income);
+        const incomeNet = income - incomeVat;
         const expenses = expenseByMonth[monthIndex]?.expenses || 0;
         const expenseVat = calculateVatFromGross(expenses);
+        const expenseNet = expenses - expenseVat;
         const customers = incomeByMonth[monthIndex]?.customers || 0;
         const workdays = incomeByMonth[monthIndex]?.workdays || 0;
         const monthMaxCustomersPerDay = incomeByMonth[monthIndex]?.maxCustomersPerDay || 0;
@@ -961,8 +1028,10 @@ function computeIncomeOverview(year) {
 
         totalIncome += income;
         totalIncomeVat += incomeVat;
+        totalIncomeNet += incomeNet;
         totalExpenses += expenses;
         totalExpenseVat += expenseVat;
+        totalExpenseNet += expenseNet;
         totalCustomers += customers;
         totalWorkdays += workdays;
         totalVacationDays += vacationDays;
@@ -982,8 +1051,10 @@ function computeIncomeOverview(year) {
         freeDayByMonth,
         totalIncome,
         totalIncomeVat,
+        totalIncomeNet,
         totalExpenses,
         totalExpenseVat,
+        totalExpenseNet,
         totalCustomers,
         totalWorkdays,
         totalVacationDays,
@@ -993,7 +1064,7 @@ function computeIncomeOverview(year) {
         maxCustomerPerDay,
         customerAveragePerActiveMonth,
         taxDue,
-        result: totalIncome - totalExpenses
+        result: totalIncomeNet - totalExpenseNet
       };
     }
 
@@ -1017,8 +1088,10 @@ function computeIncomeOverview(year) {
         tr.innerHTML = `
           <td class="yearLabelCell">${year}</td>
           <td class="num ${summary.totalIncome !== 0 ? 'yearMetricStrong' : 'muted'}">${summary.totalIncome !== 0 ? formatEuro(summary.totalIncome) : '–'}</td>
+          <td class="num ${summary.totalIncomeNet !== 0 ? 'yearMetricStrong' : 'muted'}">${summary.totalIncomeNet !== 0 ? formatEuro(summary.totalIncomeNet) : '–'}</td>
           <td class="num ${summary.totalIncomeVat !== 0 ? '' : 'muted'}">${summary.totalIncomeVat !== 0 ? formatEuro(summary.totalIncomeVat) : '–'}</td>
           <td class="num ${summary.totalExpenses !== 0 ? 'yearMetricStrong' : 'muted'}">${summary.totalExpenses !== 0 ? formatEuro(summary.totalExpenses) : '–'}</td>
+          <td class="num ${summary.totalExpenseNet !== 0 ? 'yearMetricStrong' : 'muted'}">${summary.totalExpenseNet !== 0 ? formatEuro(summary.totalExpenseNet) : '–'}</td>
           <td class="num ${summary.totalExpenseVat !== 0 ? '' : 'muted'}">${summary.totalExpenseVat !== 0 ? formatEuro(summary.totalExpenseVat) : '–'}</td>
           <td class="num ${summary.totalCustomers > 0 ? '' : 'muted'}">${summary.totalCustomers > 0 ? summary.totalCustomers : '–'}</td>
           <td class="num ${summary.totalWorkdays > 0 ? '' : 'muted'}">${summary.totalWorkdays > 0 ? formatDecimal(summary.customersPerDay) : '–'}</td>
@@ -1040,7 +1113,8 @@ function computeIncomeOverview(year) {
         { title: '4. Quartal', months: [9, 10, 11] }
       ];
 
-      let yearlyTax = 0;
+      let yearlyTaxExact = 0;
+      let yearlyTaxFinanzamt = 0;
       taxQuarterGroups.innerHTML = '';
 
       quarterRanges.forEach(group => {
@@ -1052,37 +1126,62 @@ function computeIncomeOverview(year) {
         title.textContent = group.title;
         quarter.appendChild(title);
 
-        let quarterSum = 0;
+        const headerRow = document.createElement('div');
+        headerRow.className = 'taxHeaderRow';
+        headerRow.innerHTML = `
+          <span>Monat</span>
+          <span>Cent-genau</span>
+          <span>Finanzamt</span>
+        `;
+        quarter.appendChild(headerRow);
+
+        let quarterIncomeNetExact = 0;
+        let quarterIncomeVatExact = 0;
+        let quarterExpenseVatExact = 0;
+
         group.months.forEach(monthIndex => {
           const income = incomeByMonth[monthIndex]?.income || 0;
           const vatIncome = calculateVatFromGross(income);
+          const incomeNet = income - vatIncome;
           const expenses = expenseByMonth[monthIndex]?.expenses || 0;
           const vatExpense = calculateVatFromGross(expenses);
-          const tax = vatIncome - vatExpense;
-          quarterSum += tax;
-          yearlyTax += tax;
+          const taxExact = vatIncome - vatExpense;
+
+          quarterIncomeNetExact += incomeNet;
+          quarterIncomeVatExact += vatIncome;
+          quarterExpenseVatExact += vatExpense;
+          yearlyTaxExact += taxExact;
 
           const row = document.createElement('div');
           row.className = 'taxRow';
           row.innerHTML = `
             <span>${monthNames[monthIndex]}</span>
-            <span class="${tax !== 0 ? '' : 'taxMuted'}">${tax !== 0 ? formatEuro(tax) : '–'}</span>
+            <span class="${taxExact !== 0 ? '' : 'taxMuted'}">${formatTaxDisplay(taxExact)}</span>
+            <span class="taxMuted">–</span>
           `;
           quarter.appendChild(row);
         });
+
+        const quarterIncomeNetRoundedForFinanzamt = roundDownToWholeEuroForFinanzamt(quarterIncomeNetExact);
+        const quarterIncomeVatForFinanzamt = calculateVatFromNet(quarterIncomeNetRoundedForFinanzamt);
+        const quarterTaxExact = quarterIncomeVatExact - quarterExpenseVatExact;
+        const quarterTaxFinanzamt = quarterIncomeVatForFinanzamt - quarterExpenseVatExact;
+        yearlyTaxFinanzamt += quarterTaxFinanzamt;
 
         const sumRow = document.createElement('div');
         sumRow.className = 'taxQuarterSum';
         sumRow.innerHTML = `
           <span>Summe</span>
-          <span>${quarterSum !== 0 ? formatEuro(quarterSum) : '–'}</span>
+          <span>${formatTaxDisplay(quarterTaxExact)}</span>
+          <span class="${quarterTaxFinanzamt !== 0 ? 'taxFinanceValue' : 'taxMuted'}">${formatTaxDisplay(quarterTaxFinanzamt)}</span>
         `;
         quarter.appendChild(sumRow);
 
         taxQuarterGroups.appendChild(quarter);
       });
 
-      taxYearTotal.textContent = yearlyTax !== 0 ? formatEuro(yearlyTax) : '–';
+      taxYearTotalExact.textContent = formatTaxDisplay(yearlyTaxExact);
+      taxYearTotal.textContent = formatTaxDisplay(yearlyTaxFinanzamt);
     }
 
     function renderYearOverview() {
@@ -1107,13 +1206,15 @@ function computeIncomeOverview(year) {
       quarterRanges.forEach((quarter, quarterIndex) => {
         const quarterHeader = document.createElement('tr');
         quarterHeader.className = 'quarterSectionRow';
-        quarterHeader.innerHTML = `<td colspan="11">${quarter.label}</td>`;
+        quarterHeader.innerHTML = `<td colspan="13">${quarter.label}</td>`;
         yearOverviewBody.appendChild(quarterHeader);
 
         let quarterIncome = 0;
         let quarterIncomeVat = 0;
+        let quarterIncomeNet = 0;
         let quarterExpenses = 0;
         let quarterExpenseVat = 0;
+        let quarterExpenseNet = 0;
         let quarterCustomers = 0;
         let quarterWorkdays = 0;
         let quarterVacationDays = 0;
@@ -1123,8 +1224,10 @@ function computeIncomeOverview(year) {
         for (let monthIndex = quarter.start; monthIndex <= quarter.end; monthIndex++) {
           const income = incomeByMonth[monthIndex]?.income || 0;
           const incomeVat = calculateVatFromGross(income);
+          const incomeNet = income - incomeVat;
           const expenses = expenseByMonth[monthIndex]?.expenses || 0;
           const expenseVat = calculateVatFromGross(expenses);
+          const expenseNet = expenses - expenseVat;
           const customers = incomeByMonth[monthIndex]?.customers || 0;
           const workdays = incomeByMonth[monthIndex]?.workdays || 0;
           const maxCustomersPerDay = incomeByMonth[monthIndex]?.maxCustomersPerDay || 0;
@@ -1134,8 +1237,10 @@ function computeIncomeOverview(year) {
 
           quarterIncome += income;
           quarterIncomeVat += incomeVat;
+          quarterIncomeNet += incomeNet;
           quarterExpenses += expenses;
           quarterExpenseVat += expenseVat;
+          quarterExpenseNet += expenseNet;
           quarterCustomers += customers;
           quarterWorkdays += workdays;
           quarterVacationDays += vacationDays;
@@ -1148,8 +1253,10 @@ function computeIncomeOverview(year) {
           tr.innerHTML = `
             <td>${monthNames[monthIndex]}</td>
             <td class="num ${income !== 0 ? '' : 'muted'}">${income !== 0 ? formatEuro(income) : '–'}</td>
+            <td class="num ${incomeNet !== 0 ? '' : 'muted'}">${incomeNet !== 0 ? formatEuro(incomeNet) : '–'}</td>
             <td class="num dividerCell ${incomeVat !== 0 ? '' : 'muted'}">${incomeVat !== 0 ? formatEuro(incomeVat) : '–'}</td>
             <td class="num ${expenses !== 0 ? '' : 'muted'}">${expenses !== 0 ? formatEuro(expenses) : '–'}</td>
+            <td class="num ${expenseNet !== 0 ? '' : 'muted'}">${expenseNet !== 0 ? formatEuro(expenseNet) : '–'}</td>
             <td class="num dividerCell ${expenseVat !== 0 ? '' : 'muted'}">${expenseVat !== 0 ? formatEuro(expenseVat) : '–'}</td>
             <td class="num ${hasAnyData ? '' : 'muted'}">${customers > 0 ? customers : '–'}</td>
             <td class="num ${workdays > 0 ? '' : 'muted'}">${workdays > 0 ? formatDecimal(customersPerDay) : '–'}</td>
@@ -1166,8 +1273,10 @@ function computeIncomeOverview(year) {
         quarterSummary.innerHTML = `
           <td>Summe ${quarter.label.split(' ')[0]}</td>
           <td class="num ${quarterIncome !== 0 ? '' : 'muted'}">${quarterIncome !== 0 ? formatEuro(quarterIncome) : '–'}</td>
+          <td class="num ${quarterIncomeNet !== 0 ? '' : 'muted'}">${quarterIncomeNet !== 0 ? formatEuro(quarterIncomeNet) : '–'}</td>
           <td class="num dividerCell ${quarterIncomeVat !== 0 ? '' : 'muted'}">${quarterIncomeVat !== 0 ? formatEuro(quarterIncomeVat) : '–'}</td>
           <td class="num ${quarterExpenses !== 0 ? '' : 'muted'}">${quarterExpenses !== 0 ? formatEuro(quarterExpenses) : '–'}</td>
+          <td class="num ${quarterExpenseNet !== 0 ? '' : 'muted'}">${quarterExpenseNet !== 0 ? formatEuro(quarterExpenseNet) : '–'}</td>
           <td class="num dividerCell ${quarterExpenseVat !== 0 ? '' : 'muted'}">${quarterExpenseVat !== 0 ? formatEuro(quarterExpenseVat) : '–'}</td>
           <td class="num ${quarterCustomers > 0 ? '' : 'muted'}">${quarterCustomers > 0 ? quarterCustomers : '–'}</td>
           <td class="num ${quarterWorkdays > 0 ? '' : 'muted'}">${quarterWorkdays > 0 ? formatDecimal(quarterCustomers / quarterWorkdays) : '–'}</td>
@@ -1180,8 +1289,10 @@ function computeIncomeOverview(year) {
       });
 
       yearIncomeTotal.textContent = summary.totalIncome !== 0 ? formatEuro(summary.totalIncome) : '–';
+      yearIncomeNetTotal.textContent = summary.totalIncomeNet !== 0 ? formatEuro(summary.totalIncomeNet) : '–';
       yearIncomeVatTotal.textContent = summary.totalIncomeVat !== 0 ? formatEuro(summary.totalIncomeVat) : '–';
       yearExpenseTotal.textContent = summary.totalExpenses !== 0 ? formatEuro(summary.totalExpenses) : '–';
+      yearExpenseNetTotal.textContent = summary.totalExpenseNet !== 0 ? formatEuro(summary.totalExpenseNet) : '–';
       yearExpenseVatTotal.textContent = summary.totalExpenseVat !== 0 ? formatEuro(summary.totalExpenseVat) : '–';
       yearCustomerTotal.textContent = summary.totalCustomers > 0 ? String(summary.totalCustomers) : '–';
       yearWorkdayTotal.textContent = summary.totalWorkdays > 0 ? String(summary.totalWorkdays) : '–';
