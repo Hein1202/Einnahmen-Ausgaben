@@ -3,7 +3,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8"/>
-<title>Einnahmen (Offline) – Version 278.04.26</title>
+<title>Einnahmen (Offline) – Version 282.04.26</title>
 <style>
 body { margin:0; padding:0; }
 .container { max-width:600px; margin:0 auto; background:white; padding:20px; }
@@ -1834,6 +1834,7 @@ function saveCurrentMonthSummary(summary){
       total: 0,
       customers: 0,
       workdays: 0,
+      maxCustomersPerDay: 0,
       tip: 0,
       net: 0,
       tax: 0
@@ -1974,6 +1975,7 @@ const net = total / 1.19;
     total,
     customers: totalCustomers,
     workdays: totalWorkdays,
+    maxCustomersPerDay,
     tip: totalTip,
     net,
     tax
@@ -2239,7 +2241,7 @@ function _getSelectedArchiveYear(){
 function _buildYearArchiveData(year){
   const data = {
     app: "Einnahmen",
-    version: "V278.04.26",
+    version: "V282.04.26",
     year: year,
     createdAt: new Date().toISOString(),
     days: {},
@@ -2331,7 +2333,7 @@ function buildAllProgramDataExport(){
   const payload = {
     app: "Einnahmen-Ausgaben",
     scope: "all-data",
-    version: "278.04.26",
+    version: "282.04.26",
     createdAt: new Date().toISOString(),
     storage: {}
   };

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jahresübersicht – Einnahmen-Ausgaben 278.04.26</title>
+  <title>Jahresübersicht – Einnahmen-Ausgaben 282.04.26</title>
   <style>
     :root {
       --border-strong: #94a3b8;
@@ -18,15 +18,15 @@
       color:#0f172a;
     }
     #page {
-      max-width: 1760px;
+      max-width: 1880px;
       margin: 0 auto;
       padding: 24px 22px 30px;
       box-sizing: border-box;
     }
     .layout {
       display: grid;
-      grid-template-columns: minmax(0, 2.55fr) minmax(290px, 0.92fr);
-      gap: 18px;
+      grid-template-columns: minmax(0, 2.95fr) minmax(340px, 0.82fr);
+      gap: 24px;
       align-items: start;
     }
     .panel {
@@ -182,8 +182,10 @@
 
     tbody td:nth-child(6),
     tbody td:nth-child(7),
+    tbody td:nth-child(8),
     tfoot td:nth-child(6),
-    tfoot td:nth-child(7) {
+    tfoot td:nth-child(7),
+    tfoot td:nth-child(8) {
       width: 106px;
       min-width: 106px;
       max-width: 106px;
@@ -197,11 +199,17 @@
       max-width: 118px;
     }
     tbody td:nth-child(8),
+    tfoot td:nth-child(8) {
+      width: 104px;
+      min-width: 104px;
+      max-width: 104px;
+    }
     tbody td:nth-child(9),
     tbody td:nth-child(10),
-    tfoot td:nth-child(8),
+    tbody td:nth-child(11),
     tfoot td:nth-child(9),
-    tfoot td:nth-child(10) {
+    tfoot td:nth-child(10),
+    tfoot td:nth-child(11) {
       width: 92px;
       min-width: 92px;
       max-width: 92px;
@@ -222,16 +230,18 @@
     }
     tbody td:nth-child(6),
     tbody td:nth-child(7),
+    tbody td:nth-child(8),
     tfoot td:nth-child(6),
-    tfoot td:nth-child(7) {
+    tfoot td:nth-child(7),
+    tfoot td:nth-child(8) {
       background:#f1f5f9;
     }
-    tbody td:nth-child(8),
     tbody td:nth-child(9),
     tbody td:nth-child(10),
-    tfoot td:nth-child(8),
+    tbody td:nth-child(11),
     tfoot td:nth-child(9),
-    tfoot td:nth-child(10) {
+    tfoot td:nth-child(10),
+    tfoot td:nth-child(11) {
       background:#f1f5f9;
     }
     tbody tr:last-child td {
@@ -291,7 +301,7 @@
     }
     .footerCustomerGrid {
       display:grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
       align-items:start;
     }
@@ -426,9 +436,9 @@
 
 
 
-    @media (max-width: 1360px) {
+    @media (max-width: 1460px) {
       #page {
-        max-width: 1380px;
+        max-width: 1460px;
       }
       .layout {
         grid-template-columns: 1fr;
@@ -450,9 +460,9 @@
           <div class="headLeft">
             <div class="icon">📊</div>
             <div>
-              <div class="kicker">Offline • Version 278.04.26</div>
+              <div class="kicker">Offline • Version 282.04.26</div>
               <h1>Jahresübersicht</h1>
-              <div class="sub">Einfache Tabellenansicht mit Einnahmen, Umsatzsteuer, Ausgaben, Vorsteuer, Kunden, Kunden / Tag, Arbeitstagen sowie Urlaubs- und Krankheitstagen pro Monat.</div>
+              <div class="sub">Einfache Tabellenansicht mit Einnahmen, Umsatzsteuer, Ausgaben, Vorsteuer, Kunden, Kunden / Tag, Max / Tag, Arbeitstagen sowie Urlaubs- und Krankheitstagen pro Monat.</div>
             </div>
           </div>
           <div class="controls">
@@ -468,7 +478,7 @@
                 <th rowspan="2">Monat</th>
                 <th colspan="2" class="groupIncome groupDivider">Einnahmen</th>
                 <th colspan="2" class="groupExpense groupDivider">Ausgaben</th>
-                <th colspan="2" class="groupCustomer groupDivider">Kunden</th>
+                <th colspan="3" class="groupCustomer groupDivider">Kunden</th>
                 <th colspan="3" class="groupStatus">Arbeitstage / Ausfalltage</th>
               </tr>
               <tr class="labelRow">
@@ -477,7 +487,8 @@
                 <th class="num subExpense">Betrag</th>
                 <th class="num subExpense groupDivider">Vorsteuer</th>
                 <th class="num subCustomer">Kunden</th>
-                <th class="num subCustomer groupDivider">Kunden / Tag</th>
+                <th class="num subCustomer">Kunden / Tag</th>
+                <th class="num subCustomer groupDivider">Max / Tag</th>
                 <th class="num subStatus">Arbeitstage</th>
                 <th class="num subStatus">Urlaub</th>
                 <th class="num subStatus">Krank</th>
@@ -491,7 +502,7 @@
                 <td class="num dividerCell" id="yearIncomeVatTotal">–</td>
                 <td class="num" id="yearExpenseTotal">–</td>
                 <td class="num dividerCell" id="yearExpenseVatTotal">–</td>
-                <td class="num footerCustomerWrap dividerCell" colspan="2">
+                <td class="num footerCustomerWrap dividerCell" colspan="3">
                   <div class="footerCustomerGrid" aria-label="Kunden-Zusammenfassung">
                     <div class="footerMetric">
                       <span id="yearCustomerTotal" class="footerMetricValue">–</span>
@@ -500,6 +511,10 @@
                     <div class="footerMetric">
                       <span id="yearCustomerPerDayTotal" class="footerMetricValue">–</span>
                       <span class="footerMetricNote">Jahres-Ø / Tag</span>
+                    </div>
+                    <div class="footerMetric">
+                      <span id="yearMaxCustomerPerDayTotal" class="footerMetricValue">–</span>
+                      <span class="footerMetricNote">Max / Tag</span>
                     </div>
                     <div class="footerMetric footerMetricSpan2">
                       <span id="yearCustomerAverage" class="footerMetricValue">–</span>
@@ -582,6 +597,7 @@
     const yearExpenseVatTotal = document.getElementById('yearExpenseVatTotal');
     const yearCustomerTotal = document.getElementById('yearCustomerTotal');
     const yearCustomerPerDayTotal = document.getElementById('yearCustomerPerDayTotal');
+    const yearMaxCustomerPerDayTotal = document.getElementById('yearMaxCustomerPerDayTotal');
     const yearCustomerAverage = document.getElementById('yearCustomerAverage');
     const yearWorkdayTotal = document.getElementById('yearWorkdayTotal');
     const yearVacationTotal = document.getElementById('yearVacationTotal');
@@ -690,7 +706,8 @@
     return {
       income: parseFlexibleAmount(parsed.total),
       customers: parseInt(parsed.customers || 0, 10) || 0,
-      workdays: parseInt(parsed.workdays || 0, 10) || 0
+      workdays: parseInt(parsed.workdays || 0, 10) || 0,
+      maxCustomersPerDay: parseInt(parsed.maxCustomersPerDay || 0, 10) || 0
     };
   } catch (_) {
     return null;
@@ -700,16 +717,28 @@
 function computeIncomeOverview(year) {
   const byMonth = Array.from({ length: 12 }, (_, monthIndex) => {
     const stored = getStoredIncomeMonthSummary(year, monthIndex);
-    return stored || { income: 0, customers: 0, workdays: 0 };
+    return stored || { income: 0, customers: 0, workdays: 0, maxCustomersPerDay: 0 };
   });
+
+  const getDayCustomerCount = (rows) => {
+    if (!Array.isArray(rows)) return 0;
+    let customers = 0;
+    rows.forEach(row => {
+      const n1 = parseFlexibleAmount(row?.amount1 ?? row?.a1 ?? '');
+      const n2 = parseFlexibleAmount(row?.amount2 ?? row?.a2 ?? '');
+      const tip = parseFlexibleAmount(row?.amountTip ?? '');
+      if (n1 > 0 || n2 > 0 || tip > 0) customers += 1;
+    });
+    return customers;
+  };
 
   try {
     for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
-      if (getStoredIncomeMonthSummary(year, monthIndex)) continue;
-
-      let monthIncome = 0;
-      let monthCustomers = 0;
-      let monthWorkdays = 0;
+      const stored = getStoredIncomeMonthSummary(year, monthIndex);
+      let monthIncome = stored ? (stored.income || 0) : 0;
+      let monthCustomers = stored ? (stored.customers || 0) : 0;
+      let monthWorkdays = stored ? (stored.workdays || 0) : 0;
+      let monthMaxCustomersPerDay = stored ? (stored.maxCustomersPerDay || 0) : 0;
 
       for (let day = 1; day <= 31; day++) {
         const key = `day-${year}-${monthIndex}-${day}`;
@@ -721,26 +750,31 @@ function computeIncomeOverview(year) {
         }
         if (!Array.isArray(rows) || rows.length === 0) continue;
 
+        const dayCustomers = getDayCustomerCount(rows);
+        monthMaxCustomersPerDay = Math.max(monthMaxCustomersPerDay, dayCustomers);
+
+        if (stored) continue;
+
         let hasWorkday = false;
         rows.forEach(row => {
           const n1 = parseFlexibleAmount(row?.amount1 ?? row?.a1 ?? '');
           const n2 = parseFlexibleAmount(row?.amount2 ?? row?.a2 ?? '');
           const tip = parseFlexibleAmount(row?.amountTip ?? '');
           monthIncome += n1 + n2 + tip;
-          const customers = parseInt(row?.customers ?? row?.count ?? row?.cnt ?? 0, 10) || 0;
-          monthCustomers += customers;
-          if (n1 > 0 || n2 > 0 || tip > 0 || customers > 0) {
+          if (n1 > 0 || n2 > 0 || tip > 0) {
             hasWorkday = true;
           }
         });
 
+        monthCustomers += dayCustomers;
         if (hasWorkday) monthWorkdays += 1;
       }
 
       byMonth[monthIndex] = {
         income: monthIncome,
         customers: monthCustomers,
-        workdays: monthWorkdays
+        workdays: monthWorkdays,
+        maxCustomersPerDay: monthMaxCustomersPerDay
       };
     }
   } catch (_) {}
@@ -912,6 +946,7 @@ function computeIncomeOverview(year) {
       let totalVacationDays = 0;
       let totalSickDays = 0;
       let activeCustomerMonths = 0;
+      let maxCustomerPerDay = 0;
 
       for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
         const income = incomeByMonth[monthIndex]?.income || 0;
@@ -920,6 +955,7 @@ function computeIncomeOverview(year) {
         const expenseVat = calculateVatFromGross(expenses);
         const customers = incomeByMonth[monthIndex]?.customers || 0;
         const workdays = incomeByMonth[monthIndex]?.workdays || 0;
+        const monthMaxCustomersPerDay = incomeByMonth[monthIndex]?.maxCustomersPerDay || 0;
         const vacationDays = freeDayByMonth[monthIndex]?.vacation || 0;
         const sickDays = freeDayByMonth[monthIndex]?.sick || 0;
 
@@ -931,6 +967,7 @@ function computeIncomeOverview(year) {
         totalWorkdays += workdays;
         totalVacationDays += vacationDays;
         totalSickDays += sickDays;
+        maxCustomerPerDay = Math.max(maxCustomerPerDay, monthMaxCustomersPerDay);
         if (customers > 0) activeCustomerMonths += 1;
       }
 
@@ -953,6 +990,7 @@ function computeIncomeOverview(year) {
         totalSickDays,
         activeCustomerMonths,
         customersPerDay,
+        maxCustomerPerDay,
         customerAveragePerActiveMonth,
         taxDue,
         result: totalIncome - totalExpenses
@@ -1069,7 +1107,7 @@ function computeIncomeOverview(year) {
       quarterRanges.forEach((quarter, quarterIndex) => {
         const quarterHeader = document.createElement('tr');
         quarterHeader.className = 'quarterSectionRow';
-        quarterHeader.innerHTML = `<td colspan="10">${quarter.label}</td>`;
+        quarterHeader.innerHTML = `<td colspan="11">${quarter.label}</td>`;
         yearOverviewBody.appendChild(quarterHeader);
 
         let quarterIncome = 0;
@@ -1080,6 +1118,7 @@ function computeIncomeOverview(year) {
         let quarterWorkdays = 0;
         let quarterVacationDays = 0;
         let quarterSickDays = 0;
+        let quarterMaxCustomerPerDay = 0;
 
         for (let monthIndex = quarter.start; monthIndex <= quarter.end; monthIndex++) {
           const income = incomeByMonth[monthIndex]?.income || 0;
@@ -1088,6 +1127,7 @@ function computeIncomeOverview(year) {
           const expenseVat = calculateVatFromGross(expenses);
           const customers = incomeByMonth[monthIndex]?.customers || 0;
           const workdays = incomeByMonth[monthIndex]?.workdays || 0;
+          const maxCustomersPerDay = incomeByMonth[monthIndex]?.maxCustomersPerDay || 0;
           const vacationDays = freeDayByMonth[monthIndex]?.vacation || 0;
           const sickDays = freeDayByMonth[monthIndex]?.sick || 0;
           const customersPerDay = workdays > 0 ? (customers / workdays) : 0;
@@ -1100,6 +1140,7 @@ function computeIncomeOverview(year) {
           quarterWorkdays += workdays;
           quarterVacationDays += vacationDays;
           quarterSickDays += sickDays;
+          quarterMaxCustomerPerDay = Math.max(quarterMaxCustomerPerDay, maxCustomersPerDay);
 
           const tr = document.createElement('tr');
           const hasAnyData = income !== 0 || expenses !== 0 || customers !== 0 || workdays > 0 || vacationDays > 0 || sickDays > 0;
@@ -1111,7 +1152,8 @@ function computeIncomeOverview(year) {
             <td class="num ${expenses !== 0 ? '' : 'muted'}">${expenses !== 0 ? formatEuro(expenses) : '–'}</td>
             <td class="num dividerCell ${expenseVat !== 0 ? '' : 'muted'}">${expenseVat !== 0 ? formatEuro(expenseVat) : '–'}</td>
             <td class="num ${hasAnyData ? '' : 'muted'}">${customers > 0 ? customers : '–'}</td>
-            <td class="num dividerCell ${workdays > 0 ? '' : 'muted'}">${workdays > 0 ? formatDecimal(customersPerDay) : '–'}</td>
+            <td class="num ${workdays > 0 ? '' : 'muted'}">${workdays > 0 ? formatDecimal(customersPerDay) : '–'}</td>
+            <td class="num dividerCell ${maxCustomersPerDay > 0 ? '' : 'muted'}">${maxCustomersPerDay > 0 ? maxCustomersPerDay : '–'}</td>
             <td class="num ${workdays > 0 ? '' : 'muted'}">${workdays > 0 ? workdays : '–'}</td>
             <td class="num ${vacationDays > 0 ? '' : 'muted'}">${vacationDays > 0 ? vacationDays : '–'}</td>
             <td class="num ${sickDays > 0 ? '' : 'muted'}">${sickDays > 0 ? sickDays : '–'}</td>
@@ -1128,7 +1170,8 @@ function computeIncomeOverview(year) {
           <td class="num ${quarterExpenses !== 0 ? '' : 'muted'}">${quarterExpenses !== 0 ? formatEuro(quarterExpenses) : '–'}</td>
           <td class="num dividerCell ${quarterExpenseVat !== 0 ? '' : 'muted'}">${quarterExpenseVat !== 0 ? formatEuro(quarterExpenseVat) : '–'}</td>
           <td class="num ${quarterCustomers > 0 ? '' : 'muted'}">${quarterCustomers > 0 ? quarterCustomers : '–'}</td>
-          <td class="num dividerCell ${quarterWorkdays > 0 ? '' : 'muted'}">${quarterWorkdays > 0 ? formatDecimal(quarterCustomers / quarterWorkdays) : '–'}</td>
+          <td class="num ${quarterWorkdays > 0 ? '' : 'muted'}">${quarterWorkdays > 0 ? formatDecimal(quarterCustomers / quarterWorkdays) : '–'}</td>
+          <td class="num dividerCell ${quarterMaxCustomerPerDay > 0 ? '' : 'muted'}">${quarterMaxCustomerPerDay > 0 ? quarterMaxCustomerPerDay : '–'}</td>
           <td class="num ${quarterWorkdays > 0 ? '' : 'muted'}">${quarterWorkdays > 0 ? quarterWorkdays : '–'}</td>
           <td class="num ${quarterVacationDays > 0 ? '' : 'muted'}">${quarterVacationDays > 0 ? quarterVacationDays : '–'}</td>
           <td class="num ${quarterSickDays > 0 ? '' : 'muted'}">${quarterSickDays > 0 ? quarterSickDays : '–'}</td>
@@ -1143,6 +1186,7 @@ function computeIncomeOverview(year) {
       yearCustomerTotal.textContent = summary.totalCustomers > 0 ? String(summary.totalCustomers) : '–';
       yearWorkdayTotal.textContent = summary.totalWorkdays > 0 ? String(summary.totalWorkdays) : '–';
       yearCustomerPerDayTotal.textContent = summary.totalWorkdays > 0 ? formatDecimal(summary.totalCustomers / summary.totalWorkdays) : '–';
+      yearMaxCustomerPerDayTotal.textContent = summary.maxCustomerPerDay > 0 ? String(summary.maxCustomerPerDay) : '–';
       yearCustomerAverage.textContent = summary.activeCustomerMonths > 0 ? formatDecimal(summary.totalCustomers / summary.activeCustomerMonths) : '–';
       yearVacationTotal.textContent = summary.totalVacationDays > 0 ? String(summary.totalVacationDays) : '–';
       yearSickTotal.textContent = summary.totalSickDays > 0 ? String(summary.totalSickDays) : '–';

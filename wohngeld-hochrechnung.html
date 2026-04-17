@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wohngeld-Hochrechnung – Einnahmen-Ausgaben 279.04.26</title>
+  <title>Wohngeld-Gewinn-Hochrechnung – Einnahmen-Ausgaben 282.04.26</title>
   <style>
     :root {
       --border-strong: #94a3b8;
@@ -81,13 +81,6 @@
       font-weight: 800;
       color:#000000;
       margin: 0 0 8px;
-      line-height: 1.25;
-    }
-    .documentSubtitle {
-      font-size: 24px;
-      font-weight: 700;
-      color:#000000;
-      margin: 0 0 24px;
       line-height: 1.25;
     }
     .sectionTitle {
@@ -290,7 +283,6 @@
         padding: 18px 16px 20px;
       }
       .documentTitle,
-      .documentSubtitle,
       .sectionTitle,
       .entryRow,
       .totalRow,
@@ -315,9 +307,9 @@
     <div class="controlsPanel note-screen">
       <div class="controls">
         <div class="controlsLeft">
-          <div class="pageTitle">Wohngeld-Hochrechnung</div>
+          <div class="pageTitle">Wohngeld-Gewinn-Hochrechnung</div>
           <label for="yearSelect">Jahr</label>
-          <select id="yearSelect" aria-label="Jahr für Wohngeld-Hochrechnung"></select>
+          <select id="yearSelect" aria-label="Jahr für Wohngeld-Gewinn-Hochrechnung"></select>
         </div>
         <div>
           <button id="printBtn" class="primary" type="button">Druckvorschau</button>
@@ -327,8 +319,6 @@
 
     <div class="documentPanel">
       <div class="documentTitle">Prognose des Einkommens für <span id="docYear">—</span></div>
-      <div class="documentSubtitle">Einnahmen und Ausgaben <span id="docYearSubtitle">—</span></div>
-
       <div class="sectionTitle">Einnahmen:</div>
       <div id="incomeList" class="entryList"></div>
       <div class="totals">
@@ -362,7 +352,7 @@
     <div class="print-preview-shell" role="dialog" aria-modal="true" aria-labelledby="printPreviewTitle">
       <div class="print-preview-toolbar">
         <div>
-          <div id="printPreviewTitle" class="print-preview-title">Druckvorschau – Wohngeld-Hochrechnung</div>
+          <div id="printPreviewTitle" class="print-preview-title">Druckvorschau – Wohngeld-Gewinn-Hochrechnung</div>
           <div class="print-preview-subtitle">So sieht der Ausdruck bzw. das PDF im Programm ungefähr aus.</div>
         </div>
         <div class="print-preview-actions">
@@ -658,7 +648,6 @@
       const dateText = new Date().toLocaleDateString('de-DE');
 
       document.getElementById('docYear').textContent = String(year);
-      document.getElementById('docYearSubtitle').textContent = String(year);
       document.getElementById('docYearResult').textContent = String(year);
       document.getElementById('incomeList').innerHTML = incomeRows.join('');
       document.getElementById('expenseList').innerHTML = expenseRows.join('');
@@ -725,7 +714,7 @@
     }
 
     window.refreshWohngeldHochrechnung = function() {
-      try { renderWohngeld(); } catch (err) { console.error('Fehler beim Aktualisieren der Wohngeld-Hochrechnung:', err); }
+      try { renderWohngeld(); } catch (err) { console.error('Fehler beim Aktualisieren der Wohngeld-Gewinn-Hochrechnung:', err); }
     };
 
     document.addEventListener('DOMContentLoaded', initWohngeldPage);
