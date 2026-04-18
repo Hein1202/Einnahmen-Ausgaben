@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jahresübersicht – Einnahmen-Ausgaben 291.04.26</title>
+  <title>Jahresübersicht – Einnahmen-Ausgaben 293.04.26</title>
   <style>
     :root {
       --border-strong: #94a3b8;
@@ -497,7 +497,7 @@
           <div class="headLeft">
             <div class="icon">📊</div>
             <div>
-              <div class="kicker">Offline • Version 291.04.26</div>
+              <div class="kicker">Offline • Version 293.04.26</div>
               <h1>Jahresübersicht</h1>
               <div class="sub">Einfache Tabellenansicht mit Einnahmen und Ausgaben jeweils als Brutto, Netto und Steueranteil sowie Kunden, Kunden / Tag, Max / Tag, Arbeitstagen und Ausfalltagen pro Monat.</div>
             </div>
@@ -694,6 +694,10 @@
 
     function formatTaxDisplay(value) {
       return value !== 0 ? formatEuro(value) : '–';
+    }
+
+    function formatEuroAlways(value) {
+      return formatEuro(Number(value) || 0);
     }
 
 
@@ -1176,6 +1180,40 @@ function computeIncomeOverview(year) {
           <span class="${quarterTaxFinanzamt !== 0 ? 'taxFinanceValue' : 'taxMuted'}">${formatTaxDisplay(quarterTaxFinanzamt)}</span>
         `;
         quarter.appendChild(sumRow);
+
+        const calcDetails = document.createElement('details');
+        calcDetails.className = 'taxCalcDetails';
+        calcDetails.innerHTML = `
+          <summary>Berechnung anzeigen</summary>
+          <div class="taxCalcBox">
+            <div class="taxCalcRow">
+              <span>1. Netto-Einnahmen Quartal (cent-genau)</span>
+              <span>${formatEuroAlways(quarterIncomeNetExact)}</span>
+            </div>
+            <div class="taxCalcRow">
+              <span>2. Netto-Einnahmen nach unten auf volle Euro gerundet</span>
+              <span>${formatEuroAlways(quarterIncomeNetRoundedForFinanzamt)}</span>
+            </div>
+            <div class="taxCalcRow">
+              <span>3. Umsatzsteuer aus gerundetem Netto (19 %)</span>
+              <span>${formatEuroAlways(quarterIncomeVatForFinanzamt)}</span>
+            </div>
+            <div class="taxCalcRow">
+              <span>4. Vorsteuer Quartal (cent-genau, wird abgezogen)</span>
+              <span>− ${formatEuroAlways(quarterExpenseVatExact)}</span>
+            </div>
+            <div class="taxCalcRow isResult">
+              <span>5. Quartalssumme Finanzamt</span>
+              <span>${formatEuroAlways(quarterTaxFinanzamt)}</span>
+            </div>
+            <div class="taxCalcFormula">
+              ${formatEuroAlways(quarterIncomeNetExact)} → ${formatEuroAlways(quarterIncomeNetRoundedForFinanzamt)}<br>
+              ${formatEuroAlways(quarterIncomeNetRoundedForFinanzamt)} × 19 % = ${formatEuroAlways(quarterIncomeVatForFinanzamt)}<br>
+              ${formatEuroAlways(quarterIncomeVatForFinanzamt)} − ${formatEuroAlways(quarterExpenseVatExact)} = ${formatEuroAlways(quarterTaxFinanzamt)}
+            </div>
+          </div>
+        `;
+        quarter.appendChild(calcDetails);
 
         taxQuarterGroups.appendChild(quarter);
       });
