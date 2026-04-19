@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jahresübersicht – Einnahmen-Ausgaben 293.04.26</title>
+  <title>Jahresübersicht – Einnahmen-Ausgaben 295.04.26</title>
   <style>
     :root {
       --border-strong: #94a3b8;
@@ -405,6 +405,85 @@
       font-weight: 700;
     }
 
+    .taxCalcDetails {
+      margin-top: 10px;
+      border-top: 1px dashed #cbd5e1;
+      padding-top: 10px;
+    }
+    .taxCalcDetails summary {
+      cursor: pointer;
+      list-style: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      color:#334155;
+      font-size: 13px;
+      user-select: none;
+    }
+    .taxCalcDetails summary::-webkit-details-marker {
+      display: none;
+    }
+    .taxCalcDetails summary::before {
+      content: '\25B6';
+      font-size: 11px;
+      color:#64748b;
+      transition: transform 0.15s ease;
+    }
+    .taxCalcDetails[open] summary::before {
+      transform: rotate(90deg);
+    }
+    .taxCalcBox {
+      margin-top: 10px;
+      border: 1px solid #dbe5f0;
+      border-radius: 12px;
+      background: #ffffff;
+      padding: 10px 12px;
+    }
+    .taxCalcIntro {
+      color:#64748b;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .taxCalcRow,
+    .taxCalcTotal {
+      display:grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: start;
+      padding: 5px 0;
+      font-size: 14px;
+    }
+    .taxCalcRow + .taxCalcRow {
+      border-top: 1px solid #eef2f7;
+    }
+    .taxCalcLabel {
+      color:#334155;
+      line-height: 1.35;
+    }
+    .taxCalcValue {
+      white-space: nowrap;
+      text-align: right;
+      font-weight: 800;
+      color:#0f172a;
+    }
+    .taxCalcRow.isResult,
+    .taxCalcTotal {
+      margin-top: 6px;
+      padding-top: 9px;
+      border-top: 2px solid #cbd5e1;
+      font-weight: 900;
+    }
+    .taxCalcFormula {
+      margin-top: 8px;
+      color:#475569;
+      font-size: 12px;
+      line-height: 1.4;
+      font-weight: 700;
+    }
+
+
     .year-summary-panel {
       margin-top: 18px;
     }
@@ -497,7 +576,7 @@
           <div class="headLeft">
             <div class="icon">📊</div>
             <div>
-              <div class="kicker">Offline • Version 293.04.26</div>
+              <div class="kicker">Offline • Version 295.04.26</div>
               <h1>Jahresübersicht</h1>
               <div class="sub">Einfache Tabellenansicht mit Einnahmen und Ausgaben jeweils als Brutto, Netto und Steueranteil sowie Kunden, Kunden / Tag, Max / Tag, Arbeitstagen und Ausfalltagen pro Monat.</div>
             </div>
@@ -583,7 +662,7 @@
           <div>
             <div class="kicker">Quartalsweise Übersicht</div>
             <h1>Umsatzsteuer an Finanzamt</h1>
-            <div class="sub">Monatswerte cent-genau. Für den Finanzamt-Wert wird zuerst das quartalsweise Netto-Ergebnis der Einnahmen auf volle Euro nach unten gerundet. Daraus wird die Umsatzsteuer berechnet; anschließend wird die quartalsweise Vorsteuer aus Ausgaben cent-genau abgezogen.</div>
+            <div class="sub">Monatswerte cent-genau. Für den Finanzamt-Wert werden die Nettoeinnahmen des Quartals cent-genau zusammengeführt, dann auf volle Euro nach unten gerundet, daraus die Umsatzsteuer berechnet und anschließend die Vorsteuer aus Ausgaben quartalsweise cent-genau abgezogen.</div>
           </div>
         </div>
 
@@ -681,25 +760,30 @@
       return new Intl.NumberFormat('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(value || 0);
     }
 
-    function roundDownToWholeEuroForFinanzamt(value) {
+    function roundDownToFullEuro(value) {
       const amount = Number(value) || 0;
       return amount >= 0 ? Math.floor(amount) : Math.ceil(amount);
     }
 
     function calculateVatFromNet(net) {
-      const amount = Number(net) || 0;
-      if (amount === 0) return 0;
-      return amount * 0.19;
+      return roundToCents((Number(net) || 0) * 0.19);
+    }
+
+    function addCurrency(total, value) {
+      return roundToCents((Number(total) || 0) + (Number(value) || 0));
     }
 
     function formatTaxDisplay(value) {
       return value !== 0 ? formatEuro(value) : '–';
     }
 
-    function formatEuroAlways(value) {
-      return formatEuro(Number(value) || 0);
+    function roundToCents(value) {
+      return Math.round(((Number(value) || 0) + Number.EPSILON) * 100) / 100;
     }
 
+    function calculateExpenseVorsteuerForSummary(gross) {
+      return roundToCents(calculateVatFromGross(gross));
+    }
 
     function calculateVatFromGross(gross) {
       const amount = Number(gross) || 0;
@@ -1022,7 +1106,7 @@ function computeIncomeOverview(year) {
         const incomeVat = calculateVatFromGross(income);
         const incomeNet = income - incomeVat;
         const expenses = expenseByMonth[monthIndex]?.expenses || 0;
-        const expenseVat = calculateVatFromGross(expenses);
+        const expenseVat = calculateExpenseVorsteuerForSummary(expenses);
         const expenseNet = expenses - expenseVat;
         const customers = incomeByMonth[monthIndex]?.customers || 0;
         const workdays = incomeByMonth[monthIndex]?.workdays || 0;
@@ -1030,12 +1114,12 @@ function computeIncomeOverview(year) {
         const vacationDays = freeDayByMonth[monthIndex]?.vacation || 0;
         const sickDays = freeDayByMonth[monthIndex]?.sick || 0;
 
-        totalIncome += income;
-        totalIncomeVat += incomeVat;
-        totalIncomeNet += incomeNet;
-        totalExpenses += expenses;
-        totalExpenseVat += expenseVat;
-        totalExpenseNet += expenseNet;
+        totalIncome = addCurrency(totalIncome, income);
+        totalIncomeVat = addCurrency(totalIncomeVat, incomeVat);
+        totalIncomeNet = addCurrency(totalIncomeNet, incomeNet);
+        totalExpenses = addCurrency(totalExpenses, expenses);
+        totalExpenseVat = addCurrency(totalExpenseVat, expenseVat);
+        totalExpenseNet = addCurrency(totalExpenseNet, expenseNet);
         totalCustomers += customers;
         totalWorkdays += workdays;
         totalVacationDays += vacationDays;
@@ -1139,22 +1223,22 @@ function computeIncomeOverview(year) {
         `;
         quarter.appendChild(headerRow);
 
-        let quarterIncomeNetExact = 0;
-        let quarterIncomeVatExact = 0;
-        let quarterExpenseVatExact = 0;
+        let quarterIncomeVat = 0;
+        let quarterExpenseVat = 0;
+        let quarterIncomeNet = 0;
 
         group.months.forEach(monthIndex => {
           const income = incomeByMonth[monthIndex]?.income || 0;
-          const vatIncome = calculateVatFromGross(income);
-          const incomeNet = income - vatIncome;
+          const vatIncome = roundToCents(calculateVatFromGross(income));
+          const incomeNet = roundToCents(income - vatIncome);
           const expenses = expenseByMonth[monthIndex]?.expenses || 0;
-          const vatExpense = calculateVatFromGross(expenses);
-          const taxExact = vatIncome - vatExpense;
+          const vatExpense = calculateExpenseVorsteuerForSummary(expenses);
+          const taxExact = roundToCents(vatIncome - vatExpense);
 
-          quarterIncomeNetExact += incomeNet;
-          quarterIncomeVatExact += vatIncome;
-          quarterExpenseVatExact += vatExpense;
-          yearlyTaxExact += taxExact;
+          quarterIncomeVat = addCurrency(quarterIncomeVat, vatIncome);
+          quarterExpenseVat = addCurrency(quarterExpenseVat, vatExpense);
+          quarterIncomeNet = addCurrency(quarterIncomeNet, incomeNet);
+          yearlyTaxExact = addCurrency(yearlyTaxExact, taxExact);
 
           const row = document.createElement('div');
           row.className = 'taxRow';
@@ -1166,11 +1250,11 @@ function computeIncomeOverview(year) {
           quarter.appendChild(row);
         });
 
-        const quarterIncomeNetRoundedForFinanzamt = roundDownToWholeEuroForFinanzamt(quarterIncomeNetExact);
-        const quarterIncomeVatForFinanzamt = calculateVatFromNet(quarterIncomeNetRoundedForFinanzamt);
-        const quarterTaxExact = quarterIncomeVatExact - quarterExpenseVatExact;
-        const quarterTaxFinanzamt = quarterIncomeVatForFinanzamt - quarterExpenseVatExact;
-        yearlyTaxFinanzamt += quarterTaxFinanzamt;
+        const quarterTaxExact = roundToCents(quarterIncomeVat - quarterExpenseVat);
+        const roundedQuarterIncomeNet = roundDownToFullEuro(quarterIncomeNet);
+        const quarterIncomeVatForFinanzamt = calculateVatFromNet(roundedQuarterIncomeNet);
+        const quarterTaxFinanzamt = roundToCents(quarterIncomeVatForFinanzamt - quarterExpenseVat);
+        yearlyTaxFinanzamt = addCurrency(yearlyTaxFinanzamt, quarterTaxFinanzamt);
 
         const sumRow = document.createElement('div');
         sumRow.className = 'taxQuarterSum';
@@ -1181,39 +1265,36 @@ function computeIncomeOverview(year) {
         `;
         quarter.appendChild(sumRow);
 
-        const calcDetails = document.createElement('details');
-        calcDetails.className = 'taxCalcDetails';
-        calcDetails.innerHTML = `
+        const details = document.createElement('details');
+        details.className = 'taxCalcDetails';
+        details.innerHTML = `
           <summary>Berechnung anzeigen</summary>
           <div class="taxCalcBox">
+            <div class="taxCalcIntro">Rechenweg für den Finanzamt-Wert dieses Quartals.</div>
             <div class="taxCalcRow">
-              <span>1. Netto-Einnahmen Quartal (cent-genau)</span>
-              <span>${formatEuroAlways(quarterIncomeNetExact)}</span>
-            </div>
-            <div class="taxCalcRow">
-              <span>2. Netto-Einnahmen nach unten auf volle Euro gerundet</span>
-              <span>${formatEuroAlways(quarterIncomeNetRoundedForFinanzamt)}</span>
+              <span class="taxCalcLabel">1. Nettoeinnahmen Quartal (cent-genau zusammengeführt)</span>
+              <span class="taxCalcValue">${formatEuro(quarterIncomeNet)}</span>
             </div>
             <div class="taxCalcRow">
-              <span>3. Umsatzsteuer aus gerundetem Netto (19 %)</span>
-              <span>${formatEuroAlways(quarterIncomeVatForFinanzamt)}</span>
+              <span class="taxCalcLabel">2. Nach unten auf volle Euro gerundetes Quartals-Netto</span>
+              <span class="taxCalcValue">${formatEuro(roundedQuarterIncomeNet)}</span>
             </div>
             <div class="taxCalcRow">
-              <span>4. Vorsteuer Quartal (cent-genau, wird abgezogen)</span>
-              <span>− ${formatEuroAlways(quarterExpenseVatExact)}</span>
+              <span class="taxCalcLabel">3. Umsatzsteuer aus dem gerundeten Quartals-Netto (19 %)</span>
+              <span class="taxCalcValue">${formatEuro(quarterIncomeVatForFinanzamt)}</span>
             </div>
-            <div class="taxCalcRow isResult">
-              <span>5. Quartalssumme Finanzamt</span>
-              <span>${formatEuroAlways(quarterTaxFinanzamt)}</span>
+            <div class="taxCalcRow">
+              <span class="taxCalcLabel">4. Vorsteuer Quartal (cent-genau)</span>
+              <span class="taxCalcValue">− ${formatEuro(quarterExpenseVat)}</span>
             </div>
-            <div class="taxCalcFormula">
-              ${formatEuroAlways(quarterIncomeNetExact)} → ${formatEuroAlways(quarterIncomeNetRoundedForFinanzamt)}<br>
-              ${formatEuroAlways(quarterIncomeNetRoundedForFinanzamt)} × 19 % = ${formatEuroAlways(quarterIncomeVatForFinanzamt)}<br>
-              ${formatEuroAlways(quarterIncomeVatForFinanzamt)} − ${formatEuroAlways(quarterExpenseVatExact)} = ${formatEuroAlways(quarterTaxFinanzamt)}
+            <div class="taxCalcTotal">
+              <span class="taxCalcLabel">= Quartalssumme Finanzamt</span>
+              <span class="taxCalcValue">${formatEuro(quarterTaxFinanzamt)}</span>
             </div>
+            <div class="taxCalcFormula">Formel: Quartals-Netto cent-genau → auf volle Euro nach unten runden → daraus 19 % Umsatzsteuer berechnen → quartalsweise Vorsteuer cent-genau abziehen.</div>
           </div>
         `;
-        quarter.appendChild(calcDetails);
+        quarter.appendChild(details);
 
         taxQuarterGroups.appendChild(quarter);
       });
@@ -1223,6 +1304,7 @@ function computeIncomeOverview(year) {
     }
 
     function renderYearOverview() {
+
       const years = getOverviewYears();
       populateOverviewYearSelect(years);
 
@@ -1264,7 +1346,7 @@ function computeIncomeOverview(year) {
           const incomeVat = calculateVatFromGross(income);
           const incomeNet = income - incomeVat;
           const expenses = expenseByMonth[monthIndex]?.expenses || 0;
-          const expenseVat = calculateVatFromGross(expenses);
+          const expenseVat = calculateExpenseVorsteuerForSummary(expenses);
           const expenseNet = expenses - expenseVat;
           const customers = incomeByMonth[monthIndex]?.customers || 0;
           const workdays = incomeByMonth[monthIndex]?.workdays || 0;
@@ -1273,12 +1355,12 @@ function computeIncomeOverview(year) {
           const sickDays = freeDayByMonth[monthIndex]?.sick || 0;
           const customersPerDay = workdays > 0 ? (customers / workdays) : 0;
 
-          quarterIncome += income;
-          quarterIncomeVat += incomeVat;
-          quarterIncomeNet += incomeNet;
-          quarterExpenses += expenses;
-          quarterExpenseVat += expenseVat;
-          quarterExpenseNet += expenseNet;
+          quarterIncome = addCurrency(quarterIncome, income);
+          quarterIncomeVat = addCurrency(quarterIncomeVat, incomeVat);
+          quarterIncomeNet = addCurrency(quarterIncomeNet, incomeNet);
+          quarterExpenses = addCurrency(quarterExpenses, expenses);
+          quarterExpenseVat = addCurrency(quarterExpenseVat, expenseVat);
+          quarterExpenseNet = addCurrency(quarterExpenseNet, expenseNet);
           quarterCustomers += customers;
           quarterWorkdays += workdays;
           quarterVacationDays += vacationDays;
