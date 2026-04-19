@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ausgaben (Offline) – Version 299.04.26</title>
+  <title>Ausgaben (Offline) – Version 296.04.26</title>
       <link id="tailwindStylesheet" rel="stylesheet" href="assets/tailwind.css" />
   <style>
     body { font-family: sans-serif; background-color: #f7fafc; color: #000000; }
@@ -2297,22 +2297,17 @@ function monthHasMeaningfulData(list, key = currentKey) {
     function getMonthExpensesOrDefault(key) {
       const list = allExpenses[key];
 
-      // WICHTIG:
-      // Sobald für einen Monat bereits Daten gespeichert sind, dürfen diese
-      // beim Öffnen NICHT mehr über die Aktivierungsprüfung als "leer"
-      // eingestuft und durch die Standardvorlage ersetzt werden.
-      // Genau das führte dazu, dass einzelne Monate in der Monatsansicht leer
-      // wirkten, obwohl ihre Ausgaben in der Jahresübersicht noch vorhanden waren.
-      if (!Array.isArray(list) || list.length === 0) {
+      // Immer beide Standardzeilen (Raummiete + Swaprad) normalisieren,
+      // auch in "leeren" Monaten, damit Monat/Hidden-Status sofort korrekt sind.
+      if (!Array.isArray(list) || list.length === 0 || !monthHasMeaningfulData(list, key)) {
         const def = getDefaultEmptyMonth();
         const normalized = ensureAfaFlag(normalizeSwapradRowForMonth(key, normalizeRentRowForMonth(key, def)));
+        // direkt in allExpenses schreiben, damit es beim nächsten Öffnen bleibt
         allExpenses[key] = normalized;
         saveAll();
         return normalized;
       }
 
-      // Bereits vorhandene Monatsdaten immer beibehalten und nur sanft
-      // normalisieren (Raummiete/Swaprad ergänzen, falls nötig).
       const normalized = ensureAfaFlag(normalizeSwapradRowForMonth(key, normalizeRentRowForMonth(key, list)));
       allExpenses[key] = normalized;
       saveAll();
