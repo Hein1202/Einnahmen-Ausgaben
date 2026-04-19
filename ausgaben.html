@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ausgaben (Offline) – Version 296.04.26</title>
+  <title>Ausgaben (Offline) – Version 297.04.26</title>
       <link id="tailwindStylesheet" rel="stylesheet" href="assets/tailwind.css" />
   <style>
     body { font-family: sans-serif; background-color: #f7fafc; color: #000000; }
@@ -450,6 +450,7 @@
         <span class="text-sm font-semibold text-gray-800">Ergebnis ohne Raummiete anzeigen</span>
       </label>
       <button id="exportMonthBtn" class="month-save-btn px-4 py-2">Diesen Monat speichern</button>
+      <button id="showSwapradBtn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded" type="button" style="display:none;">Swaprad Miete einblenden</button>
       
       <button id="importBtn" class="bg-yellow-500 text-white px-4 py-2 rounded advanced-only">Daten laden</button>
       <button id="exportBtn" class="bg-indigo-600 text-white px-4 py-2 rounded advanced-only">Alle Monate speichern</button>
@@ -594,6 +595,7 @@
     const monthSelect = document.getElementById('monthSelect');
     const quarterSelect = document.getElementById('quarterSelect');
     const yearSelect = document.getElementById('yearSelect');
+    const showSwapradBtn = document.getElementById('showSwapradBtn');
     let currentPreviewMode = 'month';
     let showWithoutRentSummary = false;
 
@@ -797,6 +799,12 @@ function updateEditability() {
     btn.style.display = locked ? 'none' : '';
   });
 
+  // Swaprad hide button
+  document.querySelectorAll('.swapradToggleBtn').forEach(btn => {
+    btn.style.display = locked ? 'none' : '';
+    btn.disabled = locked;
+  });
+
   // Import is blocked when locked
   const importBtn = document.getElementById('importBtn');
   if (importBtn) importBtn.disabled = locked;
@@ -807,6 +815,8 @@ function updateEditability() {
     clearBtn.disabled = locked;
     clearBtn.style.display = locked ? 'none' : '';
   }
+
+  updateSwapradRestoreButton();
 }
 
 
@@ -1146,6 +1156,8 @@ const MONTH_NAMES = {
 
       return list.some(exp => {
         if (!exp) return false;
+        if (exp.isRent === true && exp.rentHidden === true) return false;
+        if (exp.isSwaprad === true && exp.swapradHidden === true) return false;
         if (exp.isRent === true) return !isDefaultRentRow(exp, key);
         if (exp.isSwaprad === true) return !isDefaultSwapradRow(exp, key);
         return hasAnyRowContent(exp);
@@ -1379,9 +1391,18 @@ function render() {
           <td class="border p-1 text-center">
             <div class="flex justify-center gap-2">
               ${
-                (isRent || isSwaprad)
+                isRent
                   ? `<span class="text-gray-400">–</span>`
-                  : `
+                  : isSwaprad
+                    ? `<button
+                        data-index="${index}"
+                        class="swapradToggleBtn text-gray-700 underline"
+                        title="Swaprad Miete ausblenden"
+                        ${locked ? 'disabled' : ''}
+                      >
+                        Ausblenden
+                      </button>`
+                    : `
                       <button
                         data-index="${index}"
                         class="insertBtn text-green-700"
@@ -1406,6 +1427,7 @@ function render() {
       });
 
       recalcTotals();
+      updateSwapradRestoreButton();
     }
 
 function formatDateGerman(iso) {
@@ -1960,6 +1982,12 @@ expenseBody.addEventListener('focusin', (e) => {
         return;
       }
 
+      if (btn.classList.contains('swapradToggleBtn')) {
+        if (isLocked(currentKey)) return;
+        setSwapradHidden(true);
+        return;
+      }
+
       if (btn.classList.contains('deleteBtn')) {
         if (isLocked(currentKey)) return;
         expenses.splice(index, 1);
@@ -2016,10 +2044,30 @@ function isHiddenRentRow(exp) {
       return false;
     }
 
-    
-
     function isHiddenSwapradRow(exp) {
-      return false;
+      return !!(exp && exp.isSwaprad === true && exp.swapradHidden === true);
+    }
+
+    function updateSwapradRestoreButton() {
+      if (!showSwapradBtn) return;
+      const swaprad = Array.isArray(expenses) ? expenses.find(e => e && e.isSwaprad === true) : null;
+      const hidden = isHiddenSwapradRow(swaprad);
+      const locked = isLocked(currentKey);
+      showSwapradBtn.style.display = hidden ? 'inline-flex' : 'none';
+      showSwapradBtn.disabled = locked;
+      showSwapradBtn.title = locked
+        ? 'Monat ist gesperrt – zum Einblenden erst entsperren'
+        : 'Blendet die Swaprad-Miete wieder ein';
+    }
+
+    function setSwapradHidden(hidden) {
+      if (!Array.isArray(expenses)) return;
+      const swaprad = expenses.find(e => e && e.isSwaprad === true);
+      if (!swaprad) return;
+      swaprad.swapradHidden = !!hidden;
+      swaprad.receipt = '';
+      save();
+      render();
     }
 function normalizeRentRowForMonth(key, list) {
       if (!Array.isArray(list)) return list;
@@ -2230,8 +2278,8 @@ function normalizeRentRowForMonth(key, list) {
           changed = true;
         }
 
-        if (row.swapradHidden !== false) {
-          row.swapradHidden = false; // immer eingeblendet
+        if (row.swapradHidden !== true && row.swapradHidden !== false) {
+          row.swapradHidden = false;
           changed = true;
         }
 
@@ -2420,6 +2468,13 @@ function handleMonthYearChange() {
         if (printPreviewOverlay && printPreviewOverlay.classList.contains('is-open') && currentPreviewMode !== 'year') {
           openPrintPreview(currentPreviewMode);
         }
+      });
+    }
+
+    if (showSwapradBtn) {
+      showSwapradBtn.addEventListener('click', () => {
+        if (isLocked(currentKey)) return;
+        setSwapradHidden(false);
       });
     }
 

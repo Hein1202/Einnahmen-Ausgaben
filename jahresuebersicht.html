@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jahresübersicht – Einnahmen-Ausgaben 296.04.26</title>
+  <title>Jahresübersicht – Einnahmen-Ausgaben 297.04.26</title>
   <style>
     :root {
       --border-strong: #94a3b8;
@@ -652,7 +652,7 @@
           <div class="headLeft">
             <div class="icon">📊</div>
             <div>
-              <div class="kicker">Offline • Version 296.04.26</div>
+              <div class="kicker">Offline • Version 297.04.26</div>
               <h1>Jahresübersicht</h1>
               <div class="sub">Einfache Tabellenansicht mit Einnahmen und Ausgaben jeweils als Brutto, Netto und Steueranteil sowie Kunden, Kunden / Tag, Max / Tag, Arbeitstagen und Ausfalltagen pro Monat.</div>
             </div>
@@ -1168,6 +1168,8 @@ function computeIncomeOverview(year) {
 
       return list.some(exp => {
         if (!exp) return false;
+        if (exp.isRent === true && exp.rentHidden === true) return false;
+        if (exp.isSwaprad === true && exp.swapradHidden === true) return false;
         if (exp.isRent === true) return !isDefaultRentExpenseRow(exp, key);
         if (exp.isSwaprad === true) return !isDefaultSwapradExpenseRow(exp, key);
         return hasAnyExpenseRowContent(exp);
