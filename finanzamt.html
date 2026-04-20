@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Finanzamt – Einnahmen-Ausgaben 304.04.26</title>
+  <style>
+    :root {
+      --border-strong: #94a3b8;
+      --inner-highlight: rgba(255,255,255,0.70);
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:#e5e7eb;
+      color:#0f172a;
+    }
+    #page {
+      max-width: 1880px;
+      margin: 0 auto;
+      padding: 24px 22px 30px;
+      box-sizing: border-box;
+    }
+    .layout {
+      display: block;
+    }
+    .layout > .panel + .panel {
+      margin-top: 24px;
+    }
+    .panel {
+      background:#ffffff;
+      border: 2px solid var(--border-strong);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow:
+        inset 0 0 0 1px var(--inner-highlight),
+        0 12px 28px rgba(0,0,0,0.07);
+    }
+    .head {
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .headLeft {
+      display:flex;
+      align-items:flex-start;
+      gap: 12px;
+    }
+    .icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#111827;
+      color:#ffffff;
+      font-size: 20px;
+      font-weight: 900;
+      flex: 0 0 auto;
+    }
+    .kicker {
+      color:#64748b;
+      font-weight: 800;
+      font-size: 12px;
+    }
+    h1 {
+      margin: 2px 0 4px;
+      font-size: 24px;
+      letter-spacing: -0.02em;
+    }
+    .sub {
+      color:#475569;
+      font-weight: 600;
+    }
+    .controls {
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      color:#475569;
+      font-weight: 700;
+      font-size: 13px;
+      padding-top: 4px;
+    }
+    select {
+      appearance: none;
+      border: 2px solid var(--border-strong);
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-weight: 800;
+      color: #0f172a;
+      min-width: 92px;
+    }
+    .tableWrap {
+      margin-top: 14px;
+      overflow-x: visible;
+    }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 0;
+    }
+    th, td {
+      padding: 10px 10px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 13px;
+      white-space: normal;
+    }
+    th {
+      text-align: left;
+      color:#475569;
+      font-weight: 800;
+      background:#f8fafc;
+      position: sticky;
+      top: 0;
+    }
+    thead tr.groupRow th {
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0.01em;
+      color:#0f172a;
+      background:#e8eef8;
+      border-bottom: 0;
+      padding-top: 10px;
+      padding-bottom: 5px;
+      text-transform: none;
+      text-align: center;
+      box-shadow: inset 0 -1px 0 #d7e0ec;
+    }
+    thead tr.groupRow th:first-child {
+      text-align: left;
+    }
+    thead tr.labelRow th {
+      padding-top: 6px;
+      font-weight: 800;
+    }
+    .groupIncome, .subIncome {
+      background:#f1f5f9;
+    }
+    .groupExpense, .subExpense {
+      background:#f1f5f9;
+    }
+    .groupCustomer, .subCustomer {
+      background:#f1f5f9;
+    }
+    .groupStatus, .subStatus {
+      background:#f1f5f9;
+    }
+    .groupDivider, .dividerCell {
+      border-right: 2px solid #cbd5e1 !important;
+    }
+    td {
+      color:#0f172a;
+      font-weight: 700;
+    }
+    .num {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    thead th:first-child,
+    tbody td:first-child,
+    tfoot td:first-child {
+      width: 116px;
+      min-width: 116px;
+      max-width: 116px;
+      padding-right: 2px;
+      white-space: nowrap;
+    }
+    thead th:nth-child(2),
+    tbody td:nth-child(2),
+    tfoot td:nth-child(2) {
+      padding-left: 2px;
+    }
+
+    tbody td:nth-child(8),
+    tbody td:nth-child(9),
+    tbody td:nth-child(10),
+    tfoot td:nth-child(8),
+    tfoot td:nth-child(9),
+    tfoot td:nth-child(10) {
+      width: 106px;
+      min-width: 106px;
+      max-width: 106px;
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+    tbody td:nth-child(9),
+    tfoot td:nth-child(9) {
+      width: 118px;
+      min-width: 118px;
+      max-width: 118px;
+    }
+    tbody td:nth-child(10),
+    tfoot td:nth-child(10) {
+      width: 104px;
+      min-width: 104px;
+      max-width: 104px;
+    }
+    tbody td:nth-child(11),
+    tbody td:nth-child(12),
+    tbody td:nth-child(13),
+    tfoot td:nth-child(11),
+    tfoot td:nth-child(12),
+    tfoot td:nth-child(13) {
+      width: 92px;
+      min-width: 92px;
+      max-width: 92px;
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+    tbody td:nth-child(2),
+    tbody td:nth-child(3),
+    tbody td:nth-child(4),
+    tfoot td:nth-child(2),
+    tfoot td:nth-child(3),
+    tfoot td:nth-child(4) {
+      background:#f1f5f9;
+    }
+    tbody td:nth-child(5),
+    tbody td:nth-child(6),
+    tbody td:nth-child(7),
+    tfoot td:nth-child(5),
+    tfoot td:nth-child(6),
+    tfoot td:nth-child(7) {
+      background:#f1f5f9;
+    }
+    tbody td:nth-child(8),
+    tbody td:nth-child(9),
+    tbody td:nth-child(10),
+    tfoot td:nth-child(8),
+    tfoot td:nth-child(9),
+    tfoot td:nth-child(10) {
+      background:#f1f5f9;
+    }
+    tbody td:nth-child(11),
+    tbody td:nth-child(12),
+    tbody td:nth-child(13),
+    tfoot td:nth-child(11),
+    tfoot td:nth-child(12),
+    tfoot td:nth-child(13) {
+      background:#f1f5f9;
+    }
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .quarterSectionRow td {
+      background:#dbe7f5 !important;
+      color:#0f172a;
+      font-weight: 900;
+      border-top: 2px solid #cbd5e1;
+      border-bottom: 1px solid #cbd5e1;
+      letter-spacing: 0.01em;
+    }
+    .quarterSectionRow td:first-child {
+      text-transform: none;
+    }
+    .quarterSummaryRow td {
+      background:#eef4fb !important;
+      font-weight: 900;
+      color:#0f172a;
+      border-top: 1px solid #d7e0ec;
+    }
+    .quarterSummaryRow td:first-child {
+      white-space: nowrap;
+    }
+    .muted {
+      color:#94a3b8;
+      font-weight: 700;
+    }
+    tfoot td {
+      border-top: 2px solid #cbd5e1;
+      border-bottom: 0;
+      background:#f8fafc;
+      font-weight: 900;
+      vertical-align: top;
+    }
+    .footerMetric {
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap: 2px;
+      line-height: 1.15;
+    }
+    .footerMetricValue {
+      color:#0f172a;
+      font-weight: 900;
+    }
+    .footerMetricNote {
+      color:#64748b;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: normal;
+      text-align: right;
+    }
+    .footerCustomerWrap {
+      padding-top: 6px;
+    }
+    .footerCustomerGrid {
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      align-items:start;
+    }
+    .footerCustomerGrid .footerMetric {
+      min-width: 0;
+    }
+    .footerMetricSpan2 {
+      grid-column: 1 / -1;
+    }
+    .taxPanelTitle {
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .taxPanelTitle .icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      font-size: 18px;
+    }
+    .taxGroups {
+      display:flex;
+      flex-direction:column;
+      gap: 14px;
+    }
+    .taxQuarter {
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background:#f8fafc;
+      padding: 12px 14px;
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+    }
+    .taxQuarterTitle {
+      font-weight: 900;
+      color:#0f172a;
+      margin-bottom: 8px;
+    }
+    .taxHeaderRow,
+    .taxRow,
+    .taxQuarterSum,
+    .taxYearSum {
+      display:grid;
+      grid-template-columns: 220px 126px 126px;
+      width: fit-content;
+      max-width: 100%;
+      align-items:center;
+      gap: 12px;
+      padding: 6px 0;
+      font-size: 14px;
+    }
+    .taxHeaderRow {
+      padding-top: 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #dbe5f0;
+      color:#64748b;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .taxHeaderRow span:nth-child(2),
+    .taxHeaderRow span:nth-child(3),
+    .taxRow span:nth-child(2),
+    .taxRow span:nth-child(3),
+    .taxQuarterSum span:nth-child(2),
+    .taxQuarterSum span:nth-child(3),
+    .taxYearSum span:nth-child(2),
+    .taxYearSum span:nth-child(3) {
+      text-align: right;
+      white-space: nowrap;
+    }
+    .taxRow + .taxRow {
+      border-top: 1px solid #e2e8f0;
+    }
+    .taxQuarterSum {
+      margin-top: 8px;
+      padding-top: 10px;
+      border-top: 2px solid #cbd5e1;
+      font-weight: 900;
+      color:#0f172a;
+    }
+    .taxYearSum {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 2px solid #cbd5e1;
+      font-weight: 900;
+      color:#0f172a;
+    }
+    .taxFinanceLabel {
+      color:#475569;
+      font-weight: 800;
+    }
+    .taxFinanceValue {
+      color:#0f172a;
+      font-weight: 900;
+    }
+    .taxMuted {
+      color:#94a3b8;
+      font-weight: 700;
+    }
+
+    .taxCalcDetails {
+      margin-top: 10px;
+      border-top: 1px dashed #cbd5e1;
+      padding-top: 10px;
+    }
+    .taxCalcDetails summary {
+      cursor: pointer;
+      list-style: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      color:#334155;
+      font-size: 13px;
+      user-select: none;
+    }
+    .taxCalcDetails summary::-webkit-details-marker {
+      display: none;
+    }
+    .taxCalcDetails summary::before {
+      content: '\25B6';
+      font-size: 11px;
+      color:#64748b;
+      transition: transform 0.15s ease;
+    }
+    .taxCalcDetails[open] summary::before {
+      transform: rotate(90deg);
+    }
+    .taxCalcBox {
+      margin-top: 10px;
+      border: 1px solid #dbe5f0;
+      border-radius: 12px;
+      background: #ffffff;
+      padding: 10px 12px;
+    }
+    .taxCalcIntro {
+      color:#64748b;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .taxCalcRow,
+    .taxCalcTotal {
+      display:grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: start;
+      padding: 5px 0;
+      font-size: 14px;
+    }
+    .taxCalcRow + .taxCalcRow {
+      border-top: 1px solid #eef2f7;
+    }
+    .taxCalcLabel {
+      color:#334155;
+      line-height: 1.35;
+    }
+    .taxCalcValue {
+      white-space: nowrap;
+      text-align: right;
+      font-weight: 800;
+      color:#0f172a;
+    }
+    .taxCalcRow.isResult,
+    .taxCalcTotal {
+      margin-top: 6px;
+      padding-top: 9px;
+      border-top: 2px solid #cbd5e1;
+      font-weight: 900;
+    }
+    .taxCalcFormula {
+      margin-top: 8px;
+      color:#475569;
+      font-size: 12px;
+      line-height: 1.4;
+      font-weight: 700;
+    }
+
+    .rightPanelStack {
+      display:flex;
+      flex-direction:column;
+      gap: 18px;
+    }
+    .yearDeclarationPanel .sub {
+      max-width: 46ch;
+    }
+    .yearDeclarationFlow {
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+    }
+    .yearDeclarationBox {
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background:#f8fafc;
+      padding: 12px 14px;
+    }
+    .yearDeclarationIntro {
+      color:#64748b;
+      font-size: 12px;
+      line-height: 1.45;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .yearDeclarationRow,
+    .yearDeclarationTotal {
+      display:grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items:center;
+      gap: 12px;
+      padding: 6px 0;
+      font-size: 14px;
+    }
+    .yearDeclarationRow + .yearDeclarationRow {
+      border-top: 1px solid #e2e8f0;
+    }
+    .yearDeclarationLabel {
+      color:#334155;
+      line-height: 1.35;
+    }
+    .yearDeclarationValue {
+      color:#0f172a;
+      font-weight: 900;
+      white-space: nowrap;
+      text-align: right;
+    }
+    .yearDeclarationTotal {
+      margin-top: 8px;
+      padding-top: 10px;
+      border-top: 2px solid #cbd5e1;
+      font-weight: 900;
+      color:#0f172a;
+    }
+    .yearDeclarationInputWrap {
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap: 4px;
+      min-width: 150px;
+    }
+    .yearDeclarationInput {
+      width: 140px;
+      min-width: 140px;
+      text-align: right;
+      font-weight: 800;
+    }
+    .yearDeclarationInputNote {
+      color:#64748b;
+      font-size: 11px;
+      line-height: 1.3;
+      font-weight: 700;
+      text-align: right;
+      max-width: 220px;
+    }
+    .yearDeclarationAdvanceList {
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap: 8px;
+      min-width: 220px;
+    }
+    .yearDeclarationAdvanceRow {
+      display:grid;
+      grid-template-columns: auto 140px;
+      align-items:center;
+      gap: 10px;
+      width: 100%;
+    }
+    .yearDeclarationAdvanceQuarterLabel {
+      color:#334155;
+      font-weight: 800;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .year-summary-panel {
+      margin-top: 18px;
+    }
+    .yearResultTable {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 1420px;
+    }
+    .yearResultTable th,
+    .yearResultTable td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 14px;
+      background: transparent;
+      white-space: nowrap;
+    }
+    .yearResultTable th {
+      text-align: left;
+      color:#475569;
+      font-weight: 800;
+      background:#f8fafc;
+      position: static;
+    }
+    .yearResultTable th.num,
+    .yearResultTable td.num {
+      text-align: right;
+    }
+    .yearResultTable tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .yearResultTable .yearResultValue {
+      font-weight: 900;
+    }
+    .yearResultTable .yearResultPositive {
+      color:#166534;
+    }
+    .yearResultTable .yearResultNegative {
+      color:#b91c1c;
+    }
+    .yearResultTable .yearResultNeutral {
+      color:#475569;
+    }
+    .yearResultTable .isSelectedYear td {
+      background:#eef2ff;
+    }
+    .yearResultTable .yearLabelCell {
+      font-weight: 900;
+      color:#0f172a;
+      background:#f8fafc;
+      position: sticky;
+      left: 0;
+      z-index: 1;
+    }
+    .yearResultTable .muted {
+      color:#94a3b8;
+      font-weight: 700;
+    }
+    .yearResultTable .yearMetricStrong {
+      font-weight: 800;
+      color:#0f172a;
+    }
+
+
+
+    @media (max-width: 1460px) {
+      #page {
+        max-width: 1460px;
+      }
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .tableWrap {
+        overflow-x: auto;
+      }
+      table {
+        min-width: 1320px;
+      }
+      .yearResultTable {
+        min-width: 1500px;
+      }
+    }
+
+    @media (max-width: 1180px) {
+      .financeStack {
+        grid-template-columns: 1fr;
+      }
+      .taxHeaderRow,
+      .taxRow,
+      .taxQuarterSum,
+      .taxYearSum {
+        width: 100%;
+        grid-template-columns: minmax(0, 1fr) minmax(110px, auto) minmax(110px, auto);
+      }
+    }
+  
+    .financeStack {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+    .financeHeaderPanel {
+      margin-bottom: 24px;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="page">
+    <div class="panel financeHeaderPanel">
+      <div class="head">
+        <div class="headLeft">
+          <div class="icon">🏛️</div>
+          <div>
+            <div class="kicker">Offline • Version 304.04.26</div>
+            <h1>Finanzamt</h1>
+            <div class="sub">Eigener Bereich für die quartalsweise Umsatzsteuer an das Finanzamt und die Umsatzsteuer-Jahreserklärung nach WISO-Muster.</div>
+          </div>
+        </div>
+        <div class="controls">
+          <label for="overviewYearSelect">Jahr</label>
+          <select id="overviewYearSelect" aria-label="Jahr für Finanzamt"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="financeStack">
+      <div class="panel" aria-label="Umsatzsteuer an Finanzamt">
+        <div class="taxPanelTitle">
+          <div class="icon">🧾</div>
+          <div>
+            <div class="kicker">Quartalsweise Übersicht</div>
+            <h1>Umsatzsteuer an Finanzamt</h1>
+            <div class="sub">Monatswerte cent-genau. Für den Finanzamt-Wert werden die Nettoeinnahmen des Quartals cent-genau zusammengeführt, dann auf volle Euro nach unten gerundet, daraus die Umsatzsteuer berechnet und anschließend die Vorsteuer aus Ausgaben quartalsweise cent-genau abgezogen.</div>
+          </div>
+        </div>
+
+        <div id="taxQuarterGroups" class="taxGroups"></div>
+        <div class="taxYearSum">
+          <span>Gesamt Jahr</span>
+          <span id="taxYearTotalExact">–</span>
+          <span id="taxYearTotal">–</span>
+        </div>
+      </div>
+
+      <div class="panel yearDeclarationPanel" aria-label="Umsatzsteuer-Jahreserklärung">
+        <div class="taxPanelTitle">
+          <div class="icon">📄</div>
+          <div>
+            <div class="kicker">Jahresübersicht nach WISO-Muster</div>
+            <h1>Umsatzsteuer-Jahreserklärung</h1>
+            <div class="sub">Rechenweg wie im WISO-Ausdruck: Jahres-Bemessungsgrundlage, Umsatzsteuer, Vorsteuer, verbleibender Betrag, eigenes Vorauszahlungssoll und Abschlusszahlung / Erstattungsanspruch.</div>
+          </div>
+        </div>
+
+        <div class="yearDeclarationFlow">
+          <div class="yearDeclarationBox">
+            <div class="yearDeclarationIntro">Die Bemessungsgrundlage wird für die Jahreserklärung wie im Ausdruck in vollen Euro dargestellt. Das Vorauszahlungssoll wird als eigener Jahreswert gespeichert.</div>
+            <div class="yearDeclarationRow">
+              <span class="yearDeclarationLabel">Jahres-Nettoeinnahmen (cent-genau)</span>
+              <span id="yearDeclarationNetExact" class="yearDeclarationValue">–</span>
+            </div>
+            <div class="yearDeclarationRow">
+              <span class="yearDeclarationLabel">Bemessungsgrundlage ohne Umsatzsteuer</span>
+              <span id="yearDeclarationNetRounded" class="yearDeclarationValue">–</span>
+            </div>
+            <div class="yearDeclarationRow">
+              <span class="yearDeclarationLabel">Umsatzsteuer auf steuerpflichtige Lieferungen und Leistungen (19 %)</span>
+              <span id="yearDeclarationVat" class="yearDeclarationValue">–</span>
+            </div>
+            <div class="yearDeclarationRow">
+              <span class="yearDeclarationLabel">Abziehbare Vorsteuerbeträge</span>
+              <span id="yearDeclarationVorsteuer" class="yearDeclarationValue">–</span>
+            </div>
+            <div class="yearDeclarationRow">
+              <span id="yearDeclarationRemainingLabel" class="yearDeclarationLabel">Verbleibende Umsatzsteuer</span>
+              <span id="yearDeclarationRemaining" class="yearDeclarationValue">–</span>
+            </div>
+            <div class="yearDeclarationRow">
+              <span class="yearDeclarationLabel">Vorauszahlungen</span>
+              <div class="yearDeclarationAdvanceList">
+                <label class="yearDeclarationAdvanceRow" for="yearDeclarationAdvanceQ1Input">
+                  <span class="yearDeclarationAdvanceQuarterLabel">1. Quartal</span>
+                  <input id="yearDeclarationAdvanceQ1Input" class="yearDeclarationInput" type="text" inputmode="decimal" placeholder="0,00" aria-label="Vorauszahlung 1. Quartal für die Umsatzsteuer-Jahreserklärung" />
+                </label>
+                <label class="yearDeclarationAdvanceRow" for="yearDeclarationAdvanceQ2Input">
+                  <span class="yearDeclarationAdvanceQuarterLabel">2. Quartal</span>
+                  <input id="yearDeclarationAdvanceQ2Input" class="yearDeclarationInput" type="text" inputmode="decimal" placeholder="0,00" aria-label="Vorauszahlung 2. Quartal für die Umsatzsteuer-Jahreserklärung" />
+                </label>
+                <label class="yearDeclarationAdvanceRow" for="yearDeclarationAdvanceQ3Input">
+                  <span class="yearDeclarationAdvanceQuarterLabel">3. Quartal</span>
+                  <input id="yearDeclarationAdvanceQ3Input" class="yearDeclarationInput" type="text" inputmode="decimal" placeholder="0,00" aria-label="Vorauszahlung 3. Quartal für die Umsatzsteuer-Jahreserklärung" />
+                </label>
+                <label class="yearDeclarationAdvanceRow" for="yearDeclarationAdvanceQ4Input">
+                  <span class="yearDeclarationAdvanceQuarterLabel">4. Quartal</span>
+                  <input id="yearDeclarationAdvanceQ4Input" class="yearDeclarationInput" type="text" inputmode="decimal" placeholder="0,00" aria-label="Vorauszahlung 4. Quartal für die Umsatzsteuer-Jahreserklärung" />
+                </label>
+                <span class="yearDeclarationInputNote">Werden separat pro Jahr und Quartal gespeichert und nicht automatisch aus den Finanzamt-Werten übernommen.</span>
+              </div>
+            </div>
+            <div class="yearDeclarationRow">
+              <span class="yearDeclarationLabel">Summe Vorauszahlungen</span>
+              <span id="yearDeclarationAdvanceTotal" class="yearDeclarationValue">–</span>
+            </div>
+            <div class="yearDeclarationTotal">
+              <span id="yearDeclarationFinalLabel" class="yearDeclarationLabel">Noch an die Finanzkasse zu entrichten – Abschlusszahlung</span>
+              <span id="yearDeclarationFinal" class="yearDeclarationValue">–</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const overviewYearSelect = document.getElementById('overviewYearSelect');
+    const taxQuarterGroups = document.getElementById('taxQuarterGroups');
+    const taxYearTotalExact = document.getElementById('taxYearTotalExact');
+    const taxYearTotal = document.getElementById('taxYearTotal');
+    const yearDeclarationNetExact = document.getElementById('yearDeclarationNetExact');
+    const yearDeclarationNetRounded = document.getElementById('yearDeclarationNetRounded');
+    const yearDeclarationVat = document.getElementById('yearDeclarationVat');
+    const yearDeclarationVorsteuer = document.getElementById('yearDeclarationVorsteuer');
+    const yearDeclarationRemainingLabel = document.getElementById('yearDeclarationRemainingLabel');
+    const yearDeclarationRemaining = document.getElementById('yearDeclarationRemaining');
+    const yearDeclarationAdvanceInputs = [1, 2, 3, 4].map(quarter => document.getElementById(`yearDeclarationAdvanceQ${quarter}Input`));
+    const yearDeclarationAdvanceTotal = document.getElementById('yearDeclarationAdvanceTotal');
+    const yearDeclarationFinalLabel = document.getElementById('yearDeclarationFinalLabel');
+    const yearDeclarationFinal = document.getElementById('yearDeclarationFinal');
+
+    const monthNames = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+
+    function parseFlexibleAmount(value) {
+      if (typeof value !== 'string') value = String(value ?? '');
+      value = value.trim();
+      if (!value) return 0;
+
+      const hasComma = value.includes(',');
+      const hasDot = value.includes('.');
+
+      if (hasComma && hasDot) {
+        value = value.replace(/\./g, '').replace(',', '.');
+      } else if (hasComma && !hasDot) {
+        value = value.replace(',', '.');
+      }
+
+      const n = parseFloat(value);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function formatEuro(value) {
+      return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value || 0);
+    }
+
+    function roundDownToFullEuro(value) {
+      const amount = Number(value) || 0;
+      return amount >= 0 ? Math.floor(amount) : Math.ceil(amount);
+    }
+
+    function calculateVatFromNet(net) {
+      return roundToCents((Number(net) || 0) * 0.19);
+    }
+
+    function addCurrency(total, value) {
+      return roundToCents((Number(total) || 0) + (Number(value) || 0));
+    }
+
+    function formatTaxDisplay(value) {
+      return value !== 0 ? formatEuro(value) : '–';
+    }
+
+    function roundToCents(value) {
+      return Math.round(((Number(value) || 0) + Number.EPSILON) * 100) / 100;
+    }
+
+    function calculateExpenseVorsteuerForSummary(gross) {
+      return roundToCents(calculateVatFromGross(gross));
+    }
+
+    function legacyYearDeclarationAdvanceKey(year) {
+      return `ust-year-advance-${year}`;
+    }
+
+    function yearDeclarationAdvanceQuarterKey(year, quarter) {
+      return `ust-year-advance-q${quarter}-${year}`;
+    }
+
+    function getStoredYearDeclarationAdvanceQuarter(year, quarter) {
+      try {
+        return roundToCents(parseFlexibleAmount(localStorage.getItem(yearDeclarationAdvanceQuarterKey(year, quarter)) || ''));
+      } catch (_) {
+        return 0;
+      }
+    }
+
+    function hasStoredYearDeclarationAdvanceQuarterValues(year) {
+      try {
+        return [1, 2, 3, 4].some(quarter => localStorage.getItem(yearDeclarationAdvanceQuarterKey(year, quarter)) !== null);
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function getStoredYearDeclarationAdvanceTotal(year) {
+      try {
+        if (hasStoredYearDeclarationAdvanceQuarterValues(year)) {
+          return [1, 2, 3, 4].reduce((sum, quarter) => addCurrency(sum, getStoredYearDeclarationAdvanceQuarter(year, quarter)), 0);
+        }
+        return roundToCents(parseFlexibleAmount(localStorage.getItem(legacyYearDeclarationAdvanceKey(year)) || ''));
+      } catch (_) {
+        return 0;
+      }
+    }
+
+    function setStoredYearDeclarationAdvanceQuarter(year, quarter, value) {
+      try {
+        const amount = roundToCents(value);
+        const key = yearDeclarationAdvanceQuarterKey(year, quarter);
+        if (amount === 0) {
+          localStorage.removeItem(key);
+        } else {
+          localStorage.setItem(key, String(amount));
+        }
+        localStorage.removeItem(legacyYearDeclarationAdvanceKey(year));
+      } catch (_) {}
+    }
+
+    function formatInputAmount(value) {
+      const amount = roundToCents(value);
+      return new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+    }
+
+    function calculateVatFromGross(gross) {
+      const amount = Number(gross) || 0;
+      if (amount === 0) return 0;
+      return amount - (amount / 1.19);
+    }
+
+    function getOverviewYears() {
+      const years = new Set();
+      years.add(new Date().getFullYear());
+
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i) || '';
+
+          let match = key.match(/^day-(\d{4})-\d{1,2}-\d{1,2}$/);
+          if (match) {
+            years.add(parseInt(match[1], 10));
+            continue;
+          }
+
+          if (key === 'all_expenses') {
+            try {
+              const allExpenses = JSON.parse(localStorage.getItem('all_expenses') || '{}');
+              Object.keys(allExpenses || {}).forEach(expKey => {
+                const expMatch = String(expKey).match(/^(\d{4})-(\d{2})$/);
+                if (expMatch) years.add(parseInt(expMatch[1], 10));
+              });
+            } catch (_) {}
+          }
+        }
+      } catch (_) {}
+
+      return Array.from(years)
+        .filter(y => Number.isFinite(y))
+        .sort((a, b) => b - a);
+    }
+
+    function populateOverviewYearSelect() {
+      const years = getOverviewYears();
+      const currentValue = overviewYearSelect.value;
+      overviewYearSelect.innerHTML = '';
+
+      years.forEach(year => {
+        const opt = document.createElement('option');
+        opt.value = String(year);
+        opt.textContent = String(year);
+        overviewYearSelect.appendChild(opt);
+      });
+
+      const currentYear = String(new Date().getFullYear());
+      if (currentValue && years.includes(parseInt(currentValue, 10))) {
+        overviewYearSelect.value = currentValue;
+      } else if (years.includes(parseInt(currentYear, 10))) {
+        overviewYearSelect.value = currentYear;
+      } else if (years.length) {
+        overviewYearSelect.value = String(years[0]);
+      }
+    }
+
+    function incomeMonthSummaryKey(year, monthIndex) {
+      return `income-month-${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+    }
+
+    function getStoredIncomeMonthSummary(year, monthIndex) {
+      try {
+        const raw = localStorage.getItem(incomeMonthSummaryKey(year, monthIndex));
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return null;
+        return {
+          income: parseFlexibleAmount(parsed.total),
+          customers: parseInt(parsed.customers || 0, 10) || 0,
+          workdays: parseInt(parsed.workdays || 0, 10) || 0,
+          maxCustomersPerDay: parseInt(parsed.maxCustomersPerDay || 0, 10) || 0
+        };
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function computeIncomeOverview(year) {
+      const byMonth = Array.from({ length: 12 }, (_, monthIndex) => {
+        const stored = getStoredIncomeMonthSummary(year, monthIndex);
+        return stored || { income: 0, customers: 0, workdays: 0, maxCustomersPerDay: 0 };
+      });
+
+      const getDayCustomerCount = (rows) => {
+        if (!Array.isArray(rows)) return 0;
+        let customers = 0;
+        rows.forEach(row => {
+          const n1 = parseFlexibleAmount(row?.amount1 ?? row?.a1 ?? '');
+          const n2 = parseFlexibleAmount(row?.amount2 ?? row?.a2 ?? '');
+          const tip = parseFlexibleAmount(row?.amountTip ?? '');
+          if (n1 > 0 || n2 > 0 || tip > 0) customers += 1;
+        });
+        return customers;
+      };
+
+      try {
+        for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
+          const stored = getStoredIncomeMonthSummary(year, monthIndex);
+          let monthIncome = stored ? (stored.income || 0) : 0;
+          let monthCustomers = stored ? (stored.customers || 0) : 0;
+          let monthWorkdays = stored ? (stored.workdays || 0) : 0;
+          let monthMaxCustomersPerDay = stored ? (stored.maxCustomersPerDay || 0) : 0;
+
+          for (let day = 1; day <= 31; day++) {
+            const key = `day-${year}-${monthIndex}-${day}`;
+            let rows = [];
+            try {
+              rows = JSON.parse(localStorage.getItem(key) || '[]');
+            } catch (_) {
+              rows = [];
+            }
+            if (!Array.isArray(rows) || rows.length === 0) continue;
+
+            const dayCustomers = getDayCustomerCount(rows);
+            monthMaxCustomersPerDay = Math.max(monthMaxCustomersPerDay, dayCustomers);
+
+            if (stored) continue;
+
+            let hasWorkday = false;
+            rows.forEach(row => {
+              const n1 = parseFlexibleAmount(row?.amount1 ?? row?.a1 ?? '');
+              const n2 = parseFlexibleAmount(row?.amount2 ?? row?.a2 ?? '');
+              const tip = parseFlexibleAmount(row?.amountTip ?? '');
+              monthIncome += n1 + n2 + tip;
+              if (n1 > 0 || n2 > 0 || tip > 0) {
+                hasWorkday = true;
+              }
+            });
+
+            monthCustomers += dayCustomers;
+            if (hasWorkday) monthWorkdays += 1;
+          }
+
+          byMonth[monthIndex] = {
+            income: monthIncome,
+            customers: monthCustomers,
+            workdays: monthWorkdays,
+            maxCustomersPerDay: monthMaxCustomersPerDay
+          };
+        }
+      } catch (_) {}
+
+      return byMonth;
+    }
+
+    function hasAnyExpenseRowContent(exp) {
+      if (!exp) return false;
+      const dateRaw = String(exp.date ?? '').trim();
+      const amountRaw = String(exp.amount ?? '').trim();
+      const descRaw = String(exp.desc ?? '').trim();
+      const receiptRaw = String(exp.receipt ?? '').trim();
+      const periodRaw = String(exp.period ?? '').trim();
+      return !!(dateRaw || amountRaw || descRaw || receiptRaw || periodRaw);
+    }
+
+    function getExpenseMonthDefaults(key) {
+      let year = '';
+      let month = '';
+      if (key && typeof key === 'string') {
+        const parts = key.split('-');
+        if (parts.length === 2) {
+          year = parts[0] || '';
+          month = parts[1] || '';
+        }
+      }
+      const monthName = month ? (monthNames[parseInt(month, 10) - 1] || '') : '';
+      return {
+        rentDate: (year && month) ? `${year}-${month}-01` : '',
+        rentPeriod: monthName,
+        rentAmount: 392.70,
+        rentDesc: 'Raummiete',
+        swapradDate: '',
+        swapradPeriod: monthName,
+        swapradAmount: 69.90,
+        swapradDesc: 'Swaprad Miete für E-Bike'
+      };
+    }
+
+    function isDefaultRentExpenseRow(exp, key) {
+      if (!exp || exp.isRent !== true) return false;
+      const defs = getExpenseMonthDefaults(key);
+      const desc = String(exp.desc ?? '').trim();
+      const period = String(exp.period ?? '').trim();
+      const date = String(exp.date ?? '').trim();
+      return parseFlexibleAmount(exp.amount) === defs.rentAmount
+        && (!desc || desc === defs.rentDesc)
+        && (!period || period === defs.rentPeriod)
+        && (!date || date === defs.rentDate);
+    }
+
+    function isDefaultSwapradExpenseRow(exp, key) {
+      if (!exp || exp.isSwaprad !== true) return false;
+      const defs = getExpenseMonthDefaults(key);
+      const desc = String(exp.desc ?? '').trim();
+      const period = String(exp.period ?? '').trim();
+      const date = String(exp.date ?? '').trim();
+      return parseFlexibleAmount(exp.amount) === defs.swapradAmount
+        && (!desc || desc === defs.swapradDesc)
+        && (!period || period === defs.swapradPeriod)
+        && (!date || date === defs.swapradDate);
+    }
+
+    function getLockedExpenseMonths() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem('locked_months') || '{}');
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
+
+    function isExpenseMonthActivated(key, list, lockedMonths) {
+      if (!Array.isArray(list)) return false;
+      if (lockedMonths && lockedMonths[key] === true) return true;
+
+      return list.some(exp => {
+        if (!exp) return false;
+        if (exp.isRent === true) return !isDefaultRentExpenseRow(exp, key);
+        if (exp.isSwaprad === true) return !isDefaultSwapradExpenseRow(exp, key);
+        return hasAnyExpenseRowContent(exp);
+      });
+    }
+
+    function computeExpenseOverview(year) {
+      const byMonth = Array.from({ length: 12 }, () => ({ expenses: 0, expensesWithoutFixed: 0 }));
+
+      let allExpenses = {};
+      try {
+        allExpenses = JSON.parse(localStorage.getItem('all_expenses') || '{}');
+      } catch (_) {
+        allExpenses = {};
+      }
+
+      const lockedMonths = getLockedExpenseMonths();
+
+      Object.entries(allExpenses || {}).forEach(([key, list]) => {
+        const match = String(key).match(/^(\d{4})-(\d{2})$/);
+        if (!match) return;
+
+        const itemYear = parseInt(match[1], 10);
+        const monthIndex = parseInt(match[2], 10) - 1;
+        if (itemYear !== year || monthIndex < 0 || monthIndex > 11 || !Array.isArray(list)) return;
+
+        const monthActivated = isExpenseMonthActivated(key, list, lockedMonths);
+
+        let total = 0;
+        let totalWithoutFixed = 0;
+        list.forEach(exp => {
+          if (!exp) return;
+
+          const isRentHidden = exp.isRent === true && exp.rentHidden === true;
+          const isSwapradHidden = exp.isSwaprad === true && exp.swapradHidden === true;
+          if (isRentHidden || isSwapradHidden) return;
+
+          if (exp.isRent === true || exp.isSwaprad === true) {
+            if (!monthActivated) return;
+          } else if (!hasAnyExpenseRowContent(exp)) {
+            return;
+          }
+
+          const amount = parseFlexibleAmount(exp.amount);
+          total += amount;
+
+          if (exp.isRent !== true && exp.isSwaprad !== true) {
+            totalWithoutFixed += amount;
+          }
+        });
+
+        byMonth[monthIndex].expenses += total;
+        byMonth[monthIndex].expensesWithoutFixed += totalWithoutFixed;
+      });
+
+      return byMonth;
+    }
+
+    function computeYearSummary(year) {
+      const incomeByMonth = computeIncomeOverview(year);
+      const expenseByMonth = computeExpenseOverview(year);
+
+      let totalIncome = 0;
+      let totalIncomeVat = 0;
+      let totalIncomeNet = 0;
+      let totalExpenses = 0;
+      let totalExpenseVat = 0;
+      let totalExpenseNet = 0;
+
+      for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
+        const income = incomeByMonth[monthIndex]?.income || 0;
+        const incomeVat = calculateVatFromGross(income);
+        const incomeNet = income - incomeVat;
+        const expenses = expenseByMonth[monthIndex]?.expenses || 0;
+        const expenseVat = calculateExpenseVorsteuerForSummary(expenses);
+        const expenseNet = expenses - expenseVat;
+
+        totalIncome = addCurrency(totalIncome, income);
+        totalIncomeVat = addCurrency(totalIncomeVat, incomeVat);
+        totalIncomeNet = addCurrency(totalIncomeNet, incomeNet);
+        totalExpenses = addCurrency(totalExpenses, expenses);
+        totalExpenseVat = addCurrency(totalExpenseVat, expenseVat);
+        totalExpenseNet = addCurrency(totalExpenseNet, expenseNet);
+      }
+
+      return {
+        year,
+        incomeByMonth,
+        expenseByMonth,
+        totalIncome,
+        totalIncomeVat,
+        totalIncomeNet,
+        totalExpenses,
+        totalExpenseVat,
+        totalExpenseNet,
+        taxDue: totalIncomeVat - totalExpenseVat,
+        result: totalIncomeNet - totalExpenseNet
+      };
+    }
+
+    function renderTaxQuarterOverview(incomeByMonth, expenseByMonth) {
+      taxQuarterGroups.innerHTML = '';
+
+      const quarterGroups = [
+        { title: '1. Quartal', months: [0, 1, 2] },
+        { title: '2. Quartal', months: [3, 4, 5] },
+        { title: '3. Quartal', months: [6, 7, 8] },
+        { title: '4. Quartal', months: [9, 10, 11] }
+      ];
+
+      let yearlyTaxExact = 0;
+      let yearlyTaxFinanzamt = 0;
+
+      quarterGroups.forEach(group => {
+        const quarter = document.createElement('div');
+        quarter.className = 'taxQuarter';
+
+        const title = document.createElement('div');
+        title.className = 'taxQuarterTitle';
+        title.textContent = group.title;
+        quarter.appendChild(title);
+
+        const headerRow = document.createElement('div');
+        headerRow.className = 'taxHeaderRow';
+        headerRow.innerHTML = `
+          <span>Monat</span>
+          <span>centgenau</span>
+          <span>Finanzamt</span>
+        `;
+        quarter.appendChild(headerRow);
+
+        let quarterIncomeVat = 0;
+        let quarterExpenseVat = 0;
+        let quarterIncomeNet = 0;
+
+        group.months.forEach(monthIndex => {
+          const income = incomeByMonth[monthIndex]?.income || 0;
+          const vatIncome = roundToCents(calculateVatFromGross(income));
+          const incomeNet = roundToCents(income - vatIncome);
+          const expenses = expenseByMonth[monthIndex]?.expenses || 0;
+          const vatExpense = calculateExpenseVorsteuerForSummary(expenses);
+          const taxExact = roundToCents(vatIncome - vatExpense);
+
+          quarterIncomeVat = addCurrency(quarterIncomeVat, vatIncome);
+          quarterExpenseVat = addCurrency(quarterExpenseVat, vatExpense);
+          quarterIncomeNet = addCurrency(quarterIncomeNet, incomeNet);
+          yearlyTaxExact = addCurrency(yearlyTaxExact, taxExact);
+
+          const row = document.createElement('div');
+          row.className = 'taxRow';
+          row.innerHTML = `
+            <span>${monthNames[monthIndex]}</span>
+            <span class="${taxExact !== 0 ? '' : 'taxMuted'}">${formatTaxDisplay(taxExact)}</span>
+            <span class="taxMuted">–</span>
+          `;
+          quarter.appendChild(row);
+        });
+
+        const quarterTaxExact = roundToCents(quarterIncomeVat - quarterExpenseVat);
+        const roundedQuarterIncomeNet = roundDownToFullEuro(quarterIncomeNet);
+        const quarterIncomeVatForFinanzamt = calculateVatFromNet(roundedQuarterIncomeNet);
+        const quarterTaxFinanzamt = roundToCents(quarterIncomeVatForFinanzamt - quarterExpenseVat);
+        yearlyTaxFinanzamt = addCurrency(yearlyTaxFinanzamt, quarterTaxFinanzamt);
+
+        const sumRow = document.createElement('div');
+        sumRow.className = 'taxQuarterSum';
+        sumRow.innerHTML = `
+          <span>Summe</span>
+          <span>${formatTaxDisplay(quarterTaxExact)}</span>
+          <span class="${quarterTaxFinanzamt !== 0 ? 'taxFinanceValue' : 'taxMuted'}">${formatTaxDisplay(quarterTaxFinanzamt)}</span>
+        `;
+        quarter.appendChild(sumRow);
+
+        const details = document.createElement('details');
+        details.className = 'taxCalcDetails';
+        details.innerHTML = `
+          <summary>Berechnung anzeigen</summary>
+          <div class="taxCalcBox">
+            <div class="taxCalcIntro">Rechenweg für den Finanzamt-Wert dieses Quartals.</div>
+            <div class="taxCalcRow">
+              <span class="taxCalcLabel">1. Nettoeinnahmen Quartal (cent-genau zusammengeführt)</span>
+              <span class="taxCalcValue">${formatEuro(quarterIncomeNet)}</span>
+            </div>
+            <div class="taxCalcRow">
+              <span class="taxCalcLabel">2. Nach unten auf volle Euro gerundetes Quartals-Netto</span>
+              <span class="taxCalcValue">${formatEuro(roundedQuarterIncomeNet)}</span>
+            </div>
+            <div class="taxCalcRow">
+              <span class="taxCalcLabel">3. Umsatzsteuer aus dem gerundeten Quartals-Netto (19 %)</span>
+              <span class="taxCalcValue">${formatEuro(quarterIncomeVatForFinanzamt)}</span>
+            </div>
+            <div class="taxCalcRow">
+              <span class="taxCalcLabel">4. Quartalsweise Vorsteuer aus Ausgaben (cent-genau)</span>
+              <span class="taxCalcValue">${formatEuro(quarterExpenseVat)}</span>
+            </div>
+            <div class="taxCalcTotal">
+              <span>Finanzamt-Wert Quartal</span>
+              <span>${formatTaxDisplay(quarterTaxFinanzamt)}</span>
+            </div>
+            <div class="taxCalcFormula">Formel: Quartals-Netto cent-genau → auf volle Euro nach unten runden → daraus 19 % Umsatzsteuer berechnen → quartalsweise Vorsteuer cent-genau abziehen.</div>
+          </div>
+        `;
+        quarter.appendChild(details);
+
+        taxQuarterGroups.appendChild(quarter);
+      });
+
+      taxYearTotalExact.textContent = yearlyTaxExact !== 0 ? formatEuro(yearlyTaxExact) : '–';
+      taxYearTotal.textContent = yearlyTaxFinanzamt !== 0 ? formatEuro(yearlyTaxFinanzamt) : '–';
+    }
+
+    function renderYearDeclaration(summary, year) {
+      const annualNetExact = roundToCents(summary.totalIncomeNet || 0);
+      const declarationBase = roundDownToFullEuro(annualNetExact);
+      const declarationVat = roundToCents(calculateVatFromNet(declarationBase));
+      const declarationVorsteuer = roundToCents(summary.totalExpenseVat || 0);
+      const remainingAmount = roundToCents(declarationVat - declarationVorsteuer);
+      const advanceQuarterAmounts = [1, 2, 3, 4].map(quarter => getStoredYearDeclarationAdvanceQuarter(year, quarter));
+      const advanceAmount = getStoredYearDeclarationAdvanceTotal(year);
+      const finalAmount = roundToCents(remainingAmount - advanceAmount);
+
+      yearDeclarationNetExact.textContent = formatEuro(annualNetExact);
+      yearDeclarationNetRounded.textContent = formatEuro(declarationBase);
+      yearDeclarationVat.textContent = formatEuro(declarationVat);
+      yearDeclarationVorsteuer.textContent = formatEuro(declarationVorsteuer);
+      yearDeclarationRemainingLabel.textContent = remainingAmount >= 0 ? 'Verbleibende Umsatzsteuer' : 'Verbleibender Überschuss';
+      yearDeclarationRemaining.textContent = formatEuro(Math.abs(remainingAmount));
+      yearDeclarationAdvanceInputs.forEach((input, index) => {
+        const amount = advanceQuarterAmounts[index] || 0;
+        input.value = amount !== 0 ? formatInputAmount(amount) : '';
+      });
+      yearDeclarationAdvanceTotal.textContent = advanceAmount !== 0 ? formatEuro(advanceAmount) : '–';
+      yearDeclarationFinalLabel.textContent = finalAmount >= 0
+        ? 'Noch an die Finanzkasse zu entrichten – Abschlusszahlung'
+        : 'Erstattungsanspruch';
+      yearDeclarationFinal.textContent = formatEuro(Math.abs(finalAmount));
+    }
+
+    function renderFinanzamtPage() {
+      populateOverviewYearSelect();
+      const year = parseInt(overviewYearSelect.value || String(new Date().getFullYear()), 10);
+      const summary = computeYearSummary(year);
+      renderTaxQuarterOverview(summary.incomeByMonth, summary.expenseByMonth);
+      renderYearDeclaration(summary, year);
+    }
+
+    overviewYearSelect.addEventListener('change', renderFinanzamtPage);
+    yearDeclarationAdvanceInputs.forEach((input, index) => {
+      const quarter = index + 1;
+      ['change', 'blur'].forEach(eventName => {
+        input.addEventListener(eventName, () => {
+          const year = parseInt(overviewYearSelect.value || String(new Date().getFullYear()), 10);
+          setStoredYearDeclarationAdvanceQuarter(year, quarter, parseFlexibleAmount(input.value));
+          renderFinanzamtPage();
+        });
+      });
+    });
+    window.addEventListener('storage', renderFinanzamtPage);
+    window.addEventListener('focus', renderFinanzamtPage);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) renderFinanzamtPage();
+    });
+
+    window.refreshFinanzamt = renderFinanzamtPage;
+
+    renderFinanzamtPage();
+  </script>
+</body>
+</html>
