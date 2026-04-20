@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Einnahmen-Ausgaben (Offline) – Version 297.04.26</title>
+  <title>Einnahmen-Ausgaben (Offline) – Version 303.04.26</title>
   <style>
     :root{
       /* Moderner, klar sichtbarer Rand (deutlich, aber nicht "hart"). */
@@ -270,10 +270,11 @@
       <button id="btnTopEinnahmen" class="navbtn" type="button">Einnahmen</button>
       <button id="btnTopAusgaben" class="navbtn" type="button">Ausgaben</button>
       <button id="btnTopJahresuebersicht" class="navbtn" type="button">Jahresübersicht</button>
+      <button id="btnTopFinanzamt" class="navbtn" type="button">Finanzamt</button>
       <button id="btnTopWohngeld" class="navbtn" type="button">Wohngeld-Gewinn-Hochrechnung</button>
     </div>
     <div id="spacer"></div>
-    <div id="verBadge">v297.04.26</div>
+    <div id="verBadge">v303.04.26</div>
   </div>
 
   <div id="main">
@@ -283,7 +284,7 @@
           <div class="heroRow">
             <div class="heroIcon">€</div>
             <div>
-              <div class="heroKicker">Offline • Version <span id="homeVer">297.04.26</span></div>
+              <div class="heroKicker">Offline • Version <span id="homeVer">303.04.26</span></div>
               <h1>Einnahmen-Ausgaben</h1>
               <div class="heroSub">Wähle einen Bereich aus.</div>
             </div>
@@ -321,6 +322,16 @@
             </div>
           </button>
 
+          <button class="tileBtn" id="tileFinanzamt" type="button">
+            <div class="tileTop">
+              <div class="tileIcon" aria-hidden="true">🏛️</div>
+              <div>
+                <div class="tileTitle">Finanzamt</div>
+                <div class="tileDesc">Quartalsweise Umsatzsteuer und Jahreserklärung in einer eigenen Seite.</div>
+              </div>
+            </div>
+          </button>
+
           <button class="tileBtn" id="tileWohngeld" type="button">
             <div class="tileTop">
               <div class="tileIcon" aria-hidden="true">🏠</div>
@@ -339,25 +350,29 @@
     <iframe id="frameEinnahmen" title="Einnahmen"></iframe>
     <iframe id="frameAusgaben" title="Ausgaben"></iframe>
     <iframe id="frameYearOverview" title="Jahresübersicht"></iframe>
+    <iframe id="frameFinanzamt" title="Finanzamt"></iframe>
     <iframe id="frameWohngeld" title="Wohngeld-Gewinn-Hochrechnung"></iframe>
   </div>
 
   <script>
-    const version = "297.04.26";
+    const version = "303.04.26";
     const homeScreen = document.getElementById('homeScreen');
     const btnHome = document.getElementById('btnHome');
     const tileEinnahmen = document.getElementById('tileEinnahmen');
     const tileAusgaben = document.getElementById('tileAusgaben');
     const tileJahresuebersicht = document.getElementById('tileJahresuebersicht');
+    const tileFinanzamt = document.getElementById('tileFinanzamt');
     const tileWohngeld = document.getElementById('tileWohngeld');
     const btnTopEinnahmen = document.getElementById('btnTopEinnahmen');
     const btnTopAusgaben = document.getElementById('btnTopAusgaben');
     const btnTopJahresuebersicht = document.getElementById('btnTopJahresuebersicht');
+    const btnTopFinanzamt = document.getElementById('btnTopFinanzamt');
     const btnTopWohngeld = document.getElementById('btnTopWohngeld');
 
     const frameEinnahmen = document.getElementById('frameEinnahmen');
     const frameAusgaben = document.getElementById('frameAusgaben');
     const frameYearOverview = document.getElementById('frameYearOverview');
+    const frameFinanzamt = document.getElementById('frameFinanzamt');
     const frameWohngeld = document.getElementById('frameWohngeld');
 
     function injectElectronAPI(frame) {
@@ -392,6 +407,14 @@
       } catch (e) {}
     }
 
+    function refreshFinanzamtPage() {
+      try {
+        if (frameFinanzamt && frameFinanzamt.contentWindow && typeof frameFinanzamt.contentWindow.refreshFinanzamt === 'function') {
+          frameFinanzamt.contentWindow.refreshFinanzamt();
+        }
+      } catch (e) {}
+    }
+
     function refreshWohngeldPage() {
       try {
         if (frameWohngeld && frameWohngeld.contentWindow && typeof frameWohngeld.contentWindow.refreshWohngeldHochrechnung === 'function') {
@@ -404,6 +427,7 @@
       refreshEinnahmenPage();
       refreshAusgabenPage();
       refreshYearOverviewPage();
+      refreshFinanzamtPage();
       refreshWohngeldPage();
     }
 
@@ -412,6 +436,7 @@
       btnTopEinnahmen.classList.toggle('is-active', which === 'einnahmen');
       btnTopAusgaben.classList.toggle('is-active', which === 'ausgaben');
       btnTopJahresuebersicht.classList.toggle('is-active', which === 'jahresuebersicht');
+      btnTopFinanzamt.classList.toggle('is-active', which === 'finanzamt');
       btnTopWohngeld.classList.toggle('is-active', which === 'wohngeld');
     }
 
@@ -427,12 +452,14 @@
       const isAusgaben = which === 'ausgaben';
       const isEinnahmen = which === 'einnahmen';
       const isYearOverview = which === 'jahresuebersicht';
+      const isFinanzamt = which === 'finanzamt';
       const isWohngeld = which === 'wohngeld';
 
       homeScreen.classList.toggle('active', isHome);
       frameAusgaben.classList.toggle('active', isAusgaben);
       frameEinnahmen.classList.toggle('active', isEinnahmen);
       frameYearOverview.classList.toggle('active', isYearOverview);
+      frameFinanzamt.classList.toggle('active', isFinanzamt);
       frameWohngeld.classList.toggle('active', isWohngeld);
 
       setActiveTopButton(which);
@@ -447,6 +474,9 @@
       if (isYearOverview) {
         refreshYearOverviewPage();
       }
+      if (isFinanzamt) {
+        refreshFinanzamtPage();
+      }
       if (isWohngeld) {
         refreshWohngeldPage();
       }
@@ -455,6 +485,7 @@
     frameEinnahmen.src = 'einnahmen.html';
     frameAusgaben.src = 'ausgaben.html';
     frameYearOverview.src = 'jahresuebersicht.html';
+    frameFinanzamt.src = 'finanzamt.html';
     frameWohngeld.src = 'wohngeld-hochrechnung.html';
 
     frameEinnahmen.addEventListener('load', () => {
@@ -470,6 +501,11 @@
       refreshYearOverviewPage();
       setTimeout(refreshYearOverviewPage, 80);
     });
+    frameFinanzamt.addEventListener('load', () => {
+      injectElectronAPI(frameFinanzamt);
+      refreshFinanzamtPage();
+      setTimeout(refreshFinanzamtPage, 80);
+    });
     frameWohngeld.addEventListener('load', () => {
       injectElectronAPI(frameWohngeld);
       refreshWohngeldPage();
@@ -482,10 +518,12 @@
     btnTopEinnahmen.addEventListener('click', () => show('einnahmen'));
     btnTopAusgaben.addEventListener('click', () => show('ausgaben'));
     btnTopJahresuebersicht.addEventListener('click', () => show('jahresuebersicht'));
+    btnTopFinanzamt.addEventListener('click', () => show('finanzamt'));
     btnTopWohngeld.addEventListener('click', () => show('wohngeld'));
     tileEinnahmen.addEventListener('click', () => show('einnahmen'));
     tileAusgaben.addEventListener('click', () => show('ausgaben'));
     tileJahresuebersicht.addEventListener('click', () => show('jahresuebersicht'));
+    tileFinanzamt.addEventListener('click', () => show('finanzamt'));
     tileWohngeld.addEventListener('click', () => show('wohngeld'));
 
     const homeVer = document.getElementById('homeVer');
@@ -495,6 +533,7 @@
     window.refreshEinnahmenPage = refreshEinnahmenPage;
     window.refreshAusgabenPage = refreshAusgabenPage;
     window.refreshYearOverviewPage = refreshYearOverviewPage;
+    window.refreshFinanzamtPage = refreshFinanzamtPage;
     window.refreshWohngeldPage = refreshWohngeldPage;
     window.refreshAllAppPages = refreshAllPages;
     window.addEventListener('resize', resizeMainForTopbar);

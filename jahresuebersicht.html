@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jahresübersicht – Einnahmen-Ausgaben 297.04.26</title>
+  <title>Jahresübersicht – Einnahmen-Ausgaben 303.04.26</title>
   <style>
     :root {
       --border-strong: #94a3b8;
@@ -25,7 +25,7 @@
     }
     .layout {
       display: grid;
-      grid-template-columns: minmax(0, 2.95fr) minmax(340px, 0.82fr);
+      grid-template-columns: 1fr;
       gap: 24px;
       align-items: start;
     }
@@ -484,7 +484,7 @@
     }
 
     .rightPanelStack {
-      display:flex;
+      display:none; /* Finanzamt-Blöcke wurden auf die eigene Seite ausgelagert */
       flex-direction:column;
       gap: 18px;
     }
@@ -652,7 +652,7 @@
           <div class="headLeft">
             <div class="icon">📊</div>
             <div>
-              <div class="kicker">Offline • Version 297.04.26</div>
+              <div class="kicker">Offline • Version 303.04.26</div>
               <h1>Jahresübersicht</h1>
               <div class="sub">Einfache Tabellenansicht mit Einnahmen und Ausgaben jeweils als Brutto, Netto und Steueranteil sowie Kunden, Kunden / Tag, Max / Tag, Arbeitstagen und Ausfalltagen pro Monat.</div>
             </div>
@@ -732,7 +732,7 @@
         </div>
       </div>
 
-      <div class="rightPanelStack">
+      <div class="rightPanelStack" aria-hidden="true">
         <div class="panel" aria-label="Umsatzsteuer an Finanzamt">
           <div class="taxPanelTitle">
             <div class="icon">🧾</div>
@@ -1168,8 +1168,6 @@ function computeIncomeOverview(year) {
 
       return list.some(exp => {
         if (!exp) return false;
-        if (exp.isRent === true && exp.rentHidden === true) return false;
-        if (exp.isSwaprad === true && exp.swapradHidden === true) return false;
         if (exp.isRent === true) return !isDefaultRentExpenseRow(exp, key);
         if (exp.isSwaprad === true) return !isDefaultSwapradExpenseRow(exp, key);
         return hasAnyExpenseRowContent(exp);
@@ -1469,6 +1467,7 @@ function computeIncomeOverview(year) {
     }
 
     function renderYearDeclaration(summary, year) {
+      if (!yearDeclarationNetExact || !yearDeclarationNetRounded || !yearDeclarationVat || !yearDeclarationVorsteuer || !yearDeclarationRemainingLabel || !yearDeclarationRemaining || !yearDeclarationAdvanceInput || !yearDeclarationFinalLabel || !yearDeclarationFinal) return;
       const annualNetExact = roundToCents(summary.totalIncomeNet);
       const declarationBase = roundDownToFullEuro(annualNetExact);
       const declarationVat = calculateVatFromNet(declarationBase);
@@ -1612,16 +1611,18 @@ function computeIncomeOverview(year) {
     }
 
     overviewYearSelect.addEventListener('change', renderYearOverview);
-    yearDeclarationAdvanceInput.addEventListener('change', () => {
-      const year = parseInt(overviewYearSelect.value || String(new Date().getFullYear()), 10);
-      setStoredYearDeclarationAdvance(year, parseFlexibleAmount(yearDeclarationAdvanceInput.value));
-      renderYearOverview();
-    });
-    yearDeclarationAdvanceInput.addEventListener('blur', () => {
-      const year = parseInt(overviewYearSelect.value || String(new Date().getFullYear()), 10);
-      setStoredYearDeclarationAdvance(year, parseFlexibleAmount(yearDeclarationAdvanceInput.value));
-      renderYearOverview();
-    });
+    if (yearDeclarationAdvanceInput) {
+      yearDeclarationAdvanceInput.addEventListener('change', () => {
+        const year = parseInt(overviewYearSelect.value || String(new Date().getFullYear()), 10);
+        setStoredYearDeclarationAdvance(year, parseFlexibleAmount(yearDeclarationAdvanceInput.value));
+        renderYearOverview();
+      });
+      yearDeclarationAdvanceInput.addEventListener('blur', () => {
+        const year = parseInt(overviewYearSelect.value || String(new Date().getFullYear()), 10);
+        setStoredYearDeclarationAdvance(year, parseFlexibleAmount(yearDeclarationAdvanceInput.value));
+        renderYearOverview();
+      });
+    }
     window.addEventListener('storage', renderYearOverview);
     window.addEventListener('focus', renderYearOverview);
     document.addEventListener('visibilitychange', () => {
