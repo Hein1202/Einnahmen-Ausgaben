@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ausgaben (Offline) – Version 305.04.26</title>
+  <title>Ausgaben (Offline) – Version 306.04.26</title>
       <link id="tailwindStylesheet" rel="stylesheet" href="assets/tailwind.css" />
   <style>
     body { font-family: sans-serif; background-color: #f7fafc; color: #000000; }
@@ -450,7 +450,7 @@
         <span class="text-sm font-semibold text-gray-800">Ergebnis ohne Raummiete anzeigen</span>
       </label>
       <button id="exportMonthBtn" class="month-save-btn px-4 py-2">Diesen Monat speichern</button>
-      <button id="showSwapradBtn" class="bg-slate-600 text-white px-4 py-2 rounded" style="display:none;">Swaprad Miete einblenden</button>
+      <button id="showSwapradBtn" class="bg-gray-600 text-white px-4 py-2 rounded" style="display:none;">Swaprad Miete einblenden</button>
       
       <button id="importBtn" class="bg-yellow-500 text-white px-4 py-2 rounded advanced-only">Daten laden</button>
       <button id="exportBtn" class="bg-indigo-600 text-white px-4 py-2 rounded advanced-only">Alle Monate speichern</button>
@@ -1874,8 +1874,6 @@ function getPrintTitle() {
     }
 
 
-    let pendingFocusAfterDateRender = null;
-
     expenseBody.addEventListener('change', (e) => {
       const index = e.target.dataset.index;
       const field = e.target.dataset.field;
@@ -1897,15 +1895,8 @@ function getPrintTitle() {
           renumberReceiptsByRowOrder();
           // Datum wurde aktiv bearbeitet -> wieder einblenden
           expenses[index].hideDate = false;
-          const focusTarget = pendingFocusAfterDateRender && pendingFocusAfterDateRender.index === Number(index)
-            ? pendingFocusAfterDateRender
-            : null;
-          pendingFocusAfterDateRender = null;
           save();
           render();
-          if (focusTarget && focusTarget.field) {
-            focusFieldByIndex(Number(index), focusTarget.field);
-          }
         } else if (field === 'period') {
           // Monats-Text für Raummiete/Swaprad
           expenses[index].period = e.target.value;
@@ -1926,27 +1917,12 @@ function getPrintTitle() {
       const input = e.target;
       if (!input || input.tagName !== 'INPUT') return;
       if (input.type === 'checkbox') return;
-
-      const indexStr = input.dataset.index;
-      const field = input.dataset.field;
-
-      if (e.key === 'Tab' && !e.shiftKey) {
-        if (field === 'date' && indexStr !== undefined) {
-          pendingFocusAfterDateRender = {
-            index: parseInt(indexStr, 10),
-            field: 'amount'
-          };
-        } else {
-          pendingFocusAfterDateRender = null;
-        }
-        return;
-      }
-
-      pendingFocusAfterDateRender = null;
       if (e.key !== 'Enter') return;
 
       e.preventDefault();
 
+      const indexStr = input.dataset.index;
+      const field = input.dataset.field;
       if (indexStr === undefined || !field) return;
       const index = parseInt(indexStr, 10);
       if (isNaN(index) || index < 0 || index >= expenses.length) return;
