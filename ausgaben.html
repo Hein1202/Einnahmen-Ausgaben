@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ausgaben (Offline) – Version 297.04.26</title>
+  <title>Ausgaben (Offline) – Version 305.04.26</title>
       <link id="tailwindStylesheet" rel="stylesheet" href="assets/tailwind.css" />
   <style>
     body { font-family: sans-serif; background-color: #f7fafc; color: #000000; }
@@ -450,7 +450,7 @@
         <span class="text-sm font-semibold text-gray-800">Ergebnis ohne Raummiete anzeigen</span>
       </label>
       <button id="exportMonthBtn" class="month-save-btn px-4 py-2">Diesen Monat speichern</button>
-      <button id="showSwapradBtn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded" type="button" style="display:none;">Swaprad Miete einblenden</button>
+      <button id="showSwapradBtn" class="bg-slate-600 text-white px-4 py-2 rounded" style="display:none;">Swaprad Miete einblenden</button>
       
       <button id="importBtn" class="bg-yellow-500 text-white px-4 py-2 rounded advanced-only">Daten laden</button>
       <button id="exportBtn" class="bg-indigo-600 text-white px-4 py-2 rounded advanced-only">Alle Monate speichern</button>
@@ -799,11 +799,15 @@ function updateEditability() {
     btn.style.display = locked ? 'none' : '';
   });
 
-  // Swaprad hide button
-  document.querySelectorAll('.swapradToggleBtn').forEach(btn => {
+  // Swaprad ausblenden
+  document.querySelectorAll('.swapradHideBtn').forEach(btn => {
     btn.style.display = locked ? 'none' : '';
     btn.disabled = locked;
   });
+
+  if (showSwapradBtn) {
+    showSwapradBtn.disabled = locked;
+  }
 
   // Import is blocked when locked
   const importBtn = document.getElementById('importBtn');
@@ -815,8 +819,6 @@ function updateEditability() {
     clearBtn.disabled = locked;
     clearBtn.style.display = locked ? 'none' : '';
   }
-
-  updateSwapradRestoreButton();
 }
 
 
@@ -1156,8 +1158,6 @@ const MONTH_NAMES = {
 
       return list.some(exp => {
         if (!exp) return false;
-        if (exp.isRent === true && exp.rentHidden === true) return false;
-        if (exp.isSwaprad === true && exp.swapradHidden === true) return false;
         if (exp.isRent === true) return !isDefaultRentRow(exp, key);
         if (exp.isSwaprad === true) return !isDefaultSwapradRow(exp, key);
         return hasAnyRowContent(exp);
@@ -1396,8 +1396,8 @@ function render() {
                   : isSwaprad
                     ? `<button
                         data-index="${index}"
-                        class="swapradToggleBtn text-gray-700 underline"
-                        title="Swaprad Miete ausblenden"
+                        class="swapradHideBtn text-amber-700 font-semibold"
+                        title="Swaprad-Zeile ausblenden"
                         ${locked ? 'disabled' : ''}
                       >
                         Ausblenden
@@ -1427,7 +1427,31 @@ function render() {
       });
 
       recalcTotals();
-      updateSwapradRestoreButton();
+      updateSwapradControls();
+    }
+
+    function updateSwapradControls() {
+      if (!showSwapradBtn) return;
+      const hasHiddenSwaprad = Array.isArray(expenses) && expenses.some(exp => exp && exp.isSwaprad === true && exp.swapradHidden === true);
+      showSwapradBtn.style.display = hasHiddenSwaprad ? '' : 'none';
+      showSwapradBtn.disabled = isLocked(currentKey);
+    }
+
+    if (showSwapradBtn) {
+      showSwapradBtn.addEventListener('click', () => {
+        if (isLocked(currentKey)) return;
+        let changed = false;
+        expenses.forEach(exp => {
+          if (exp && exp.isSwaprad === true && exp.swapradHidden === true) {
+            exp.swapradHidden = false;
+            changed = true;
+          }
+        });
+        if (changed) {
+          save();
+          render();
+        }
+      });
     }
 
 function formatDateGerman(iso) {
@@ -1850,6 +1874,8 @@ function getPrintTitle() {
     }
 
 
+    let pendingFocusAfterDateRender = null;
+
     expenseBody.addEventListener('change', (e) => {
       const index = e.target.dataset.index;
       const field = e.target.dataset.field;
@@ -1871,8 +1897,15 @@ function getPrintTitle() {
           renumberReceiptsByRowOrder();
           // Datum wurde aktiv bearbeitet -> wieder einblenden
           expenses[index].hideDate = false;
+          const focusTarget = pendingFocusAfterDateRender && pendingFocusAfterDateRender.index === Number(index)
+            ? pendingFocusAfterDateRender
+            : null;
+          pendingFocusAfterDateRender = null;
           save();
           render();
+          if (focusTarget && focusTarget.field) {
+            focusFieldByIndex(Number(index), focusTarget.field);
+          }
         } else if (field === 'period') {
           // Monats-Text für Raummiete/Swaprad
           expenses[index].period = e.target.value;
@@ -1893,12 +1926,27 @@ function getPrintTitle() {
       const input = e.target;
       if (!input || input.tagName !== 'INPUT') return;
       if (input.type === 'checkbox') return;
+
+      const indexStr = input.dataset.index;
+      const field = input.dataset.field;
+
+      if (e.key === 'Tab' && !e.shiftKey) {
+        if (field === 'date' && indexStr !== undefined) {
+          pendingFocusAfterDateRender = {
+            index: parseInt(indexStr, 10),
+            field: 'amount'
+          };
+        } else {
+          pendingFocusAfterDateRender = null;
+        }
+        return;
+      }
+
+      pendingFocusAfterDateRender = null;
       if (e.key !== 'Enter') return;
 
       e.preventDefault();
 
-      const indexStr = input.dataset.index;
-      const field = input.dataset.field;
       if (indexStr === undefined || !field) return;
       const index = parseInt(indexStr, 10);
       if (isNaN(index) || index < 0 || index >= expenses.length) return;
@@ -1982,12 +2030,6 @@ expenseBody.addEventListener('focusin', (e) => {
         return;
       }
 
-      if (btn.classList.contains('swapradToggleBtn')) {
-        if (isLocked(currentKey)) return;
-        setSwapradHidden(true);
-        return;
-      }
-
       if (btn.classList.contains('deleteBtn')) {
         if (isLocked(currentKey)) return;
         expenses.splice(index, 1);
@@ -1995,6 +2037,16 @@ expenseBody.addEventListener('focusin', (e) => {
         renumberReceiptsByRowOrder();
         save();
         render();
+        return;
+      }
+
+      if (btn.classList.contains('swapradHideBtn')) {
+        if (isLocked(currentKey)) return;
+        if (expenses[index] && expenses[index].isSwaprad === true) {
+          expenses[index].swapradHidden = true;
+          save();
+          render();
+        }
         return;
       }
     });
@@ -2044,30 +2096,10 @@ function isHiddenRentRow(exp) {
       return false;
     }
 
+    
+
     function isHiddenSwapradRow(exp) {
       return !!(exp && exp.isSwaprad === true && exp.swapradHidden === true);
-    }
-
-    function updateSwapradRestoreButton() {
-      if (!showSwapradBtn) return;
-      const swaprad = Array.isArray(expenses) ? expenses.find(e => e && e.isSwaprad === true) : null;
-      const hidden = isHiddenSwapradRow(swaprad);
-      const locked = isLocked(currentKey);
-      showSwapradBtn.style.display = hidden ? 'inline-flex' : 'none';
-      showSwapradBtn.disabled = locked;
-      showSwapradBtn.title = locked
-        ? 'Monat ist gesperrt – zum Einblenden erst entsperren'
-        : 'Blendet die Swaprad-Miete wieder ein';
-    }
-
-    function setSwapradHidden(hidden) {
-      if (!Array.isArray(expenses)) return;
-      const swaprad = expenses.find(e => e && e.isSwaprad === true);
-      if (!swaprad) return;
-      swaprad.swapradHidden = !!hidden;
-      swaprad.receipt = '';
-      save();
-      render();
     }
 function normalizeRentRowForMonth(key, list) {
       if (!Array.isArray(list)) return list;
@@ -2278,7 +2310,7 @@ function normalizeRentRowForMonth(key, list) {
           changed = true;
         }
 
-        if (row.swapradHidden !== true && row.swapradHidden !== false) {
+        if (typeof row.swapradHidden !== 'boolean') {
           row.swapradHidden = false;
           changed = true;
         }
@@ -2468,13 +2500,6 @@ function handleMonthYearChange() {
         if (printPreviewOverlay && printPreviewOverlay.classList.contains('is-open') && currentPreviewMode !== 'year') {
           openPrintPreview(currentPreviewMode);
         }
-      });
-    }
-
-    if (showSwapradBtn) {
-      showSwapradBtn.addEventListener('click', () => {
-        if (isLocked(currentKey)) return;
-        setSwapradHidden(false);
       });
     }
 
