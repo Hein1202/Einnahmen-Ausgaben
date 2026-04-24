@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ausgaben (Offline) – Version 307.04.26</title>
+  <title>Ausgaben (Offline) – Version 308.04.26</title>
       <link id="tailwindStylesheet" rel="stylesheet" href="assets/tailwind.css" />
   <style>
     body { font-family: sans-serif; background-color: #f7fafc; color: #000000; }
@@ -1917,12 +1917,34 @@ function getPrintTitle() {
       const input = e.target;
       if (!input || input.tagName !== 'INPUT') return;
       if (input.type === 'checkbox') return;
+
+      const indexStr = input.dataset.index;
+      const field = input.dataset.field;
+
+      // Tab im Datumsfeld: nach dem notwendigen Neuaufbau der Tabelle
+      // gezielt in das Betragsfeld derselben Zeile wechseln. Ohne diese
+      // Fokus-Ruecksetzung verliert der Browser den normalen Tab-Sprung,
+      // weil render() das aktive Eingabefeld aus dem DOM ersetzt.
+      if (e.key === 'Tab' && !e.shiftKey && field === 'date') {
+        if (indexStr === undefined) return;
+        const index = parseInt(indexStr, 10);
+        if (isNaN(index) || index < 0 || index >= expenses.length) return;
+
+        e.preventDefault();
+
+        expenses[index].date = buildDateFromDay(input.value, expenses[index].date);
+        renumberReceiptsByRowOrder();
+        expenses[index].hideDate = false;
+        save();
+        render();
+        focusFieldByIndex(index, "amount");
+        return;
+      }
+
       if (e.key !== 'Enter') return;
 
       e.preventDefault();
 
-      const indexStr = input.dataset.index;
-      const field = input.dataset.field;
       if (indexStr === undefined || !field) return;
       const index = parseInt(indexStr, 10);
       if (isNaN(index) || index < 0 || index >= expenses.length) return;
@@ -2750,7 +2772,6 @@ document.getElementById('lockIcon').addEventListener('click', toggleLock);
 
         const amount = parseAmount(exp?.amount);
         total += amount;
-        if (exp?.isRent !== true && exp?.isSwaprad !== true) receiptsTotal += amount;
 
         // Excel: echte Datumszelle (nicht Text)
         // Für Raummiete/Swaprad kann statt eines Tagesdatums ein Monats-Text (z.B. "Januar") stehen.
@@ -2789,7 +2810,6 @@ wsData.push([
 
       wsData.push([]);
       wsData.push(["Gesamtsumme (Brutto):", "", total, ""]);
-      wsData.push(["Davon Quittungen:", "", receiptsTotal, ""]);
       wsData.push(["Nettobetrag:", "", net, ""]);
       wsData.push(["Mehrwertsteuer (19%):", "", vat, ""]);
 
@@ -2835,7 +2855,6 @@ wsData.push([
       ];
 
       let total = 0;
-      let receiptsTotal = 0;
 
       (info.rows || []).forEach(exp => {
         if (exp && exp.__monthHeader) {
@@ -2846,7 +2865,6 @@ wsData.push([
 
         const amount = parseAmount(exp.amount);
         total += amount;
-        if (exp?.isRent !== true && exp?.isSwaprad !== true) receiptsTotal += amount;
 
         let excelDate = "";
         const isFixedMonthly = (exp?.isRent === true || exp?.isSwaprad === true);
@@ -2881,7 +2899,6 @@ wsData.push([
 
       wsData.push([]);
       wsData.push(["Gesamtsumme (Brutto):", "", total, ""]);
-      wsData.push(["Davon Quittungen:", "", receiptsTotal, ""]);
       wsData.push(["Nettobetrag:", "", net, ""]);
       wsData.push(["Mehrwertsteuer (19%):", "", vat, ""]);
 
