@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Finanzamt – Einnahmen-Ausgaben 304.04.26</title>
+  <title>Finanzamt – Einnahmen-Ausgaben 309.04.26</title>
   <style>
     :root {
       --border-strong: #94a3b8;
@@ -410,6 +410,32 @@
       font-weight: 700;
     }
 
+    /* Lesbarkeit Variante A: Werte und Monatsnamen klar dunkel und kräftig */
+    .taxRow span,
+    .taxQuarterSum span,
+    .taxYearSum span,
+    .yearDeclarationRow,
+    .yearDeclarationLabel,
+    .yearDeclarationValue,
+    .yearDeclarationAdvanceQuarterLabel,
+    .yearDeclarationTotal {
+      color:#000000;
+      font-weight:900;
+    }
+    .taxHeaderRow {
+      color:#000000;
+      font-weight:900;
+    }
+    .taxMuted,
+    .yearDeclarationInputNote,
+    .yearDeclarationIntro,
+    .taxCalcIntro,
+    .taxCalcFormula {
+      color:#000000;
+      font-weight:800;
+    }
+
+
     .taxCalcDetails {
       margin-top: 10px;
       border-top: 1px dashed #cbd5e1;
@@ -700,7 +726,7 @@
         <div class="headLeft">
           <div class="icon">🏛️</div>
           <div>
-            <div class="kicker">Offline • Version 304.04.26</div>
+            <div class="kicker">Offline • Version 309.04.26</div>
             <h1>Finanzamt</h1>
             <div class="sub">Eigener Bereich für die quartalsweise Umsatzsteuer an das Finanzamt und die Umsatzsteuer-Jahreserklärung nach WISO-Muster.</div>
           </div>
@@ -765,7 +791,7 @@
               <span id="yearDeclarationRemaining" class="yearDeclarationValue">–</span>
             </div>
             <div class="yearDeclarationRow">
-              <span class="yearDeclarationLabel">Vorauszahlungen</span>
+              <span class="yearDeclarationLabel">Geleistete Vorauszahlungen</span>
               <div class="yearDeclarationAdvanceList">
                 <label class="yearDeclarationAdvanceRow" for="yearDeclarationAdvanceQ1Input">
                   <span class="yearDeclarationAdvanceQuarterLabel">1. Quartal</span>
@@ -787,7 +813,7 @@
               </div>
             </div>
             <div class="yearDeclarationRow">
-              <span class="yearDeclarationLabel">Summe Vorauszahlungen</span>
+              <span class="yearDeclarationLabel">Summe geleistete Vorauszahlungen</span>
               <span id="yearDeclarationAdvanceTotal" class="yearDeclarationValue">–</span>
             </div>
             <div class="yearDeclarationTotal">
